@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
+//UI컨트롤들과 catalog 처리기능 연결하는 클래스
 namespace DateManager.services
 {
     internal sealed class CatalogFrameController
@@ -26,11 +27,11 @@ namespace DateManager.services
         private List<FrameData> visibleFrames = [];
         private string catalogDirectory = string.Empty;
 
-        public static CatalogFrameController? TryAttach(Control root)
+        public static CatalogFrameController? TryAttach(Control root) //Form1 안에서 필요한 컨트롤들을 이름으로 찾아서 연결
         {
-            var loadTubButton = FindControl<Button>(root, "btnLoadTub");
-            var frameListBox = FindControl<ListBox>(root, "lstFrameData");
-            var framePictureBox = FindControl<PictureBox>(root, "pbMainCam");
+            var loadTubButton = FindControl<Button>(root, "btnLoadTub"); //카탈로그 파일 불러오는 버튼
+            var frameListBox = FindControl<ListBox>(root, "lstFrameData"); //전체 프레임 목록 보여주는 리스트박스
+            var framePictureBox = FindControl<PictureBox>(root, "pbMainCam"); //선택한 프레임의 이미지 보여주는 픽쳐박스
 
             if (loadTubButton is null || frameListBox is null || framePictureBox is null)
             {
@@ -84,6 +85,7 @@ namespace DateManager.services
 
             this.loadTubButton.Click += LoadTubButton_Click;
             this.frameListBox.SelectedIndexChanged += FrameListBox_SelectedIndexChanged;
+            //찾은 컨트롤에 이벤트 연결
 
             if (this.applyFilterButton is not null)
             {
@@ -107,8 +109,9 @@ namespace DateManager.services
         {
             using var dialog = new OpenFileDialog
             {
-                Title = "Select catalog file",
+                Title = "카탈로그 파일 선택",
                 Filter = "Catalog or JSON Lines (*.catalog;*.jsonl;*.txt)|*.catalog;*.jsonl;*.txt|All files (*.*)|*.*"
+                //카탈로그 파일 선택하는 다이얼로그, .catalog, .jsonl, .txt 확장자 허용
             };
 
             if (dialog.ShowDialog() != DialogResult.OK)
@@ -119,8 +122,8 @@ namespace DateManager.services
             try
             {
                 allFrames.Clear();
-                allFrames.AddRange(CatalogServices.LoadCatalog(dialog.FileName));
-                catalogDirectory = Path.GetDirectoryName(dialog.FileName) ?? string.Empty;
+                allFrames.AddRange(CatalogServices.LoadCatalog(dialog.FileName)); //CatalogServices의 LoadCatalog 메서드로 선택한 파일에서 프레임 데이터 로드
+                catalogDirectory = Path.GetDirectoryName(dialog.FileName) ?? string.Empty; //카탈로그 파일이 있는 디렉토리 경로 저장
                 ApplySelectedFilters();
             }
             catch (Exception ex)
@@ -136,6 +139,7 @@ namespace DateManager.services
 
         private void FrameListBox_SelectedIndexChanged(object? sender, EventArgs e)
         {
+            //리스트박스에서 프레임 선택이 바뀌면 해당 프레임 보여주기
             if (frameListBox.SelectedItem is FrameData frame)
             {
                 ShowFrame(frame);
@@ -159,28 +163,29 @@ namespace DateManager.services
             if (throttleFilterCheckBox?.Checked == true)
             {
                 filteredFrames = filteredFrames.Where(frame => frame.Throttle > 0);
-            }
+            } //throttle이 0보다 큰 프레임만 남김
 
             if (angleZeroFilterCheckBox?.Checked == true)
             {
                 filteredFrames = filteredFrames.Where(frame => Math.Abs(frame.Angle) <= 0.01);
-            }
+            } //angle이 거의 0인 프레임만 남김
 
             if (largeAngleFilterCheckBox?.Checked == true)
             {
                 filteredFrames = filteredFrames.Where(frame => Math.Abs(frame.Angle) > 0.3);
-            }
+            } //angle이 0.3보다 큰 프레임만 남김
 
             visibleFrames = filteredFrames.ToList();
             BindFrameList();
+            //필터 적용된 프레임 목록 업데이트
         }
 
         private void BindFrameList()
         {
             frameListBox.DataSource = null;
-            frameListBox.DataSource = visibleFrames;
+            frameListBox.DataSource = visibleFrames; //리스트박스에 필터 적용된 프레임 목록 바인딩
 
-            if (frameSlider is not null)
+            if (frameSlider is not null) //프레임 슬라이더가 있으면 슬라이더 범위 업데이트
             {
                 frameSlider.Minimum = 0;
                 frameSlider.Maximum = Math.Max(0, visibleFrames.Count - 1);
@@ -191,7 +196,7 @@ namespace DateManager.services
             {
                 frameListBox.SelectedIndex = 0;
                 return;
-            }
+            } //프레임이 있으면 자동으로 첫 프레임 선택
 
             framePictureBox.Image = null;
             UpdateFrameLabels(null);
@@ -200,20 +205,23 @@ namespace DateManager.services
         private void ShowFrame(FrameData frame)
         {
             var imagePath = Path.Combine(catalogDirectory, frame.ImageFile);
+            //카탈로그 디렉토리와 프레임의 이미지 파일 경로 합쳐서 전체 이미지 경로 생성
 
             framePictureBox.Image?.Dispose();
             framePictureBox.Image = File.Exists(imagePath) ? Image.FromFile(imagePath) : null;
+            //이미지 파일이 존재하면 로드해서 픽쳐박스에 보여주고, 없으면 null로 설정
 
             if (frameSlider is not null && frameListBox.SelectedIndex >= 0)
             {
                 frameSlider.Value = frameListBox.SelectedIndex;
-            }
+            }//프레임 슬라이더가 있으면 현재 선택된 프레임 인덱스로 슬라이더 위치 업데이트
 
             UpdateFrameLabels(frame);
         }
 
         private void UpdateFrameLabels(FrameData? frame)
         {
+            //프레임 정보 레이블 업데이트, 프레임이 null이면 기본값으로 설정
             if (frame is null)
             {
                 SetText(frameIndexLabel, "Frame Index 0/0");
