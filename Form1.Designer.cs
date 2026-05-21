@@ -77,10 +77,10 @@
             // pbMainCam
             // 
             pbMainCam.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            pbMainCam.Location = new Point(8, 67);
-            pbMainCam.Margin = new Padding(4, 4, 4, 4);
+            pbMainCam.Location = new Point(12, 107);
+            pbMainCam.Margin = new Padding(6);
             pbMainCam.Name = "pbMainCam";
-            pbMainCam.Size = new Size(829, 455);
+            pbMainCam.Size = new Size(1290, 728);
             pbMainCam.TabIndex = 0;
             pbMainCam.TabStop = false;
             // 
@@ -90,10 +90,10 @@
             lblThrottleBottom.AutoSize = true;
             lblThrottleBottom.Font = new Font("맑은 고딕", 12F, FontStyle.Bold, GraphicsUnit.Point, 129);
             lblThrottleBottom.ForeColor = Color.White;
-            lblThrottleBottom.Location = new Point(627, 475);
-            lblThrottleBottom.Margin = new Padding(4, 0, 4, 0);
+            lblThrottleBottom.Location = new Point(975, 760);
+            lblThrottleBottom.Margin = new Padding(6, 0, 6, 0);
             lblThrottleBottom.Name = "lblThrottleBottom";
-            lblThrottleBottom.Size = new Size(143, 28);
+            lblThrottleBottom.Size = new Size(230, 45);
             lblThrottleBottom.TabIndex = 1;
             lblThrottleBottom.Text = "Throttle: +0.0";
             // 
@@ -102,10 +102,10 @@
             lblFrameIndex.AutoSize = true;
             lblFrameIndex.Font = new Font("맑은 고딕", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
             lblFrameIndex.ForeColor = Color.White;
-            lblFrameIndex.Location = new Point(17, 31);
-            lblFrameIndex.Margin = new Padding(4, 0, 4, 0);
+            lblFrameIndex.Location = new Point(26, 50);
+            lblFrameIndex.Margin = new Padding(6, 0, 6, 0);
             lblFrameIndex.Name = "lblFrameIndex";
-            lblFrameIndex.Size = new Size(127, 20);
+            lblFrameIndex.Size = new Size(202, 32);
             lblFrameIndex.TabIndex = 2;
             lblFrameIndex.Text = "Frame Index 0/0";
             // 
@@ -114,10 +114,10 @@
             lblAngle.AutoSize = true;
             lblAngle.Font = new Font("맑은 고딕", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
             lblAngle.ForeColor = Color.White;
-            lblAngle.Location = new Point(264, 31);
-            lblAngle.Margin = new Padding(4, 0, 4, 0);
+            lblAngle.Location = new Point(411, 50);
+            lblAngle.Margin = new Padding(6, 0, 6, 0);
             lblAngle.Name = "lblAngle";
-            lblAngle.Size = new Size(92, 20);
+            lblAngle.Size = new Size(146, 32);
             lblAngle.TabIndex = 3;
             lblAngle.Text = "Angle: +0.0";
             // 
@@ -126,10 +126,10 @@
             lblThrottleTop.AutoSize = true;
             lblThrottleTop.Font = new Font("맑은 고딕", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
             lblThrottleTop.ForeColor = Color.White;
-            lblThrottleTop.Location = new Point(456, 31);
-            lblThrottleTop.Margin = new Padding(4, 0, 4, 0);
+            lblThrottleTop.Location = new Point(709, 50);
+            lblThrottleTop.Margin = new Padding(6, 0, 6, 0);
             lblThrottleTop.Name = "lblThrottleTop";
-            lblThrottleTop.Size = new Size(108, 20);
+            lblThrottleTop.Size = new Size(170, 32);
             lblThrottleTop.TabIndex = 4;
             lblThrottleTop.Text = "Throttle: +0.0";
             // 
@@ -138,10 +138,10 @@
             lblTimestamp.AutoSize = true;
             lblTimestamp.Font = new Font("맑은 고딕", 9F, FontStyle.Bold, GraphicsUnit.Point, 129);
             lblTimestamp.ForeColor = Color.White;
-            lblTimestamp.Location = new Point(649, 31);
-            lblTimestamp.Margin = new Padding(4, 0, 4, 0);
+            lblTimestamp.Location = new Point(1010, 50);
+            lblTimestamp.Margin = new Padding(6, 0, 6, 0);
             lblTimestamp.Name = "lblTimestamp";
-            lblTimestamp.Size = new Size(88, 20);
+            lblTimestamp.Size = new Size(140, 32);
             lblTimestamp.TabIndex = 5;
             lblTimestamp.Text = "Timestamp";
             // 
@@ -155,11 +155,11 @@
             gbCamView.Controls.Add(lblThrottleTop);
             gbCamView.Controls.Add(lblAngle);
             gbCamView.ForeColor = Color.White;
-            gbCamView.Location = new Point(31, 71);
-            gbCamView.Margin = new Padding(4, 4, 4, 4);
+            gbCamView.Location = new Point(48, 114);
+            gbCamView.Margin = new Padding(6);
             gbCamView.Name = "gbCamView";
-            gbCamView.Padding = new Padding(4, 4, 4, 4);
-            gbCamView.Size = new Size(845, 529);
+            gbCamView.Padding = new Padding(6);
+            gbCamView.Size = new Size(1314, 846);
             gbCamView.TabIndex = 6;
             gbCamView.TabStop = false;
             gbCamView.Text = "CAM IMAGE VIEW";
@@ -176,11 +176,11 @@
             gbNavigation.Controls.Add(trkFrameSlider);
             gbNavigation.Controls.Add(btnStop);
             gbNavigation.ForeColor = Color.White;
-            gbNavigation.Location = new Point(31, 608);
-            gbNavigation.Margin = new Padding(4, 4, 4, 4);
+            gbNavigation.Location = new Point(48, 973);
+            gbNavigation.Margin = new Padding(6);
             gbNavigation.Name = "gbNavigation";
-            gbNavigation.Padding = new Padding(4, 4, 4, 4);
-            gbNavigation.Size = new Size(845, 167);
+            gbNavigation.Padding = new Padding(6);
+            gbNavigation.Size = new Size(1314, 267);
             gbNavigation.TabIndex = 7;
             gbNavigation.TabStop = false;
             gbNavigation.Text = "DATAFRAME NAVIGATION";
@@ -190,10 +190,10 @@
             btnSpeed.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnSpeed.BackColor = Color.Silver;
             btnSpeed.ForeColor = Color.Black;
-            btnSpeed.Location = new Point(456, 109);
-            btnSpeed.Margin = new Padding(4, 4, 4, 4);
+            btnSpeed.Location = new Point(709, 174);
+            btnSpeed.Margin = new Padding(6);
             btnSpeed.Name = "btnSpeed";
-            btnSpeed.Size = new Size(121, 39);
+            btnSpeed.Size = new Size(188, 62);
             btnSpeed.TabIndex = 7;
             btnSpeed.Text = "1.0";
             btnSpeed.UseVisualStyleBackColor = false;
@@ -203,10 +203,10 @@
             btnFastForward.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnFastForward.BackColor = Color.Silver;
             btnFastForward.ForeColor = Color.Black;
-            btnFastForward.Location = new Point(716, 109);
-            btnFastForward.Margin = new Padding(4, 4, 4, 4);
+            btnFastForward.Location = new Point(1114, 174);
+            btnFastForward.Margin = new Padding(6);
             btnFastForward.Name = "btnFastForward";
-            btnFastForward.Size = new Size(121, 39);
+            btnFastForward.Size = new Size(188, 62);
             btnFastForward.TabIndex = 6;
             btnFastForward.Text = ">>>";
             btnFastForward.UseVisualStyleBackColor = false;
@@ -216,10 +216,10 @@
             btnFastRewind.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnFastRewind.BackColor = Color.Silver;
             btnFastRewind.ForeColor = Color.Black;
-            btnFastRewind.Location = new Point(588, 109);
-            btnFastRewind.Margin = new Padding(4, 4, 4, 4);
+            btnFastRewind.Location = new Point(915, 174);
+            btnFastRewind.Margin = new Padding(6);
             btnFastRewind.Name = "btnFastRewind";
-            btnFastRewind.Size = new Size(121, 39);
+            btnFastRewind.Size = new Size(188, 62);
             btnFastRewind.TabIndex = 5;
             btnFastRewind.Text = "<<<";
             btnFastRewind.UseVisualStyleBackColor = false;
@@ -229,10 +229,10 @@
             btnNext.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnNext.BackColor = Color.Silver;
             btnNext.ForeColor = Color.Black;
-            btnNext.Location = new Point(716, 63);
-            btnNext.Margin = new Padding(4, 4, 4, 4);
+            btnNext.Location = new Point(1114, 101);
+            btnNext.Margin = new Padding(6);
             btnNext.Name = "btnNext";
-            btnNext.Size = new Size(121, 39);
+            btnNext.Size = new Size(188, 62);
             btnNext.TabIndex = 4;
             btnNext.Text = ">";
             btnNext.UseVisualStyleBackColor = false;
@@ -242,10 +242,10 @@
             btnPrev.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnPrev.BackColor = Color.Silver;
             btnPrev.ForeColor = Color.Black;
-            btnPrev.Location = new Point(588, 63);
-            btnPrev.Margin = new Padding(4, 4, 4, 4);
+            btnPrev.Location = new Point(915, 101);
+            btnPrev.Margin = new Padding(6);
             btnPrev.Name = "btnPrev";
-            btnPrev.Size = new Size(121, 39);
+            btnPrev.Size = new Size(188, 62);
             btnPrev.TabIndex = 3;
             btnPrev.Text = "<";
             btnPrev.UseVisualStyleBackColor = false;
@@ -255,10 +255,10 @@
             btnPlay.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnPlay.BackColor = Color.Silver;
             btnPlay.ForeColor = Color.Black;
-            btnPlay.Location = new Point(588, 16);
-            btnPlay.Margin = new Padding(4, 4, 4, 4);
+            btnPlay.Location = new Point(915, 26);
+            btnPlay.Margin = new Padding(6);
             btnPlay.Name = "btnPlay";
-            btnPlay.Size = new Size(121, 39);
+            btnPlay.Size = new Size(188, 62);
             btnPlay.TabIndex = 2;
             btnPlay.Text = "Play";
             btnPlay.UseVisualStyleBackColor = false;
@@ -266,10 +266,10 @@
             // trkFrameSlider
             // 
             trkFrameSlider.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            trkFrameSlider.Location = new Point(4, 31);
-            trkFrameSlider.Margin = new Padding(4, 4, 4, 4);
+            trkFrameSlider.Location = new Point(6, 50);
+            trkFrameSlider.Margin = new Padding(6);
             trkFrameSlider.Name = "trkFrameSlider";
-            trkFrameSlider.Size = new Size(573, 56);
+            trkFrameSlider.Size = new Size(891, 90);
             trkFrameSlider.TabIndex = 1;
             // 
             // btnStop
@@ -277,10 +277,10 @@
             btnStop.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnStop.BackColor = Color.Silver;
             btnStop.ForeColor = Color.Black;
-            btnStop.Location = new Point(716, 16);
-            btnStop.Margin = new Padding(4, 4, 4, 4);
+            btnStop.Location = new Point(1114, 26);
+            btnStop.Margin = new Padding(6);
             btnStop.Name = "btnStop";
-            btnStop.Size = new Size(121, 39);
+            btnStop.Size = new Size(188, 62);
             btnStop.TabIndex = 0;
             btnStop.Text = "Stop";
             btnStop.UseVisualStyleBackColor = false;
@@ -290,11 +290,11 @@
             gbFrameList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             gbFrameList.Controls.Add(lstFrameData);
             gbFrameList.ForeColor = Color.White;
-            gbFrameList.Location = new Point(883, 71);
-            gbFrameList.Margin = new Padding(4, 4, 4, 4);
+            gbFrameList.Location = new Point(1374, 114);
+            gbFrameList.Margin = new Padding(6);
             gbFrameList.Name = "gbFrameList";
-            gbFrameList.Padding = new Padding(4, 4, 4, 4);
-            gbFrameList.Size = new Size(189, 315);
+            gbFrameList.Padding = new Padding(6);
+            gbFrameList.Size = new Size(294, 504);
             gbFrameList.TabIndex = 8;
             gbFrameList.TabStop = false;
             gbFrameList.Text = "FRAME LIST";
@@ -303,10 +303,10 @@
             // 
             lstFrameData.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             lstFrameData.FormattingEnabled = true;
-            lstFrameData.Location = new Point(8, 29);
-            lstFrameData.Margin = new Padding(4, 4, 4, 4);
+            lstFrameData.Location = new Point(12, 46);
+            lstFrameData.Margin = new Padding(6);
             lstFrameData.Name = "lstFrameData";
-            lstFrameData.Size = new Size(172, 264);
+            lstFrameData.Size = new Size(265, 420);
             lstFrameData.TabIndex = 0;
             // 
             // gbSystemOps
@@ -316,11 +316,11 @@
             gbSystemOps.Controls.Add(btnLoadTub);
             gbSystemOps.Controls.Add(btnLoadConfig);
             gbSystemOps.ForeColor = Color.White;
-            gbSystemOps.Location = new Point(1080, 71);
-            gbSystemOps.Margin = new Padding(4, 4, 4, 4);
+            gbSystemOps.Location = new Point(1680, 114);
+            gbSystemOps.Margin = new Padding(6);
             gbSystemOps.Name = "gbSystemOps";
-            gbSystemOps.Padding = new Padding(4, 4, 4, 4);
-            gbSystemOps.Size = new Size(199, 315);
+            gbSystemOps.Padding = new Padding(6);
+            gbSystemOps.Size = new Size(310, 504);
             gbSystemOps.TabIndex = 9;
             gbSystemOps.TabStop = false;
             gbSystemOps.Text = "SYSTEM OPERATIONS";
@@ -330,10 +330,10 @@
             btnStartTraining.BackColor = Color.MediumSeaGreen;
             btnStartTraining.Font = new Font("맑은 고딕", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 129);
             btnStartTraining.ForeColor = Color.Yellow;
-            btnStartTraining.Location = new Point(8, 155);
-            btnStartTraining.Margin = new Padding(4, 4, 4, 4);
+            btnStartTraining.Location = new Point(12, 248);
+            btnStartTraining.Margin = new Padding(6);
             btnStartTraining.Name = "btnStartTraining";
-            btnStartTraining.Size = new Size(184, 148);
+            btnStartTraining.Size = new Size(286, 237);
             btnStartTraining.TabIndex = 2;
             btnStartTraining.Text = "Start AI Model\r\nTraining";
             btnStartTraining.UseVisualStyleBackColor = false;
@@ -343,23 +343,24 @@
             btnLoadTub.BackColor = Color.CornflowerBlue;
             btnLoadTub.Font = new Font("맑은 고딕", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             btnLoadTub.ForeColor = Color.White;
-            btnLoadTub.Location = new Point(8, 83);
-            btnLoadTub.Margin = new Padding(4, 4, 4, 4);
+            btnLoadTub.Location = new Point(12, 133);
+            btnLoadTub.Margin = new Padding(6);
             btnLoadTub.Name = "btnLoadTub";
-            btnLoadTub.Size = new Size(184, 64);
+            btnLoadTub.Size = new Size(286, 102);
             btnLoadTub.TabIndex = 1;
             btnLoadTub.Text = "Load tub";
             btnLoadTub.UseVisualStyleBackColor = false;
+            btnLoadTub.Click += btnLoadTub_Click;
             // 
             // btnLoadConfig
             // 
             btnLoadConfig.BackColor = Color.CornflowerBlue;
             btnLoadConfig.Font = new Font("맑은 고딕", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             btnLoadConfig.ForeColor = Color.White;
-            btnLoadConfig.Location = new Point(8, 29);
-            btnLoadConfig.Margin = new Padding(4, 4, 4, 4);
+            btnLoadConfig.Location = new Point(12, 46);
+            btnLoadConfig.Margin = new Padding(6);
             btnLoadConfig.Name = "btnLoadConfig";
-            btnLoadConfig.Size = new Size(184, 45);
+            btnLoadConfig.Size = new Size(286, 72);
             btnLoadConfig.TabIndex = 0;
             btnLoadConfig.Text = "Load config";
             btnLoadConfig.UseVisualStyleBackColor = false;
@@ -374,11 +375,11 @@
             gbDataManagement.Controls.Add(btnApplyFilter);
             gbDataManagement.Controls.Add(gbFilterOptions);
             gbDataManagement.ForeColor = Color.White;
-            gbDataManagement.Location = new Point(883, 393);
-            gbDataManagement.Margin = new Padding(4, 4, 4, 4);
+            gbDataManagement.Location = new Point(1374, 629);
+            gbDataManagement.Margin = new Padding(6);
             gbDataManagement.Name = "gbDataManagement";
-            gbDataManagement.Padding = new Padding(4, 4, 4, 4);
-            gbDataManagement.Size = new Size(396, 207);
+            gbDataManagement.Padding = new Padding(6);
+            gbDataManagement.Size = new Size(616, 331);
             gbDataManagement.TabIndex = 10;
             gbDataManagement.TabStop = false;
             gbDataManagement.Text = "DATA MANAGEMENT && FILTERING";
@@ -388,10 +389,10 @@
             lblSetRange.AutoSize = true;
             lblSetRange.Font = new Font("맑은 고딕", 12F, FontStyle.Regular, GraphicsUnit.Point, 129);
             lblSetRange.ForeColor = Color.White;
-            lblSetRange.Location = new Point(258, 68);
-            lblSetRange.Margin = new Padding(4, 0, 4, 0);
+            lblSetRange.Location = new Point(401, 109);
+            lblSetRange.Margin = new Padding(6, 0, 6, 0);
             lblSetRange.Name = "lblSetRange";
-            lblSetRange.Size = new Size(57, 28);
+            lblSetRange.Size = new Size(94, 45);
             lblSetRange.TabIndex = 8;
             lblSetRange.Text = "(0, 0)";
             // 
@@ -399,10 +400,10 @@
             // 
             btnSetLeft.BackColor = Color.Silver;
             btnSetLeft.ForeColor = Color.Black;
-            btnSetLeft.Location = new Point(197, 105);
-            btnSetLeft.Margin = new Padding(4, 4, 4, 4);
+            btnSetLeft.Location = new Point(306, 168);
+            btnSetLeft.Margin = new Padding(6);
             btnSetLeft.Name = "btnSetLeft";
-            btnSetLeft.Size = new Size(86, 39);
+            btnSetLeft.Size = new Size(134, 62);
             btnSetLeft.TabIndex = 7;
             btnSetLeft.Text = "Set L";
             btnSetLeft.UseVisualStyleBackColor = false;
@@ -412,22 +413,23 @@
             btnDeleteData.BackColor = Color.Red;
             btnDeleteData.Font = new Font("맑은 고딕", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             btnDeleteData.ForeColor = Color.White;
-            btnDeleteData.Location = new Point(197, 152);
-            btnDeleteData.Margin = new Padding(4, 4, 4, 4);
+            btnDeleteData.Location = new Point(306, 243);
+            btnDeleteData.Margin = new Padding(6);
             btnDeleteData.Name = "btnDeleteData";
-            btnDeleteData.Size = new Size(177, 39);
+            btnDeleteData.Size = new Size(275, 62);
             btnDeleteData.TabIndex = 6;
             btnDeleteData.Text = "Delete";
             btnDeleteData.UseVisualStyleBackColor = false;
+            btnDeleteData.Click += btnDeleteData_Click;
             // 
             // btnSetRight
             // 
             btnSetRight.BackColor = Color.Silver;
             btnSetRight.ForeColor = Color.Black;
-            btnSetRight.Location = new Point(288, 105);
-            btnSetRight.Margin = new Padding(4, 4, 4, 4);
+            btnSetRight.Location = new Point(448, 168);
+            btnSetRight.Margin = new Padding(6);
             btnSetRight.Name = "btnSetRight";
-            btnSetRight.Size = new Size(86, 39);
+            btnSetRight.Size = new Size(134, 62);
             btnSetRight.TabIndex = 5;
             btnSetRight.Text = "Set R";
             btnSetRight.UseVisualStyleBackColor = false;
@@ -437,13 +439,14 @@
             btnApplyFilter.BackColor = Color.CornflowerBlue;
             btnApplyFilter.Font = new Font("맑은 고딕", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             btnApplyFilter.ForeColor = Color.White;
-            btnApplyFilter.Location = new Point(197, 20);
-            btnApplyFilter.Margin = new Padding(4, 4, 4, 4);
+            btnApplyFilter.Location = new Point(306, 32);
+            btnApplyFilter.Margin = new Padding(6);
             btnApplyFilter.Name = "btnApplyFilter";
-            btnApplyFilter.Size = new Size(177, 39);
+            btnApplyFilter.Size = new Size(275, 62);
             btnApplyFilter.TabIndex = 3;
             btnApplyFilter.Text = "Apply Filter";
             btnApplyFilter.UseVisualStyleBackColor = false;
+            btnApplyFilter.Click += btnApplyFilter_Click;
             // 
             // gbFilterOptions
             // 
@@ -451,11 +454,11 @@
             gbFilterOptions.Controls.Add(chkFilterAngleZero);
             gbFilterOptions.Controls.Add(chkFilterThr);
             gbFilterOptions.ForeColor = Color.White;
-            gbFilterOptions.Location = new Point(8, 29);
-            gbFilterOptions.Margin = new Padding(4, 4, 4, 4);
+            gbFilterOptions.Location = new Point(12, 46);
+            gbFilterOptions.Margin = new Padding(6);
             gbFilterOptions.Name = "gbFilterOptions";
-            gbFilterOptions.Padding = new Padding(4, 4, 4, 4);
-            gbFilterOptions.Size = new Size(181, 161);
+            gbFilterOptions.Padding = new Padding(6);
+            gbFilterOptions.Size = new Size(282, 258);
             gbFilterOptions.TabIndex = 0;
             gbFilterOptions.TabStop = false;
             gbFilterOptions.Text = "Filter Options";
@@ -465,10 +468,10 @@
             chkFilterLargeAngle.AutoSize = true;
             chkFilterLargeAngle.Font = new Font("맑은 고딕", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             chkFilterLargeAngle.ForeColor = Color.White;
-            chkFilterLargeAngle.Location = new Point(8, 105);
-            chkFilterLargeAngle.Margin = new Padding(4, 4, 4, 4);
+            chkFilterLargeAngle.Location = new Point(12, 168);
+            chkFilterLargeAngle.Margin = new Padding(6);
             chkFilterLargeAngle.Name = "chkFilterLargeAngle";
-            chkFilterLargeAngle.Size = new Size(113, 24);
+            chkFilterLargeAngle.Size = new Size(176, 36);
             chkFilterLargeAngle.TabIndex = 2;
             chkFilterLargeAngle.Text = "Large Angle";
             chkFilterLargeAngle.UseVisualStyleBackColor = true;
@@ -478,10 +481,10 @@
             chkFilterAngleZero.AutoSize = true;
             chkFilterAngleZero.Font = new Font("맑은 고딕", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             chkFilterAngleZero.ForeColor = Color.White;
-            chkFilterAngleZero.Location = new Point(8, 72);
-            chkFilterAngleZero.Margin = new Padding(4, 4, 4, 4);
+            chkFilterAngleZero.Location = new Point(12, 115);
+            chkFilterAngleZero.Margin = new Padding(6);
             chkFilterAngleZero.Name = "chkFilterAngleZero";
-            chkFilterAngleZero.Size = new Size(111, 24);
+            chkFilterAngleZero.Size = new Size(172, 36);
             chkFilterAngleZero.TabIndex = 1;
             chkFilterAngleZero.Text = "Angle == 0";
             chkFilterAngleZero.UseVisualStyleBackColor = true;
@@ -491,10 +494,10 @@
             chkFilterThr.AutoSize = true;
             chkFilterThr.Font = new Font("맑은 고딕", 9F, FontStyle.Regular, GraphicsUnit.Point, 129);
             chkFilterThr.ForeColor = Color.White;
-            chkFilterThr.Location = new Point(8, 39);
-            chkFilterThr.Margin = new Padding(4, 4, 4, 4);
+            chkFilterThr.Location = new Point(12, 62);
+            chkFilterThr.Margin = new Padding(6);
             chkFilterThr.Name = "chkFilterThr";
-            chkFilterThr.Size = new Size(82, 24);
+            chkFilterThr.Size = new Size(127, 36);
             chkFilterThr.TabIndex = 0;
             chkFilterThr.Text = "Thr > 0";
             chkFilterThr.UseVisualStyleBackColor = true;
@@ -504,11 +507,11 @@
             gbTrainingLog.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             gbTrainingLog.Controls.Add(rtbTrainLog);
             gbTrainingLog.ForeColor = Color.White;
-            gbTrainingLog.Location = new Point(883, 608);
-            gbTrainingLog.Margin = new Padding(4, 4, 4, 4);
+            gbTrainingLog.Location = new Point(1374, 973);
+            gbTrainingLog.Margin = new Padding(6);
             gbTrainingLog.Name = "gbTrainingLog";
-            gbTrainingLog.Padding = new Padding(4, 4, 4, 4);
-            gbTrainingLog.Size = new Size(396, 167);
+            gbTrainingLog.Padding = new Padding(6);
+            gbTrainingLog.Size = new Size(616, 267);
             gbTrainingLog.TabIndex = 11;
             gbTrainingLog.TabStop = false;
             gbTrainingLog.Text = "TRAINING LOG";
@@ -516,10 +519,10 @@
             // rtbTrainLog
             // 
             rtbTrainLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            rtbTrainLog.Location = new Point(8, 29);
-            rtbTrainLog.Margin = new Padding(4, 4, 4, 4);
+            rtbTrainLog.Location = new Point(12, 46);
+            rtbTrainLog.Margin = new Padding(6);
             rtbTrainLog.Name = "rtbTrainLog";
-            rtbTrainLog.Size = new Size(379, 128);
+            rtbTrainLog.Size = new Size(587, 202);
             rtbTrainLog.TabIndex = 1;
             rtbTrainLog.Text = "";
             // 
@@ -528,19 +531,19 @@
             lblTitle.AutoSize = true;
             lblTitle.Font = new Font("Segoe Script", 16.2F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblTitle.ForeColor = Color.Red;
-            lblTitle.Location = new Point(31, 12);
-            lblTitle.Margin = new Padding(4, 0, 4, 0);
+            lblTitle.Location = new Point(48, 19);
+            lblTitle.Margin = new Padding(6, 0, 6, 0);
             lblTitle.Name = "lblTitle";
-            lblTitle.Size = new Size(316, 46);
+            lblTitle.Size = new Size(501, 73);
             lblTitle.TabIndex = 12;
             lblTitle.Text = "Team 05 Donkey UI";
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(9F, 20F);
+            AutoScaleDimensions = new SizeF(14F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(64, 64, 64);
-            ClientSize = new Size(1295, 805);
+            ClientSize = new Size(2014, 1288);
             Controls.Add(lblTitle);
             Controls.Add(gbTrainingLog);
             Controls.Add(gbDataManagement);
@@ -549,8 +552,8 @@
             Controls.Add(gbNavigation);
             Controls.Add(gbCamView);
             ForeColor = SystemColors.ControlText;
-            Margin = new Padding(4, 4, 4, 4);
-            MinimumSize = new Size(1310, 842);
+            Margin = new Padding(6);
+            MinimumSize = new Size(2023, 1305);
             Name = "Form1";
             Text = "MoveArt Donkeycar Data Manager";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();

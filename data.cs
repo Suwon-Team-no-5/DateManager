@@ -93,25 +93,6 @@ namespace DateManager
 
             return frameList;
         }
-
-        public void DeleteFrame(List<DonkeyFrame> frameList, DonkeyFrame targetFrame)
-        {
-            if (targetFrame == null) return;
-
-            try
-            {
-                if (!string.IsNullOrEmpty(targetFrame.FullImagePath) && File.Exists(targetFrame.FullImagePath))
-                {
-                    File.Delete(targetFrame.FullImagePath);
-                }
-
-                frameList.Remove(targetFrame);
-                MessageBox.Show($"프레임 {targetFrame.FrameIndex}번 ({targetFrame.DataTypeSummary}) 데이터가 성공적으로 정제(삭제)되었습니다.", "정제 완료");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"파일 삭제 실패: {ex.Message}", "삭제 오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        
     }
 }
