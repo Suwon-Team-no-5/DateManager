@@ -1,18 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace DateManager.services
 {
     internal sealed class CatalogFrameController
     {
-        private readonly Button loadCatalogButton;
-        private readonly ComboBox filterComboBox;
+        private readonly Button loadTubButton;
+        private readonly Button? applyFilterButton;
+        private readonly CheckBox? throttleFilterCheckBox;
+        private readonly CheckBox? angleZeroFilterCheckBox;
+        private readonly CheckBox? largeAngleFilterCheckBox;
         private readonly ListBox frameListBox;
         private readonly PictureBox framePictureBox;
-        private readonly Label statusLabel;
-        private readonly Label infoLabel;
+        private readonly TrackBar? frameSlider;
+        private readonly Label? frameIndexLabel;
+        private readonly Label? angleLabel;
+        private readonly Label? throttleTopLabel;
+        private readonly Label? throttleBottomLabel;
+        private readonly Label? timestampLabel;
         private readonly List<FrameData> allFrames = [];
 
         private List<FrameData> visibleFrames = [];
@@ -20,82 +28,82 @@ namespace DateManager.services
 
         public static CatalogFrameController? TryAttach(Control root)
         {
-            
-            var loadCatalogButton = FindControl<Button>(root, "loadCatalogButton", "btnLoadCatalog", "openCatalogButton");
-            var filterComboBox = FindControl<ComboBox>(root, "filterComboBox", "cmbFilter", "frameFilterComboBox");
-            var frameListBox = FindControl<ListBox>(root, "frameListBox", "lstFrames", "framesListBox");
-            var framePictureBox = FindControl<PictureBox>(root, "framePictureBox", "pictureBoxFrame", "previewPictureBox");
-            var statusLabel = FindControl<Label>(root, "statusLabel", "lblStatus", "catalogStatusLabel");
-            var infoLabel = FindControl<Label>(root, "infoLabel", "lblFrameInfo", "frameInfoLabel");
+            var loadTubButton = FindControl<Button>(root, "btnLoadTub");
+            var frameListBox = FindControl<ListBox>(root, "lstFrameData");
+            var framePictureBox = FindControl<PictureBox>(root, "pbMainCam");
 
-            if (loadCatalogButton is null ||
-                filterComboBox is null ||
-                frameListBox is null ||
-                framePictureBox is null ||
-                statusLabel is null ||
-                infoLabel is null)
+            if (loadTubButton is null || frameListBox is null || framePictureBox is null)
             {
                 return null;
             }
 
             return new CatalogFrameController(
-                loadCatalogButton,
-                filterComboBox,
+                loadTubButton,
+                FindControl<Button>(root, "btnApplyFilter"),
+                FindControl<CheckBox>(root, "chkFilterThr"),
+                FindControl<CheckBox>(root, "chkFilterAngleZero"),
+                FindControl<CheckBox>(root, "chkFilterLargeAngle"),
                 frameListBox,
                 framePictureBox,
-                statusLabel,
-                infoLabel);
+                FindControl<TrackBar>(root, "trkFrameSlider"),
+                FindControl<Label>(root, "lblFrameIndex"),
+                FindControl<Label>(root, "lblAngle"),
+                FindControl<Label>(root, "lblThrottleTop"),
+                FindControl<Label>(root, "lblThrottleBottom"),
+                FindControl<Label>(root, "lblTimestamp"));
         }
 
-        public CatalogFrameController(
-            Button loadCatalogButton,
-            ComboBox filterComboBox,
+        private CatalogFrameController(
+            Button loadTubButton,
+            Button? applyFilterButton,
+            CheckBox? throttleFilterCheckBox,
+            CheckBox? angleZeroFilterCheckBox,
+            CheckBox? largeAngleFilterCheckBox,
             ListBox frameListBox,
             PictureBox framePictureBox,
-            Label statusLabel,
-            Label infoLabel)
+            TrackBar? frameSlider,
+            Label? frameIndexLabel,
+            Label? angleLabel,
+            Label? throttleTopLabel,
+            Label? throttleBottomLabel,
+            Label? timestampLabel)
         {
-            this.loadCatalogButton = loadCatalogButton;
-            this.filterComboBox = filterComboBox;
+            this.loadTubButton = loadTubButton;
+            this.applyFilterButton = applyFilterButton;
+            this.throttleFilterCheckBox = throttleFilterCheckBox;
+            this.angleZeroFilterCheckBox = angleZeroFilterCheckBox;
+            this.largeAngleFilterCheckBox = largeAngleFilterCheckBox;
             this.frameListBox = frameListBox;
             this.framePictureBox = framePictureBox;
-            this.statusLabel = statusLabel;
-            this.infoLabel = infoLabel;
+            this.frameSlider = frameSlider;
+            this.frameIndexLabel = frameIndexLabel;
+            this.angleLabel = angleLabel;
+            this.throttleTopLabel = throttleTopLabel;
+            this.throttleBottomLabel = throttleBottomLabel;
+            this.timestampLabel = timestampLabel;
 
-            this.loadCatalogButton.Click += LoadCatalogButton_Click;
-            this.filterComboBox.SelectedIndexChanged += FilterComboBox_SelectedIndexChanged;
+            this.loadTubButton.Click += LoadTubButton_Click;
             this.frameListBox.SelectedIndexChanged += FrameListBox_SelectedIndexChanged;
 
-            if (this.filterComboBox.Items.Count == 0)
+            if (this.applyFilterButton is not null)
             {
-                this.filterComboBox.Items.AddRange(new object[]
-                {
-                    "All frames",
-                    "Stopped (Throttle = 0)",
-                    "Straight driving (Angle ~= 0, Throttle > 0)"
-                });
+                this.applyFilterButton.Click += ApplyFilterButton_Click;
             }
 
-            this.filterComboBox.SelectedIndex = 0;
+            if (this.frameSlider is not null)
+            {
+                this.frameSlider.Scroll += FrameSlider_Scroll;
+            }
         }
 
-        private static T? FindControl<T>(Control root, params string[] names)
+        private static T? FindControl<T>(Control root, string name)
             where T : Control
         {
-            foreach (var name in names)
-            {
-                var matches = root.Controls.Find(name, true);
-
-                if (matches.Length > 0 && matches[0] is T control)
-                {
-                    return control;
-                }
-            }
-
-            return null;
+            var matches = root.Controls.Find(name, true);
+            return matches.Length > 0 && matches[0] is T control ? control : null;
         }
 
-        private void LoadCatalogButton_Click(object? sender, EventArgs e)
+        private void LoadTubButton_Click(object? sender, EventArgs e)
         {
             using var dialog = new OpenFileDialog
             {
@@ -113,7 +121,7 @@ namespace DateManager.services
                 allFrames.Clear();
                 allFrames.AddRange(CatalogServices.LoadCatalog(dialog.FileName));
                 catalogDirectory = Path.GetDirectoryName(dialog.FileName) ?? string.Empty;
-                ApplySelectedFilter();
+                ApplySelectedFilters();
             }
             catch (Exception ex)
             {
@@ -121,9 +129,9 @@ namespace DateManager.services
             }
         }
 
-        private void FilterComboBox_SelectedIndexChanged(object? sender, EventArgs e)
+        private void ApplyFilterButton_Click(object? sender, EventArgs e)
         {
-            ApplySelectedFilter();
+            ApplySelectedFilters();
         }
 
         private void FrameListBox_SelectedIndexChanged(object? sender, EventArgs e)
@@ -134,18 +142,50 @@ namespace DateManager.services
             }
         }
 
-        private void ApplySelectedFilter()
+        private void FrameSlider_Scroll(object? sender, EventArgs e)
         {
-            visibleFrames = filterComboBox.SelectedIndex switch
+            if (frameSlider is null || frameSlider.Value < 0 || frameSlider.Value >= visibleFrames.Count)
             {
-                1 => FrameFilterService.GetStoppedFrames(allFrames),
-                2 => FrameFilterService.GetStraightDrivingFrames(allFrames),
-                _ => new List<FrameData>(allFrames)
-            };
+                return;
+            }
 
+            frameListBox.SelectedIndex = frameSlider.Value;
+        }
+
+        private void ApplySelectedFilters()
+        {
+            IEnumerable<FrameData> filteredFrames = allFrames;
+
+            if (throttleFilterCheckBox?.Checked == true)
+            {
+                filteredFrames = filteredFrames.Where(frame => frame.Throttle > 0);
+            }
+
+            if (angleZeroFilterCheckBox?.Checked == true)
+            {
+                filteredFrames = filteredFrames.Where(frame => Math.Abs(frame.Angle) <= 0.01);
+            }
+
+            if (largeAngleFilterCheckBox?.Checked == true)
+            {
+                filteredFrames = filteredFrames.Where(frame => Math.Abs(frame.Angle) > 0.3);
+            }
+
+            visibleFrames = filteredFrames.ToList();
+            BindFrameList();
+        }
+
+        private void BindFrameList()
+        {
             frameListBox.DataSource = null;
             frameListBox.DataSource = visibleFrames;
-            statusLabel.Text = $"Showing: {visibleFrames.Count} / Total: {allFrames.Count}";
+
+            if (frameSlider is not null)
+            {
+                frameSlider.Minimum = 0;
+                frameSlider.Maximum = Math.Max(0, visibleFrames.Count - 1);
+                frameSlider.Value = 0;
+            }
 
             if (visibleFrames.Count > 0)
             {
@@ -154,7 +194,7 @@ namespace DateManager.services
             }
 
             framePictureBox.Image = null;
-            infoLabel.Text = "No frames match the selected filter.";
+            UpdateFrameLabels(null);
         }
 
         private void ShowFrame(FrameData frame)
@@ -164,9 +204,39 @@ namespace DateManager.services
             framePictureBox.Image?.Dispose();
             framePictureBox.Image = File.Exists(imagePath) ? Image.FromFile(imagePath) : null;
 
-            infoLabel.Text = File.Exists(imagePath)
-                ? $"{frame.ImageFile} | angle: {frame.Angle:0.000} | throttle: {frame.Throttle:0.000}"
-                : $"Image file not found: {imagePath}";
+            if (frameSlider is not null && frameListBox.SelectedIndex >= 0)
+            {
+                frameSlider.Value = frameListBox.SelectedIndex;
+            }
+
+            UpdateFrameLabels(frame);
+        }
+
+        private void UpdateFrameLabels(FrameData? frame)
+        {
+            if (frame is null)
+            {
+                SetText(frameIndexLabel, "Frame Index 0/0");
+                SetText(angleLabel, "Angle: +0.0");
+                SetText(throttleTopLabel, "Throttle: +0.0");
+                SetText(throttleBottomLabel, "Throttle: +0.0");
+                SetText(timestampLabel, "Timestamp");
+                return;
+            }
+
+            SetText(frameIndexLabel, $"Frame Index {frame.Index}/{Math.Max(0, allFrames.Count - 1)}");
+            SetText(angleLabel, $"Angle: {frame.Angle:+0.000;-0.000;0.000}");
+            SetText(throttleTopLabel, $"Throttle: {frame.Throttle:+0.000;-0.000;0.000}");
+            SetText(throttleBottomLabel, $"Throttle: {frame.Throttle:+0.000;-0.000;0.000}");
+            SetText(timestampLabel, frame.TimestampMs.ToString());
+        }
+
+        private static void SetText(Label? label, string text)
+        {
+            if (label is not null)
+            {
+                label.Text = text;
+            }
         }
     }
 }
