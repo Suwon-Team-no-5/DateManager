@@ -6,6 +6,14 @@
         ///  Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.Label lblThrottleBottom;
+        private System.Windows.Forms.GroupBox gbCamView;
+        private System.Windows.Forms.GroupBox gbNavigation;
+        private System.Windows.Forms.GroupBox gbFrameList;
+        private System.Windows.Forms.GroupBox gbSystemOps;
+        private System.Windows.Forms.GroupBox gbDataManagement;
+        private System.Windows.Forms.GroupBox gbFilterOptions;
+        private System.Windows.Forms.GroupBox gbTrainingLog;
 
         /// <summary>
         ///  Clean up any resources being used.
