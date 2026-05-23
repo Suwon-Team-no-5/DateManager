@@ -7,6 +7,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 
+
 namespace DateManager
 {
     public class FileRemover // 'Delete'는 키워드와 겹칠 수 있어 FileRemover 추천
@@ -65,9 +66,7 @@ namespace DateManager
                 frameList.RemoveAll(f => f.FrameIndex >= startIndex && f.FrameIndex <= endIndex);
 
             }
-            catch (System.Exception ex)
-            {
-
+            catch (System.Exception ex) { 
                 throw new System.Exception($"파일 삭제 실패: {ex.Message}");
             }
         }

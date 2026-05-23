@@ -20,7 +20,7 @@ namespace DateManager
         private readonly System.Windows.Forms.Timer _playbackTimer;
         private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
         private int _playbackSpeedIndex = 1;
-        private const int BasePlaybackIntervalMs = 400;
+        private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
 
         public Form1()
         {
@@ -33,9 +33,9 @@ namespace DateManager
             _masterFrameList = new List<DonkeyFrame>();
             _displayedFrameList = new List<DonkeyFrame>();
             _pictureHandler = new Picture();
-            _playbackTimer = new System.Windows.Forms.Timer();
+            _playbackTimer = new System.Windows.Forms.Timer(); //재생하면서 넘길 타이머
             _playbackTimer.Tick += PlaybackTimer_Tick;
-            UpdatePlaybackInterval();
+            UpdatePlaybackInterval();// 타이머 간격을 초기 배속에 맞게 설정
         }
 
         /// <summary>
@@ -51,29 +51,29 @@ namespace DateManager
         /// </summary>
         private void button1_Click(object sender, EventArgs e)
         {
-            // 💡 진철님 컴퓨터의 실제 WSL Ubuntu 경로 설정 완료!
-            string catalogPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\catalog_0.catalog";
-            string imagesFolderPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\images";
+            //// 💡 진철님 컴퓨터의 실제 WSL Ubuntu 경로 설정 완료!
+            //string catalogPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\catalog_0.catalog";
+            //string imagesFolderPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\images";
 
-            // 1. 테스트 시작 알림
-            MessageBox.Show("진철님의 데이터 엔진으로 파일 읽기를 시작합니다!", "테스트 시작", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            //// 1. 테스트 시작 알림
+            //MessageBox.Show("진철님의 데이터 엔진으로 파일 읽기를 시작합니다!", "테스트 시작", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            // 2. data.cs에 구현해 둔 가공(파싱) 및 자동 분류 함수 호출
-            _masterFrameList = _dataProcessor.LoadCatalogData(catalogPath, imagesFolderPath);
+            //// 2. data.cs에 구현해 둔 가공(파싱) 및 자동 분류 함수 호출
+            //_masterFrameList = _dataProcessor.LoadCatalogData(catalogPath, imagesFolderPath);
 
-            // 3. 데이터가 성공적으로 로드되었다면 신규/기존 데이터 분리 결과 최종 검증
-            if (_masterFrameList != null && _masterFrameList.Count > 0)
-            {
-                // IsNewData 깃발이 true인 새로 수집된 불량 데이터만 골라내기
-                List<DonkeyFrame> newDataOnly = _masterFrameList.FindAll(frame => frame.IsNewData == true);
+            //// 3. 데이터가 성공적으로 로드되었다면 신규/기존 데이터 분리 결과 최종 검증
+            //if (_masterFrameList != null && _masterFrameList.Count > 0)
+            //{
+            //    // IsNewData 깃발이 true인 새로 수집된 불량 데이터만 골라내기
+            //    List<DonkeyFrame> newDataOnly = _masterFrameList.FindAll(frame => frame.IsNewData == true);
 
-                string resultReport = $"🏁 [검증 결과 최종 리포트]\n\n" +
-                                      $"📊 전체 데이터 수: {_masterFrameList.Count}개\n" +
-                                      $"❌ 새로 수집된 불량 데이터(정제 대상): {newDataOnly.Count}개\n\n" +
-                                      $"자동 구분이 정상적으로 작동합니다. 이제 UI 팀원에게 코드를 넘겨도 좋습니다!";
+            //    string resultReport = $"🏁 [검증 결과 최종 리포트]\n\n" +
+            //                          $"📊 전체 데이터 수: {_masterFrameList.Count}개\n" +
+            //                          $"❌ 새로 수집된 불량 데이터(정제 대상): {newDataOnly.Count}개\n\n" +
+            //                          $"자동 구분이 정상적으로 작동합니다. 이제 UI 팀원에게 코드를 넘겨도 좋습니다!";
 
-                MessageBox.Show(resultReport, "엔진 검증 완료", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-            }
+            //    MessageBox.Show(resultReport, "엔진 검증 완료", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            //}
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -139,6 +139,7 @@ namespace DateManager
             if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
+                //필터 없으면 원본 리스트 불러옴
             }
 
         }
