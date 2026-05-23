@@ -158,7 +158,40 @@ namespace DateManager
             DialogResult result = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
                                                   "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
-            if (result == DialogResult.No) return;
+            if (result == DialogResult.No) return; // 사용자가 삭제를 취소한 경우 함수 종료
+
+            //!!!!!!아래 다중 삭제 로직 윤형규가 작성, 오류 발생 시 우선 주석처리 할 것
+            if(Math.Max(start, end) - Math.Min(start, end) > 0)
+            {
+                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
+                                                  "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (rangeResult == DialogResult.Yes)
+                {
+                    try
+                    {
+                        _fileRemover.RemoveFrames(_masterFrameList, _displayedFrameList[Math.Min(start, end)], _displayedFrameList[Math.Max(start, end)]);
+                        //for (int i = start; i <= end; i++)
+                        //{
+                        //    _fileRemover.RemoveFrames(_masterFrameList, _displayedFrameList[i], _displayedFrameList[end]);
+                        //}
+                        // UI 업데이트
+                        _displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
+                        // 마스터 리스트에서도 해당 프레임들을 제거
+                        RefreshFrameList(_displayedFrameList);
+                        if (_displayedFrameList.Count > 0)
+                        {
+                            SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
+                            // 선택된 프레임이 범위를 벗어날 수 있으므로 안전하게 인덱스 조정
+                        }
+                        MessageBox.Show("선택된 범위의 데이터가 성공적으로 삭제되었습니다.", "범위 삭제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    return;
+                }
+            }
 
             // 4. 새로운 클래스(FileRemover)를 사용하여 파일 및 리스트 삭제 호출
             try
@@ -184,7 +217,7 @@ namespace DateManager
             }
         }
 
-        private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e)
+        private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
         {
             int index = lstFrameData.SelectedIndex;
             if (index >= 0 && index < _displayedFrameList.Count)
@@ -222,7 +255,7 @@ namespace DateManager
             MoveFrame(1);
         }
 
-        private void btnPlay_Click(object sender, EventArgs e)
+        private void btnPlay_Click(object sender, EventArgs e) // 재생 버튼을 눌렀을 때 타이머를 시작하거나 멈추는 토글 기능
         {
             if (!HasDisplayedFrames()) return;
 
@@ -251,7 +284,7 @@ namespace DateManager
             UpdatePlaybackInterval();
         }
 
-        private void PlaybackTimer_Tick(object? sender, EventArgs e)
+        private void PlaybackTimer_Tick(object? sender, EventArgs e) // 타이머가 틱할 때마다 다음 프레임으로 이동하는 이벤트 핸들러
         {
             if (!HasDisplayedFrames(false))
             {
@@ -259,7 +292,7 @@ namespace DateManager
                 return;
             }
 
-            int currentIndex = lstFrameData.SelectedIndex < 0 ? 0 : lstFrameData.SelectedIndex;
+            int currentIndex = lstFrameData.SelectedIndex < 0 ? 0 : lstFrameData.SelectedIndex; // 현재 선택된 프레임의 인덱스 가져오기 (선택된 항목이 없으면 0으로 간주)
             if (currentIndex >= _displayedFrameList.Count - 1)
             {
                 StopPlayback();
@@ -373,7 +406,7 @@ namespace DateManager
 
             return hasFrames;
         }
-        int start, end = 0;
+        public int start, end = 0;
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;
