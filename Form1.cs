@@ -14,6 +14,8 @@ namespace DateManager
 
         private FileRemover _fileRemover;
 
+        private Picture _pictureHandler;
+
         public Form1()
         {
             InitializeComponent();
@@ -22,6 +24,7 @@ namespace DateManager
             _dataProcessor = new DataProcessor();
             _fileRemover = new FileRemover();
             _masterFrameList = new List<DonkeyFrame>();
+            _pictureHandler = new Picture();
         }
 
         /// <summary>
@@ -69,38 +72,31 @@ namespace DateManager
 
         private void btnLoadTub_Click(object sender, EventArgs e)
         {
-            // 1. WSL 내부 데이터 경로 설정
-            string catalogPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\catalog_0.catalog";
-            string imagesFolderPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\images";
-
-            MessageBox.Show("진철님의 엔진으로 카탈로그 데이터 로드를 시작합니다!", "데이터 로드", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            // 2. 백엔드 파싱 엔진 가동 (마스터 리스트에 데이터 적재)
-            _masterFrameList = _dataProcessor.LoadCatalogData(catalogPath, imagesFolderPath);
-
-            // 3. 데이터가 성공적으로 로드되었는지 검증 및 UI 초기 연동
-            if (_masterFrameList != null && _masterFrameList.Count > 0)
+            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
-                MessageBox.Show($"📊 총 {_masterFrameList.Count}개의 프레임 데이터를 성공적으로 불러왔습니다!", "로드 완료", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-
-                // [UI 연동] 4. 팀원이 만든 오른쪽 리스트박스(lstFrameData)에 데이터 목록 뿌려주기
-                lstFrameData.Items.Clear(); // 기존 목록 청소
-
-                // 예시: 리스트박스에 프레임 번호나 인덱스를 쫙 추가해 줍니다.
-                for (int i = 0; i < _masterFrameList.Count; i++)
+                fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
+                if (fbd.ShowDialog() == DialogResult.OK)
                 {
-                    // DonkeyFrame 내부에 정의된 변수명에 맞춰 수정 가능 (예: _masterFrameList[i].Index)
-                    lstFrameData.Items.Add($"Frame {i} - Angle: {_masterFrameList[i].Angle}");
-                }
+                    string selectedPath = fbd.SelectedPath;
 
-                // 5. 탐색 슬라이더(trkFrameSlider)의 최대 길이를 데이터 개수만큼 맞춰주기
-                trkFrameSlider.Minimum = 0;
-                trkFrameSlider.Maximum = _masterFrameList.Count - 1;
-                trkFrameSlider.Value = 0;
-            }
-            else
-            {
-                MessageBox.Show("데이터를 불러오지 못했습니다. 경로를 다시 확인해 주세요.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // 데이터 폴더 내의 카탈로그와 이미지 경로를 자동 추론
+                    string catalogPath = Path.Combine(selectedPath, "catalog_0.catalog");
+                    string imagesFolderPath = Path.Combine(selectedPath, "images");
+
+                    // 엔진 가동: 이미지와 데이터를 합쳐서 리스트로 가져옴
+                    _masterFrameList = _dataProcessor.LoadCatalogData(catalogPath, imagesFolderPath);
+
+                    // 로드 성공 시 리스트박스 업데이트
+                    if (_masterFrameList != null)
+                    {
+                        lstFrameData.Items.Clear();
+                        foreach (var frame in _masterFrameList)
+                        {
+                            // [이미지] + [조향값]이 합쳐진 형태를 보여줌
+                            lstFrameData.Items.Add($"Frame {frame.FrameIndex} | Angle: {frame.Angle:F2}");
+                        }
+                    }
+                }
             }
         }
 
@@ -174,6 +170,24 @@ namespace DateManager
             {
                 // 삭제 과정에서 발생한 에러 처리
                 MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int index = lstFrameData.SelectedIndex;
+            if (index >= 0 && index < _masterFrameList.Count)
+            {
+                DonkeyFrame selectedFrame = _masterFrameList[index];
+
+                // 1. 이미지 연동
+                _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
+
+                // 2. 조향값 및 정보 표시 (UI 라벨 이름에 맞춰 수정하세요)
+                // 화면 상단에 조향값, 출력값이 같이 나와야 형님이 좋아합니다!
+                lblFrameIndex.Text = $"프레임 인덱스 {selectedFrame.FrameIndex}/{_masterFrameList.Count}";
+                lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
+                lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
             }
         }
     }

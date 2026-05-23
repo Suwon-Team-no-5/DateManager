@@ -308,6 +308,7 @@
             lstFrameData.Name = "lstFrameData";
             lstFrameData.Size = new Size(265, 420);
             lstFrameData.TabIndex = 0;
+            lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
             // 
             // gbSystemOps
             // 
