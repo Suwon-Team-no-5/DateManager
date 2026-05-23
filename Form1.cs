@@ -180,15 +180,9 @@ namespace DateManager
                         _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
                         start = 0; end = 0; 
                         lblSetRange.Text = "(0, 0)";
-                        // 범위 삭제 후 초기화
-                        // UI 업데이트
                         //_displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
-                        RefreshFrameList(_displayedFrameList);
-                        //if (_displayedFrameList.Count > 0)
-                        //{
-                        //   SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
-                            // 선택된 프레임이 범위를 벗어날 수 있으므로 안전하게 인덱스 조정
-                        //}
+                        RefreshFrameList(_masterFrameList);
+
                         MessageBox.Show("선택된 범위의 데이터가 성공적으로 삭제되었습니다.", "범위 삭제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
