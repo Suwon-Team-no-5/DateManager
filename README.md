@@ -79,11 +79,11 @@ DateManager/
 - .NET Framework 또는 .NET SDK
 - Visual Studio 2022 이상 (.NET 데스크톱 개발 워크로드 포함)
 
+---
+
 ## 실행 방법
 - 프로젝트 클론: git clone https://github.com/your-username/your-repo-name.git
-
 - Visual Studio에서 DateManager.sln 오픈.
-
 - F5를 눌러 애플리케이션 실행.
 
 ---
