@@ -132,7 +132,15 @@ namespace DateManager
             // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
             RefreshFrameList(filteredList, "[필터됨] ");
 
+
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
+
+             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
+            if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
+            {
+                RefreshFrameList(_masterFrameList);
+            }
+
         }
 
         private void btnDeleteData_Click(object sender, EventArgs e)
@@ -170,19 +178,17 @@ namespace DateManager
                     try
                     {
                         _fileRemover.RemoveFrames(_masterFrameList, _displayedFrameList[Math.Min(start, end)], _displayedFrameList[Math.Max(start, end)]);
-                        //for (int i = start; i <= end; i++)
-                        //{
-                        //    _fileRemover.RemoveFrames(_masterFrameList, _displayedFrameList[i], _displayedFrameList[end]);
-                        //}
+                        start = 0; end = 0; 
+                        lblSetRange.Text = "(0, 0)";
+                        // 범위 삭제 후 초기화
                         // UI 업데이트
-                        _displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
-                        // 마스터 리스트에서도 해당 프레임들을 제거
+                        //_displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
                         RefreshFrameList(_displayedFrameList);
-                        if (_displayedFrameList.Count > 0)
-                        {
-                            SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
+                        //if (_displayedFrameList.Count > 0)
+                        //{
+                        //   SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
                             // 선택된 프레임이 범위를 벗어날 수 있으므로 안전하게 인덱스 조정
-                        }
+                        //}
                         MessageBox.Show("선택된 범위의 데이터가 성공적으로 삭제되었습니다.", "범위 삭제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception ex)
