@@ -215,6 +215,7 @@
             btnSpeed.TabIndex = 7;
             btnSpeed.Text = "배속 x 1.0";
             btnSpeed.UseVisualStyleBackColor = false;
+            btnSpeed.Click += btnSpeed_Click;
             // 
             // btnPrev
             // 
@@ -230,6 +231,7 @@
             btnPrev.TabIndex = 3;
             btnPrev.Text = "⏮";
             btnPrev.UseVisualStyleBackColor = false;
+            btnPrev.Click += btnPrev_Click;
             // 
             // btnFastRewind
             // 
@@ -245,6 +247,7 @@
             btnFastRewind.TabIndex = 5;
             btnFastRewind.Text = "⏪";
             btnFastRewind.UseVisualStyleBackColor = false;
+            btnFastRewind.Click += btnFastRewind_Click;
             // 
             // btnPlay
             // 
@@ -260,6 +263,7 @@
             btnPlay.TabIndex = 2;
             btnPlay.Text = "▶ 재생";
             btnPlay.UseVisualStyleBackColor = false;
+            btnPlay.Click += btnPlay_Click;
             // 
             // btnStop
             // 
@@ -275,6 +279,7 @@
             btnStop.TabIndex = 0;
             btnStop.Text = "⏹ 정지";
             btnStop.UseVisualStyleBackColor = false;
+            btnStop.Click += btnStop_Click;
             // 
             // btnFastForward
             // 
@@ -290,6 +295,7 @@
             btnFastForward.TabIndex = 6;
             btnFastForward.Text = "⏩";
             btnFastForward.UseVisualStyleBackColor = false;
+            btnFastForward.Click += btnFastForward_Click;
             // 
             // btnNext
             // 
@@ -305,6 +311,7 @@
             btnNext.TabIndex = 4;
             btnNext.Text = "⏭";
             btnNext.UseVisualStyleBackColor = false;
+            btnNext.Click += btnNext_Click;
             // 
             // trkFrameSlider
             // 

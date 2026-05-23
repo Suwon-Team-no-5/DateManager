@@ -1,7 +1,6 @@
-﻿using System;
-
+using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using System.Windows.Forms;
 
 namespace DateManager
@@ -13,22 +12,30 @@ namespace DateManager
 
         // 메모리에 로드된 전체 카탈로그 데이터를 담아둘 마스터 리스트
         private List<DonkeyFrame> _masterFrameList;
+        private List<DonkeyFrame> _displayedFrameList;
 
         private FileRemover _fileRemover;
 
         private Picture _pictureHandler;
+        private readonly System.Windows.Forms.Timer _playbackTimer;
+        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
+        private int _playbackSpeedIndex = 1;
+        private const int BasePlaybackIntervalMs = 400;
 
         public Form1()
         {
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
             InitializeComponent();
 
-
             // 프로그램이 켜질 때 객체들을 초기화해 줍니다.
             _dataProcessor = new DataProcessor();
             _fileRemover = new FileRemover();
             _masterFrameList = new List<DonkeyFrame>();
+            _displayedFrameList = new List<DonkeyFrame>();
             _pictureHandler = new Picture();
+            _playbackTimer = new System.Windows.Forms.Timer();
+            _playbackTimer.Tick += PlaybackTimer_Tick;
+            UpdatePlaybackInterval();
         }
 
         /// <summary>
@@ -85,16 +92,7 @@ namespace DateManager
 
                     if (_masterFrameList != null && _masterFrameList.Count > 0)
                     {
-                        lstFrameData.Items.Clear();
-                        foreach (var frame in _masterFrameList)
-                        {
-                            lstFrameData.Items.Add($"Frame {frame.FrameIndex} | Angle: {frame.Angle:F2}");
-                        }
-
-                        // 💡 트랙바 전체 데이터 연동
-                        trkFrameSlider.Minimum = 0;
-                        trkFrameSlider.Maximum = _masterFrameList.Count - 1;
-                        trkFrameSlider.Value = 0;
+                        RefreshFrameList(_masterFrameList);
 
                         MessageBox.Show($"총 {_masterFrameList.Count}개의 프레임 데이터 로드 완료!");
                     }
@@ -126,12 +124,13 @@ namespace DateManager
                 filteredList = filteredList.FindAll(frame => frame.Angle == 0);
             }
 
-            // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
-            lstFrameData.Items.Clear();
-            foreach (var frame in filteredList)
+            if (chkFilterLargeAngle.Checked)
             {
-                lstFrameData.Items.Add($"[필터됨] Frame - Angle: {frame.Angle}");
+                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 0.5);
             }
+
+            // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
+            RefreshFrameList(filteredList, "[필터됨] ");
 
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
         }
@@ -145,10 +144,15 @@ namespace DateManager
                 return;
             }
 
+            if (!HasDisplayedFrames(false))
+            {
+                MessageBox.Show("삭제할 데이터가 없습니다!", "알림");
+                return;
+            }
+
             // 2. 삭제할 프레임 객체 가져오기
-            // 리스트박스의 순서와 _masterFrameList의 순서가 일치한다고 가정합니다.
             int selectedIndex = lstFrameData.SelectedIndex;
-            DonkeyFrame targetFrame = _masterFrameList[selectedIndex];
+            DonkeyFrame targetFrame = _displayedFrameList[selectedIndex];
 
             // 3. 사용자 확인 절차
             DialogResult result = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
@@ -164,7 +168,12 @@ namespace DateManager
                 _fileRemover.RemoveFrame(_masterFrameList, targetFrame);
 
                 // 5. UI 업데이트: 리스트박스에서 해당 항목 제거
-                lstFrameData.Items.RemoveAt(selectedIndex);
+                _displayedFrameList.Remove(targetFrame);
+                RefreshFrameList(_displayedFrameList);
+                if (_displayedFrameList.Count > 0)
+                {
+                    SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
+                }
 
                 MessageBox.Show("삭제가 성공적으로 완료되었습니다.", "정제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
@@ -178,35 +187,191 @@ namespace DateManager
         private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e)
         {
             int index = lstFrameData.SelectedIndex;
-            if (index >= 0 && index < _masterFrameList.Count)
+            if (index >= 0 && index < _displayedFrameList.Count)
             {
-                // 1. 기존 이미지/데이터 갱신 로직 (이미 만드신 거)
-                DonkeyFrame selectedFrame = _masterFrameList[index];
-                _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
-
-                lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
-                lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
-                lblFrameIndex.Text = $"프레임 인덱스: {selectedFrame.FrameIndex}/{_masterFrameList.Count}";
-
-
-            // TODO: 새로운 팀원이 만든 기능(컨트롤러나 매니저 등)을 이 아래에 연결하세요.
-
-
-                // 2. 💡 추가: 트랙바 위치도 현재 인덱스로 맞추기
-                if (trkFrameSlider.Value != index)
-                {
-                    trkFrameSlider.Value = index;
-                }
+                DisplayFrame(index);
             }
         }
 
         private void trkFrameSlider_Scroll(object sender, EventArgs e)
         {
             // 트랙바의 현재 값(Value)을 리스트박스의 인덱스로 설정
-            if (trkFrameSlider.Value >= 0 && trkFrameSlider.Value < lstFrameData.Items.Count)
+            if (trkFrameSlider.Value >= 0 && trkFrameSlider.Value < _displayedFrameList.Count)
             {
-                lstFrameData.SelectedIndex = trkFrameSlider.Value;
+                SelectFrame(trkFrameSlider.Value);
             }
+        }
+
+        private void btnPrev_Click(object sender, EventArgs e)
+        {
+            MoveFrame(-100);
+        }
+
+        private void btnNext_Click(object sender, EventArgs e)
+        {
+            MoveFrame(100);
+        }
+
+        private void btnFastRewind_Click(object sender, EventArgs e)
+        {
+            MoveFrame(-1);
+        }
+
+        private void btnFastForward_Click(object sender, EventArgs e)
+        {
+            MoveFrame(1);
+        }
+
+        private void btnPlay_Click(object sender, EventArgs e)
+        {
+            if (!HasDisplayedFrames()) return;
+
+            if (_playbackTimer.Enabled)
+            {
+                StopPlayback();
+                return;
+            }
+
+            _playbackTimer.Start();
+            btnPlay.Text = "⏸ 일시정지";
+        }
+
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            StopPlayback();
+            if (HasDisplayedFrames(false))
+            {
+                SelectFrame(0);
+            }
+        }
+
+        private void btnSpeed_Click(object sender, EventArgs e)
+        {
+            _playbackSpeedIndex = (_playbackSpeedIndex + 1) % _playbackSpeeds.Length;
+            UpdatePlaybackInterval();
+        }
+
+        private void PlaybackTimer_Tick(object? sender, EventArgs e)
+        {
+            if (!HasDisplayedFrames(false))
+            {
+                StopPlayback();
+                return;
+            }
+
+            int currentIndex = lstFrameData.SelectedIndex < 0 ? 0 : lstFrameData.SelectedIndex;
+            if (currentIndex >= _displayedFrameList.Count - 1)
+            {
+                StopPlayback();
+                return;
+            }
+
+            SelectFrame(currentIndex + 1);
+        }
+
+        private void RefreshFrameList(IEnumerable<DonkeyFrame> frames, string prefix = "")
+        {
+            StopPlayback();
+            _displayedFrameList = frames?.ToList() ?? new List<DonkeyFrame>();
+
+            lstFrameData.Items.Clear();
+            foreach (DonkeyFrame frame in _displayedFrameList)
+            {
+                lstFrameData.Items.Add($"{prefix}Frame {frame.FrameIndex} | Angle: {frame.Angle:F2} | Thr: {frame.Throttle:F2}");
+            }
+
+            trkFrameSlider.Minimum = 0;
+            trkFrameSlider.Maximum = Math.Max(0, _displayedFrameList.Count - 1);
+            trkFrameSlider.Value = 0;
+            trkFrameSlider.Enabled = _displayedFrameList.Count > 0;
+
+            if (_displayedFrameList.Count > 0)
+            {
+                SelectFrame(0);
+            }
+            else
+            {
+                ClearFramePreview();
+            }
+        }
+
+        private void SelectFrame(int index)
+        {
+            if (!HasDisplayedFrames(false)) return;
+
+            int safeIndex = Math.Max(0, Math.Min(index, _displayedFrameList.Count - 1));
+            if (lstFrameData.SelectedIndex != safeIndex)
+            {
+                lstFrameData.SelectedIndex = safeIndex;
+            }
+            else
+            {
+                DisplayFrame(safeIndex);
+            }
+        }
+
+        private void MoveFrame(int offset)
+        {
+            if (!HasDisplayedFrames()) return;
+
+            int currentIndex = lstFrameData.SelectedIndex < 0 ? 0 : lstFrameData.SelectedIndex;
+            SelectFrame(currentIndex + offset);
+        }
+
+        private void DisplayFrame(int index)
+        {
+            DonkeyFrame selectedFrame = _displayedFrameList[index];
+            _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
+
+            lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
+            lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
+            lblFrameIndex.Text = $"프레임 인덱스: {index + 1}/{_displayedFrameList.Count} (원본 {selectedFrame.FrameIndex})";
+            lblTimestamp.Text = string.IsNullOrWhiteSpace(selectedFrame.SessionId) ? selectedFrame.DataTypeSummary : selectedFrame.SessionId;
+            prgThrottle.Value = Math.Max(0, Math.Min(100, (int)Math.Round(selectedFrame.Throttle * 100)));
+
+            if (trkFrameSlider.Value != index)
+            {
+                trkFrameSlider.Value = index;
+            }
+        }
+
+        private void ClearFramePreview()
+        {
+            if (pbMainCam.Image != null)
+            {
+                pbMainCam.Image.Dispose();
+                pbMainCam.Image = null;
+            }
+
+            lblAngle.Text = "조향각: +0.0";
+            lblThrottleTop.Text = "출력: +0.0";
+            lblFrameIndex.Text = "프레임 번호 0/0";
+            lblTimestamp.Text = "기록 시간";
+            prgThrottle.Value = 0;
+        }
+
+        private void StopPlayback()
+        {
+            _playbackTimer.Stop();
+            btnPlay.Text = "▶ 재생";
+        }
+
+        private void UpdatePlaybackInterval()
+        {
+            double speed = _playbackSpeeds[_playbackSpeedIndex];
+            _playbackTimer.Interval = Math.Max(50, (int)Math.Round(BasePlaybackIntervalMs / speed));
+            btnSpeed.Text = $"배속 x {speed:0.0}";
+        }
+
+        private bool HasDisplayedFrames(bool showMessage = true)
+        {
+            bool hasFrames = _displayedFrameList != null && _displayedFrameList.Count > 0;
+            if (!hasFrames && showMessage)
+            {
+                MessageBox.Show("먼저 데이터를 로드해 주세요!", "알림");
+            }
+
+            return hasFrames;
         }
     }
 }
