@@ -61,16 +61,16 @@ DateManager/
  ├── Form1.Designer.cs         # UI 컴포넌트 자동 생성 파일
  ├── Program.cs                # 애플리케이션 진입점 (Main)
  └── [추가 개발 모듈]/           # AI 학습 연동 및 신규 기능 확장을 위한 베이스라인
+```
 
-
- 🚀 시작하기 (Getting Started)
+## 🚀 시작하기 (Getting Started)
 요구사항 (Prerequisites)
 Windows OS
 .NET Framework 또는 .NET SDK
 Visual Studio 2022 이상 (.NET 데스크톱 개발 워크로드 포함)
 
 
-👥 팀 구성 및 역할 (Team Members)Team 05 - Convergence이름전공주요 역할
+## 👥 팀 구성 및 역할 (Team Members)Team 05 - Convergence이름전공주요 역할
 [김재서][컴퓨터소프트웨어학과][(팀장/UI 총괄): 전체 WinForms 레이아웃 설계, (이미지 표시 및 슬라이더) 연동 담당. -> Form1.Designer.cs]
 [박진철][컴퓨터소프트웨어학과][(데이터 엔지니어): (JSON 파싱) 및 (파일 시스템 삭제 로직) 담당]
 [윤형규][컴퓨터소프트웨어학과][(로직 개발자): (리스트 선택 및 LINQ 기반 데이터 필터링) 알고리즘 구현.]
