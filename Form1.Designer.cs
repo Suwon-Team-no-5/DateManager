@@ -271,6 +271,7 @@
             trkFrameSlider.Name = "trkFrameSlider";
             trkFrameSlider.Size = new Size(891, 90);
             trkFrameSlider.TabIndex = 1;
+            trkFrameSlider.Scroll += trkFrameSlider_Scroll;
             // 
             // btnStop
             // 

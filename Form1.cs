@@ -74,27 +74,25 @@ namespace DateManager
         {
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
-                fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
-                    string selectedPath = fbd.SelectedPath;
+                    // 💡 파일 1개가 아니라 폴더 전체 경로를 넘김
+                    _masterFrameList = _dataProcessor.LoadCatalogData(fbd.SelectedPath);
 
-                    // 데이터 폴더 내의 카탈로그와 이미지 경로를 자동 추론
-                    string catalogPath = Path.Combine(selectedPath, "catalog_0.catalog");
-                    string imagesFolderPath = Path.Combine(selectedPath, "images");
-
-                    // 엔진 가동: 이미지와 데이터를 합쳐서 리스트로 가져옴
-                    _masterFrameList = _dataProcessor.LoadCatalogData(catalogPath, imagesFolderPath);
-
-                    // 로드 성공 시 리스트박스 업데이트
-                    if (_masterFrameList != null)
+                    if (_masterFrameList != null && _masterFrameList.Count > 0)
                     {
                         lstFrameData.Items.Clear();
                         foreach (var frame in _masterFrameList)
                         {
-                            // [이미지] + [조향값]이 합쳐진 형태를 보여줌
                             lstFrameData.Items.Add($"Frame {frame.FrameIndex} | Angle: {frame.Angle:F2}");
                         }
+
+                        // 💡 트랙바 전체 데이터 연동
+                        trkFrameSlider.Minimum = 0;
+                        trkFrameSlider.Maximum = _masterFrameList.Count - 1;
+                        trkFrameSlider.Value = 0;
+
+                        MessageBox.Show($"총 {_masterFrameList.Count}개의 프레임 데이터 로드 완료!");
                     }
                 }
             }
@@ -178,16 +176,28 @@ namespace DateManager
             int index = lstFrameData.SelectedIndex;
             if (index >= 0 && index < _masterFrameList.Count)
             {
+                // 1. 기존 이미지/데이터 갱신 로직 (이미 만드신 거)
                 DonkeyFrame selectedFrame = _masterFrameList[index];
-
-                // 1. 이미지 연동
                 _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
 
-                // 2. 조향값 및 정보 표시 (UI 라벨 이름에 맞춰 수정하세요)
-                // 화면 상단에 조향값, 출력값이 같이 나와야 형님이 좋아합니다!
-                lblFrameIndex.Text = $"프레임 인덱스 {selectedFrame.FrameIndex}/{_masterFrameList.Count}";
                 lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
                 lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
+                lblFrameIndex.Text = $"프레임 인덱스: {selectedFrame.FrameIndex}/{_masterFrameList.Count}";
+
+                // 2. 💡 추가: 트랙바 위치도 현재 인덱스로 맞추기
+                if (trkFrameSlider.Value != index)
+                {
+                    trkFrameSlider.Value = index;
+                }
+            }
+        }
+
+        private void trkFrameSlider_Scroll(object sender, EventArgs e)
+        {
+            // 트랙바의 현재 값(Value)을 리스트박스의 인덱스로 설정
+            if (trkFrameSlider.Value >= 0 && trkFrameSlider.Value < lstFrameData.Items.Count)
+            {
+                lstFrameData.SelectedIndex = trkFrameSlider.Value;
             }
         }
     }
