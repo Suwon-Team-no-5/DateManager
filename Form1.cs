@@ -177,7 +177,7 @@ namespace DateManager
                 {
                     try
                     {
-                        _fileRemover.RemoveFrames(_masterFrameList, _displayedFrameList[Math.Min(start, end)], _displayedFrameList[Math.Max(start, end)]);
+                        _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
                         start = 0; end = 0; 
                         lblSetRange.Text = "(0, 0)";
                         // 범위 삭제 후 초기화
