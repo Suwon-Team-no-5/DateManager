@@ -373,5 +373,17 @@ namespace DateManager
 
             return hasFrames;
         }
+        int start, end = 0;
+        private void btnSetLeft_Click(object sender, EventArgs e)
+        {
+            start = lstFrameData.SelectedIndex;
+            lblSetRange.Text = "(" + start + ", " + end +")";
+        }
+
+        private void btnSetRight_Click(object sender, EventArgs e)
+        {
+            end = lstFrameData.SelectedIndex;
+            lblSetRange.Text= "(" + start + ", " + end + ")";
+        }
     }
 }

@@ -474,6 +474,7 @@
             btnSetLeft.TabIndex = 7;
             btnSetLeft.Text = "시작 지점";
             btnSetLeft.UseVisualStyleBackColor = false;
+            btnSetLeft.Click += btnSetLeft_Click;
             // 
             // btnDeleteData
             // 
@@ -502,6 +503,7 @@
             btnSetRight.TabIndex = 5;
             btnSetRight.Text = "종료 지점";
             btnSetRight.UseVisualStyleBackColor = false;
+            btnSetRight.Click += btnSetRight_Click;
             // 
             // btnApplyFilter
             // 
