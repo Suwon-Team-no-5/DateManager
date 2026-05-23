@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
-//UI컨트롤들과 catalog 처리기능 연결하는 클래스
 namespace DateManager.services
 {
     internal sealed class CatalogFrameController
     {
+        // 1. UI 컨트롤 필드 선언 (정리해주신 명명 규칙 반영)
         private readonly Button loadTubButton;
         private readonly Button? applyFilterButton;
         private readonly CheckBox? throttleFilterCheckBox;
@@ -20,24 +20,31 @@ namespace DateManager.services
         private readonly Label? frameIndexLabel;
         private readonly Label? angleLabel;
         private readonly Label? throttleTopLabel;
-        private readonly Label? throttleBottomLabel;
+        private readonly ProgressBar? prgThrottle; // [변경] lblThrottleBottom(Label) ➔ prgThrottle(ProgressBar)
         private readonly Label? timestampLabel;
-        private readonly List<FrameData> allFrames = [];
 
+        // [추가] 독립 배치된 재생/정지 버튼 제어용 필드
+        private readonly Button? btnPlay;
+        private readonly Button? btnStop;
+
+        private readonly List<FrameData> allFrames = [];
         private List<FrameData> visibleFrames = [];
         private string catalogDirectory = string.Empty;
 
-        public static CatalogFrameController? TryAttach(Control root) //Form1 안에서 필요한 컨트롤들을 이름으로 찾아서 연결
+        // 2. Form1에서 컨트롤들을 이름으로 자동 연결하는 메서드
+        public static CatalogFrameController? TryAttach(Control root)
         {
-            var loadTubButton = FindControl<Button>(root, "btnLoadTub"); //카탈로그 파일 불러오는 버튼
-            var frameListBox = FindControl<ListBox>(root, "lstFrameData"); //전체 프레임 목록 보여주는 리스트박스
-            var framePictureBox = FindControl<PictureBox>(root, "pbMainCam"); //선택한 프레임의 이미지 보여주는 픽쳐박스
+            // 필수 컨트롤 체크 (이름 일치 확인용)
+            var loadTubButton = FindControl<Button>(root, "btnLoadTub");
+            var frameListBox = FindControl<ListBox>(root, "lstFrameData");
+            var framePictureBox = FindControl<PictureBox>(root, "pbMainCam");
 
             if (loadTubButton is null || frameListBox is null || framePictureBox is null)
             {
                 return null;
             }
 
+            // 정의해주신 새로운 변수명 규칙에 맞춰 1:1 매핑하여 생성자 호출
             return new CatalogFrameController(
                 loadTubButton,
                 FindControl<Button>(root, "btnApplyFilter"),
@@ -50,10 +57,13 @@ namespace DateManager.services
                 FindControl<Label>(root, "lblFrameIndex"),
                 FindControl<Label>(root, "lblAngle"),
                 FindControl<Label>(root, "lblThrottleTop"),
-                FindControl<Label>(root, "lblThrottleBottom"),
-                FindControl<Label>(root, "lblTimestamp"));
+                FindControl<ProgressBar>(root, "prgThrottle"), // [변경] 하단 스레틀 게이지 바 연동
+                FindControl<Label>(root, "lblTimestamp"),
+                FindControl<Button>(root, "btnPlay"),           // [추가] 재생 버튼 매핑
+                FindControl<Button>(root, "btnStop"));          // [추가] 정지 버튼 매핑
         }
 
+        // 3. 생성자 및 이벤트 바인딩
         private CatalogFrameController(
             Button loadTubButton,
             Button? applyFilterButton,
@@ -66,8 +76,10 @@ namespace DateManager.services
             Label? frameIndexLabel,
             Label? angleLabel,
             Label? throttleTopLabel,
-            Label? throttleBottomLabel,
-            Label? timestampLabel)
+            ProgressBar? prgThrottle,
+            Label? timestampLabel,
+            Button? btnPlay,
+            Button? btnStop)
         {
             this.loadTubButton = loadTubButton;
             this.applyFilterButton = applyFilterButton;
@@ -80,12 +92,14 @@ namespace DateManager.services
             this.frameIndexLabel = frameIndexLabel;
             this.angleLabel = angleLabel;
             this.throttleTopLabel = throttleTopLabel;
-            this.throttleBottomLabel = throttleBottomLabel;
+            this.prgThrottle = prgThrottle;
             this.timestampLabel = timestampLabel;
+            this.btnPlay = btnPlay;
+            this.btnStop = btnStop;
 
+            // 필수 이벤트 연결
             this.loadTubButton.Click += LoadTubButton_Click;
             this.frameListBox.SelectedIndexChanged += FrameListBox_SelectedIndexChanged;
-            //찾은 컨트롤에 이벤트 연결
 
             if (this.applyFilterButton is not null)
             {
@@ -96,13 +110,38 @@ namespace DateManager.services
             {
                 this.frameSlider.Scroll += FrameSlider_Scroll;
             }
+
+            // [추가] 재생/정지 버튼 클릭 시 UX 비활성화/활성화 상태 제어 트리거 연결
+            if (this.btnPlay is not null)
+            {
+                this.btnPlay.Click += BtnPlay_Click;
+                this.btnPlay.Enabled = true; // 초기 상태: 재생 가능
+            }
+            if (this.btnStop is not null)
+            {
+                this.btnStop.Click += BtnStop_Click;
+                this.btnStop.Enabled = false; // 초기 상태: 정지 비활성화
+            }
         }
 
-        private static T? FindControl<T>(Control root, string name)
-            where T : Control
+        private static T? FindControl<T>(Control root, string name) where T : Control
         {
             var matches = root.Controls.Find(name, true);
             return matches.Length > 0 && matches[0] is T control ? control : null;
+        }
+
+        // [추가] 미디어 플레이어 전형의 UI 흐름 적용 (재생 클릭 시)
+        private void BtnPlay_Click(object? sender, EventArgs e)
+        {
+            if (btnPlay is not null) btnPlay.Enabled = false;
+            if (btnStop is not null) btnStop.Enabled = true;
+        }
+
+        // [추가] 미디어 플레이어 전형의 UI 흐름 적용 (정지 클릭 시)
+        private void BtnStop_Click(object? sender, EventArgs e)
+        {
+            if (btnPlay is not null) btnPlay.Enabled = true;
+            if (btnStop is not null) btnStop.Enabled = false;
         }
 
         private void LoadTubButton_Click(object? sender, EventArgs e)
@@ -111,7 +150,6 @@ namespace DateManager.services
             {
                 Title = "카탈로그 파일 선택",
                 Filter = "Catalog or JSON Lines (*.catalog;*.jsonl;*.txt)|*.catalog;*.jsonl;*.txt|All files (*.*)|*.*"
-                //카탈로그 파일 선택하는 다이얼로그, .catalog, .jsonl, .txt 확장자 허용
             };
 
             if (dialog.ShowDialog() != DialogResult.OK)
@@ -122,8 +160,8 @@ namespace DateManager.services
             try
             {
                 allFrames.Clear();
-                allFrames.AddRange(CatalogServices.LoadCatalog(dialog.FileName)); //CatalogServices의 LoadCatalog 메서드로 선택한 파일에서 프레임 데이터 로드
-                catalogDirectory = Path.GetDirectoryName(dialog.FileName) ?? string.Empty; //카탈로그 파일이 있는 디렉토리 경로 저장
+                allFrames.AddRange(CatalogServices.LoadCatalog(dialog.FileName));
+                catalogDirectory = Path.GetDirectoryName(dialog.FileName) ?? string.Empty;
                 ApplySelectedFilters();
             }
             catch (Exception ex)
@@ -139,7 +177,6 @@ namespace DateManager.services
 
         private void FrameListBox_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            //리스트박스에서 프레임 선택이 바뀌면 해당 프레임 보여주기
             if (frameListBox.SelectedItem is FrameData frame)
             {
                 ShowFrame(frame);
@@ -163,29 +200,28 @@ namespace DateManager.services
             if (throttleFilterCheckBox?.Checked == true)
             {
                 filteredFrames = filteredFrames.Where(frame => frame.Throttle > 0);
-            } //throttle이 0보다 큰 프레임만 남김
+            }
 
             if (angleZeroFilterCheckBox?.Checked == true)
             {
                 filteredFrames = filteredFrames.Where(frame => Math.Abs(frame.Angle) <= 0.01);
-            } //angle이 거의 0인 프레임만 남김
+            }
 
             if (largeAngleFilterCheckBox?.Checked == true)
             {
                 filteredFrames = filteredFrames.Where(frame => Math.Abs(frame.Angle) > 0.3);
-            } //angle이 0.3보다 큰 프레임만 남김
+            }
 
             visibleFrames = filteredFrames.ToList();
             BindFrameList();
-            //필터 적용된 프레임 목록 업데이트
         }
 
         private void BindFrameList()
         {
             frameListBox.DataSource = null;
-            frameListBox.DataSource = visibleFrames; //리스트박스에 필터 적용된 프레임 목록 바인딩
+            frameListBox.DataSource = visibleFrames;
 
-            if (frameSlider is not null) //프레임 슬라이더가 있으면 슬라이더 범위 업데이트
+            if (frameSlider is not null)
             {
                 frameSlider.Minimum = 0;
                 frameSlider.Maximum = Math.Max(0, visibleFrames.Count - 1);
@@ -196,7 +232,7 @@ namespace DateManager.services
             {
                 frameListBox.SelectedIndex = 0;
                 return;
-            } //프레임이 있으면 자동으로 첫 프레임 선택
+            }
 
             framePictureBox.Image = null;
             UpdateFrameLabels(null);
@@ -205,37 +241,47 @@ namespace DateManager.services
         private void ShowFrame(FrameData frame)
         {
             var imagePath = Path.Combine(catalogDirectory, frame.ImageFile);
-            //카탈로그 디렉토리와 프레임의 이미지 파일 경로 합쳐서 전체 이미지 경로 생성
 
             framePictureBox.Image?.Dispose();
             framePictureBox.Image = File.Exists(imagePath) ? Image.FromFile(imagePath) : null;
-            //이미지 파일이 존재하면 로드해서 픽쳐박스에 보여주고, 없으면 null로 설정
 
             if (frameSlider is not null && frameListBox.SelectedIndex >= 0)
             {
                 frameSlider.Value = frameListBox.SelectedIndex;
-            }//프레임 슬라이더가 있으면 현재 선택된 프레임 인덱스로 슬라이더 위치 업데이트
+            }
 
             UpdateFrameLabels(frame);
         }
 
+        // 4. 데이터 표시 갱신 (라벨 영문화 및 프로그레스 바 연동 핵심부)
+        // 4. 데이터 표시 갱신 (항상 한글 표기 및 프로그레스 바 연동)
         private void UpdateFrameLabels(FrameData? frame)
         {
-            //프레임 정보 레이블 업데이트, 프레임이 null이면 기본값으로 설정
+            // [수정] 맨 처음 또는 데이터가 없을 때 기본 한글 표시
             if (frame is null)
             {
-                SetText(frameIndexLabel, "Frame Index 0/0");
-                SetText(angleLabel, "Angle: +0.0");
-                SetText(throttleTopLabel, "Throttle: +0.0");
-                SetText(throttleBottomLabel, "Throttle: +0.0");
-                SetText(timestampLabel, "Timestamp");
+                SetText(frameIndexLabel, "프레임 인덱스 0/0");
+                SetText(angleLabel, "조향각(앵글): +0.0");
+                SetText(throttleTopLabel, "출력(스레틀): +0.0");
+                if (prgThrottle is not null) prgThrottle.Value = 0; // 하단 게이지 초기화
+                SetText(timestampLabel, "타임스탬프");
                 return;
             }
 
-            SetText(frameIndexLabel, $"Frame Index {frame.Index}/{Math.Max(0, allFrames.Count - 1)}");
-            SetText(angleLabel, $"Angle: {frame.Angle:+0.000;-0.000;0.000}");
-            SetText(throttleTopLabel, $"Throttle: {frame.Throttle:+0.000;-0.000;0.000}");
-            SetText(throttleBottomLabel, $"Throttle: {frame.Throttle:+0.000;-0.000;0.000}");
+            // [수정] 리스트에서 프레임을 선택했을 때도 한글로 데이터 업데이트
+            SetText(frameIndexLabel, $"프레임 인덱스 {frame.Index}/{Math.Max(0, allFrames.Count - 1)}");
+            SetText(angleLabel, $"조향각(앵글): {frame.Angle:+0.000;-0.000;0.000}");
+            SetText(throttleTopLabel, $"출력(스레틀): {frame.Throttle:+0.000;-0.000;0.000}");
+
+            // 하단 스레틀 게이지 바 연동 (0.0~1.0 사이의 값을 0~100%로 변환)
+            if (prgThrottle is not null)
+            {
+                int progressValue = (int)(frame.Throttle * 100);
+
+                // ProgressBar 범위를 벗어나 에러가 발생하는 것을 방지 (0~100 사이로 보정)
+                prgThrottle.Value = Math.Max(0, Math.Min(100, progressValue));
+            }
+
             SetText(timestampLabel, frame.TimestampMs.ToString());
         }
 
