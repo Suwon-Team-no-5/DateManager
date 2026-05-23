@@ -1,5 +1,7 @@
 ﻿using System;
+
 using System.Collections.Generic;
+
 using System.Windows.Forms;
 
 namespace DateManager
@@ -18,7 +20,9 @@ namespace DateManager
 
         public Form1()
         {
+            // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
             InitializeComponent();
+
 
             // 프로그램이 켜질 때 객체들을 초기화해 줍니다.
             _dataProcessor = new DataProcessor();
@@ -183,6 +187,10 @@ namespace DateManager
                 lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
                 lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
                 lblFrameIndex.Text = $"프레임 인덱스: {selectedFrame.FrameIndex}/{_masterFrameList.Count}";
+
+
+            // TODO: 새로운 팀원이 만든 기능(컨트롤러나 매니저 등)을 이 아래에 연결하세요.
+
 
                 // 2. 💡 추가: 트랙바 위치도 현재 인덱스로 맞추기
                 if (trkFrameSlider.Value != index)
