@@ -54,8 +54,13 @@ namespace DateManager
                 List<DonkeyFrame> framesFromFile = ParseSingleCatalog(file, imagesFolderPath);
                 foreach (var frame in framesFromFile)
                 {
-                    frame.FrameIndex = globalIndex++;
-                    allFrames.Add(frame);
+                    if (!string.IsNullOrEmpty(frame.FullImagePath) && File.Exists(frame.FullImagePath))
+                    {
+                        // 이미지가 존재하는 경우에만 globalIndex를 부여하고 리스트에 추가
+                        frame.FrameIndex = globalIndex++;
+                        allFrames.Add(frame);
+                    }
+                    
                 }
             }
             return allFrames;
