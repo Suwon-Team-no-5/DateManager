@@ -394,6 +394,7 @@
             btnStartTraining.TabIndex = 2;
             btnStartTraining.Text = "AI 학습\r\n시작";
             btnStartTraining.UseVisualStyleBackColor = false;
+            btnStartTraining.Click += btnStart_Click;
             // 
             // btnLoadTub
             // 
