@@ -30,6 +30,13 @@ namespace DateManager
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
             InitializeComponent();
 
+            // 폼에서 키 입력을 전역으로 처리하도록 설정
+            this.KeyPreview = true;
+            this.KeyDown += Form1_KeyDown;
+
+            // 탭 순서를 명시적으로 관리하기 위한 리스트 초기화
+            _focusOrder = new List<Control>();
+
             // 프로그램이 켜질 때 객체들을 초기화해 줍니다.
             _dataProcessor = new DataProcessor();
             _fileRemover = new FileRemover();
@@ -65,12 +72,31 @@ namespace DateManager
 
         }
 
+        // 탭 순서 제어를 위한 컨트롤 리스트
+        private List<Control> _focusOrder;
+
+
         /// <summary>
         /// 폼이 처음 로드될 때 실행되는 함수입니다. (중복 제거 완료)
         /// </summary>
         private void Form1_Load(object sender, EventArgs e)
         {
             // 필요한 경우 여기에 초기화 코드를 넣습니다.
+            // 요청된 탭 순서: 설정 파일 로드 -> 학습 데이터 로드 -> AI 학습 시작 -> 시작지점 -> 종료지점 -> 필터 적용 -> 삭제 -> 재생 -> 정지 -> 배속
+            _focusOrder.Clear();
+            _focusOrder.Add(btnLoadConfig);    // 설정 파일 로드
+            _focusOrder.Add(btnLoadTub);       // 학습 데이터 로드
+            _focusOrder.Add(btnStartTraining); // AI 학습 시작
+            _focusOrder.Add(btnSetLeft);       // 시작 지점
+            _focusOrder.Add(btnSetRight);      // 종료 지점
+            _focusOrder.Add(btnApplyFilter);   // 필터 적용
+            _focusOrder.Add(btnDeleteData);    // 삭제
+            _focusOrder.Add(btnPlay);          // 재생
+            _focusOrder.Add(btnStop);          // 정지
+            _focusOrder.Add(btnSpeed);         // 배속
+
+            // 포커스 가능한 컨트롤들에 TabStop 활성화
+            foreach (var c in _focusOrder) c.TabStop = true;
         }
 
         /// <summary>
@@ -343,6 +369,61 @@ namespace DateManager
         {
             _playbackSpeedIndex = (_playbackSpeedIndex + 1) % _playbackSpeeds.Length;
             UpdatePlaybackInterval();
+        }
+
+        // 폼 전체에 대한 키보드 단축키 핸들러
+        private void Form1_KeyDown(object? sender, KeyEventArgs e)
+        {
+            // 스페이스: 재생/일시정지 토글
+            if (e.KeyCode == Keys.Space)
+            {
+                btnPlay.PerformClick();
+                e.Handled = true;
+            }
+
+            // 화살표 위/아래: 포커스 이동
+            if (e.KeyCode == Keys.Up)
+            {
+                MoveFocus(-1);
+                e.Handled = true;
+            }
+
+            if (e.KeyCode == Keys.Down)
+            {
+                MoveFocus(1);
+                e.Handled = true;
+            }
+
+            // Enter: 포커스가 올라간 버튼을 클릭 처리
+            if (e.KeyCode == Keys.Enter)
+            {
+                try
+                {
+                    Control ctrl = this.ActiveControl;
+                    // 컨테이너 내부에 포커스된 자식 컨트롤이 있는 경우 가장 깊은 ActiveControl을 찾음
+                    while (ctrl is ContainerControl container && container.ActiveControl != null)
+                    {
+                        ctrl = container.ActiveControl;
+                    }
+
+                    if (ctrl is Button btn)
+                    {
+                        btn.PerformClick();
+                        e.Handled = true;
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void MoveFocus(int delta)
+        {
+            if (_focusOrder == null || _focusOrder.Count == 0) return;
+            Control active = this.ActiveControl ?? _focusOrder[0];
+            int idx = _focusOrder.IndexOf(active);
+            if (idx == -1) idx = 0;
+            int next = (idx + delta + _focusOrder.Count) % _focusOrder.Count;
+            _focusOrder[next].Focus();
         }
 
         private void PlaybackTimer_Tick(object? sender, EventArgs e) // 타이머가 틱할 때마다 다음 프레임으로 이동하는 이벤트 핸들러
