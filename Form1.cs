@@ -354,7 +354,10 @@ namespace DateManager
 
             if (_displayedFrameList.Count > 0)
             {
+                // 선택 인덱스를 0으로 설정하고 직접 프레임 표시를 한 번 강제합니다.
                 SelectFrame(0);
+                // SelectedIndexChanged 이벤트가 정상적으로 호출되지 않는 환경을 대비해 직접 호출
+                try { DisplayFrame(0); } catch { }
             }
             else
             {
