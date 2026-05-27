@@ -108,20 +108,50 @@ namespace DateManager
             // 라벨 클릭 이벤트가 필요 없다면 비워둡니다.
         }
 
-        private void btnLoadTub_Click(object sender, EventArgs e)
+        private async void btnLoadTub_Click(object sender, EventArgs e)
         {
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
+                fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
-                    // 💡 파일 1개가 아니라 폴더 전체 경로를 넘김
-                    _masterFrameList = _dataProcessor.LoadCatalogData(fbd.SelectedPath);
+                    string selectedPath = fbd.SelectedPath;
 
-                    if (_masterFrameList != null && _masterFrameList.Count > 0)
+                    // 로딩 중임을 사용자에게 알림 (UI가 멈추지 않음)
+                    this.Cursor = Cursors.WaitCursor;
+                    lstFrameData.Items.Clear();
+                    lstFrameData.Items.Add("데이터 로드 중... 잠시만 기다려주세요.");
+
+                    try
                     {
-                        RefreshFrameList(_masterFrameList);
+                        // 💡 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행
+                        _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath));
 
-                        MessageBox.Show($"총 {_masterFrameList.Count}개의 프레임 데이터 로드 완료!");
+                        // 로드 완료 후 UI 업데이트
+                        if (_masterFrameList != null && _masterFrameList.Count > 0)
+                        {
+                            lstFrameData.Items.Clear();
+                            foreach (var frame in _masterFrameList)
+                            {
+                                lstFrameData.Items.Add($"Frame {frame.FrameIndex} | Angle: {frame.Angle:F2}");
+                            }
+
+                            // 트랙바 범위 설정
+                            trkFrameSlider.Minimum = 0;
+                            trkFrameSlider.Maximum = _masterFrameList.Count - 1;
+                            trkFrameSlider.Value = 0;
+
+                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터를 로드했습니다!");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"데이터 로드 중 오류가 발생했습니다: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // 커서 복구
+                        this.Cursor = Cursors.Default;
                     }
                 }
             }
@@ -173,7 +203,7 @@ namespace DateManager
 
         private void btnDeleteData_Click(object sender, EventArgs e)
         {
-            // 1. 선택된 데이터가 있는지 확인// 1. 선택된 데이터가 있는지 확인 (리스트박스에서 선택된 항목이 없으면 -1 반환)
+            // 1. 선택된 데이터 확인
             if (lstFrameData.SelectedIndex == -1)
             {
                 MessageBox.Show("삭제할 프레임을 리스트에서 선택해주세요!", "선택 필요");
@@ -186,10 +216,12 @@ namespace DateManager
                 return;
             }
 
-            // 2. 삭제할 프레임 객체 가져오기
+            // 2. 삭제할 프레임 가져오기
             int selectedIndex = lstFrameData.SelectedIndex;
             DonkeyFrame targetFrame = _displayedFrameList[selectedIndex];
 
+
+            // 3. 사용자 확인 및 범위 삭제 로직
             // 3. 사용자 확인 절차
             DialogResult result = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
                                                   "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -199,49 +231,60 @@ namespace DateManager
             //!!!!!!아래 다중 삭제 로직 윤형규가 작성, 오류 발생 시 우선 주석처리 할 것
             if (Math.Max(start, end) - Math.Min(start, end) > 0)
             {
-                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
+                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?",
                                                   "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (rangeResult == DialogResult.Yes)
                 {
                     try
                     {
+                        // 💡 범위 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
+                        pbMainCam.Image?.Dispose();
+                        pbMainCam.Image = null;
+
                         _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
+
+
+
                         start = 0; end = 0;
                         lblSetRange.Text = "(0, 0)";
-                        //_displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
                         RefreshFrameList(_masterFrameList);
-
-                        MessageBox.Show("선택된 범위의 데이터가 성공적으로 삭제되었습니다.", "범위 삭제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("범위 삭제가 완료되었습니다.", "완료");
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러");
                     }
                     return;
                 }
             }
 
-            // 4. 새로운 클래스(FileRemover)를 사용하여 파일 및 리스트 삭제 호출
-            try
-            {
-                // 💡 여기서 분리한 클래스의 메서드를 호출합니다.
-                // _fileRemover는 Form1 생성자에서 미리 선언 및 초기화해 두어야 합니다.
-                _fileRemover.RemoveFrame(_masterFrameList, targetFrame);
+            // 4. 단일 삭제 로직
+            DialogResult result = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?",
+                                                  "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
-                // 5. UI 업데이트: 리스트박스에서 해당 항목 제거
-                _displayedFrameList.Remove(targetFrame);
-                RefreshFrameList(_displayedFrameList);
-                if (_displayedFrameList.Count > 0)
+            if (result == DialogResult.Yes)
+            {
+                try
                 {
-                    SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
-                }
+                    // 💡 단일 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
+                    pbMainCam.Image?.Dispose();
+                    pbMainCam.Image = null;
 
-                MessageBox.Show("삭제가 성공적으로 완료되었습니다.", "정제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                // 삭제 과정에서 발생한 에러 처리
-                MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    _fileRemover.RemoveFrame(_masterFrameList, targetFrame);
+
+                    // 5. UI 업데이트
+                    _displayedFrameList.Remove(targetFrame);
+                    RefreshFrameList(_displayedFrameList);
+                    if (_displayedFrameList.Count > 0)
+                    {
+                        SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
+                    }
+                    MessageBox.Show("삭제가 완료되었습니다.", "정제 완료");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러");
+                }
             }
         }
 
