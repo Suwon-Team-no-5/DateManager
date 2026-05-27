@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace DateManager
 {
@@ -42,28 +43,36 @@ namespace DateManager
         // 💡 [수정] 폴더 내 모든 파일을 한 번에 로드하는 메인 메서드
         public List<DonkeyFrame> LoadCatalogData(string folderPath)
         {
-            List<DonkeyFrame> allFrames = new List<DonkeyFrame>();
-            string imagesFolderPath = Path.Combine(folderPath, "images");
-
-            // 폴더 내 모든 .catalog 파일 검색
-            string[] catalogFiles = Directory.GetFiles(folderPath, "*.catalog");
-
-            int globalIndex = 0;
-            foreach (string file in catalogFiles)
             {
-                List<DonkeyFrame> framesFromFile = ParseSingleCatalog(file, imagesFolderPath);
-                foreach (var frame in framesFromFile)
+                string imagesFolderPath = Path.Combine(folderPath, "images");
+                string[] catalogFiles = Directory.GetFiles(folderPath, "*.catalog");
+
+                // 1. 파일별로 데이터 세트를 나눔
+                var list = new System.Collections.Concurrent.ConcurrentBag<List<DonkeyFrame>>();
+
+                // 2. 파일별로 병렬 파싱
+                Parallel.ForEach(catalogFiles, file =>
                 {
-                    if (!string.IsNullOrEmpty(frame.FullImagePath) && File.Exists(frame.FullImagePath))
-                    {
-                        // 이미지가 존재하는 경우에만 globalIndex를 부여하고 리스트에 추가
-                        frame.FrameIndex = globalIndex++;
-                        allFrames.Add(frame);
-                    }
-                    
+                    list.Add(ParseSingleCatalog(file, imagesFolderPath));
+                });
+
+                // 3. 하나로 합치기
+                List<DonkeyFrame> allFrames = new List<DonkeyFrame>();
+                foreach (var fileList in list)
+                {
+                    allFrames.AddRange(fileList);
                 }
+
+                // 4. 여기서 결정적 수정! 
+                // 정렬을 먼저 하고(필요 시), 그다음에 0부터 차례대로 번호를 매깁니다.
+                // (만약 카탈로그 파일 이름순으로 정렬해야 한다면 OrderBy 사용)
+                for (int i = 0; i < allFrames.Count; i++)
+                {
+                    allFrames[i].FrameIndex = i;
+                }
+
+                return allFrames;
             }
-            return allFrames;
         }
 
         // 개별 파일 파싱 전용 로직
