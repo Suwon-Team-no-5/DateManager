@@ -18,7 +18,7 @@ namespace DateManager
 
         private Picture _pictureHandler;
         private readonly System.Windows.Forms.Timer _playbackTimer;
-        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
+        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0, 8.0 };
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
 
@@ -135,7 +135,7 @@ namespace DateManager
 
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
 
-             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
+            //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
             if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
@@ -170,7 +170,7 @@ namespace DateManager
             if (result == DialogResult.No) return; // 사용자가 삭제를 취소한 경우 함수 종료
 
             //!!!!!!아래 다중 삭제 로직 윤형규가 작성, 오류 발생 시 우선 주석처리 할 것
-            if(Math.Max(start, end) - Math.Min(start, end) > 0)
+            if (Math.Max(start, end) - Math.Min(start, end) > 0)
             {
                 DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
                                                   "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -179,7 +179,7 @@ namespace DateManager
                     try
                     {
                         _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
-                        start = 0; end = 0; 
+                        start = 0; end = 0;
                         lblSetRange.Text = "(0, 0)";
                         //_displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
                         RefreshFrameList(_masterFrameList);
@@ -411,13 +411,18 @@ namespace DateManager
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;
-            lblSetRange.Text = "(" + start + ", " + end +")";
+            lblSetRange.Text = "(" + start + ", " + end + ")";
         }
 
         private void btnSetRight_Click(object sender, EventArgs e)
         {
             end = lstFrameData.SelectedIndex;
-            lblSetRange.Text= "(" + start + ", " + end + ")";
+            lblSetRange.Text = "(" + start + ", " + end + ")";
+        }
+
+        private void btnStartTraining_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
