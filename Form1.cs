@@ -127,20 +127,10 @@ namespace DateManager
                         // 💡 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행
                         _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath));
 
-                        // 로드 완료 후 UI 업데이트
+                        // 로드 완료 후 UI 업데이트: 마스터 리스트를 바로 표시 리스트로 반영
                         if (_masterFrameList != null && _masterFrameList.Count > 0)
                         {
-                            lstFrameData.Items.Clear();
-                            foreach (var frame in _masterFrameList)
-                            {
-                                lstFrameData.Items.Add($"Frame {frame.FrameIndex} | Angle: {frame.Angle:F2}");
-                            }
-
-                            // 트랙바 범위 설정
-                            trkFrameSlider.Minimum = 0;
-                            trkFrameSlider.Maximum = _masterFrameList.Count - 1;
-                            trkFrameSlider.Value = 0;
-
+                            RefreshFrameList(_masterFrameList);
                             MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터를 로드했습니다!");
                         }
                     }
@@ -259,10 +249,10 @@ namespace DateManager
             }
 
             // 4. 단일 삭제 로직
-            DialogResult result = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?",
+            DialogResult singleResult = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?",
                                                   "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
-            if (result == DialogResult.Yes)
+            if (singleResult == DialogResult.Yes)
             {
                 try
                 {
