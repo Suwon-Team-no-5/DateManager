@@ -394,6 +394,25 @@ namespace DateManager
                 e.Handled = true;
             }
 
+            // Home/End: 첫 프레임 / 마지막 프레임으로 이동
+            if (e.KeyCode == Keys.Home)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(0);
+                }
+                e.Handled = true;
+            }
+
+            if (e.KeyCode == Keys.End)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(_displayedFrameList.Count - 1);
+                }
+                e.Handled = true;
+            }
+
             // Enter: 포커스가 올라간 버튼을 클릭 처리
             if (e.KeyCode == Keys.Enter)
             {
