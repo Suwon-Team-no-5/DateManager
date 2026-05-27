@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -9,6 +9,9 @@ namespace DateManager
     {
         // 데이터 정제 및 로드를 담당하는 핵심 백엔드 클래스 선언
         private DataProcessor _dataProcessor;
+
+        // AI 백엔드 엔진 클래스 선언
+        private Trainer donkeyTrainer = new Trainer();
 
         // 메모리에 로드된 전체 카탈로그 데이터를 담아둘 마스터 리스트
         private List<DonkeyFrame> _masterFrameList;
@@ -36,6 +39,30 @@ namespace DateManager
             _playbackTimer = new System.Windows.Forms.Timer(); //재생하면서 넘길 타이머
             _playbackTimer.Tick += PlaybackTimer_Tick;
             UpdatePlaybackInterval();// 타이머 간격을 초기 배속에 맞게 설정
+
+            // 프로그램 켜질 때 AI 실시간 로그 이벤트 연결
+            donkeyTrainer.LogReceived += (logText) =>
+            {
+                this.Invoke((MethodInvoker)delegate
+                {
+                    rtbTrainLog.AppendText(logText);
+                    rtbTrainLog.SelectionStart = rtbTrainLog.TextLength;
+                    rtbTrainLog.ScrollToCaret();
+                });
+            };
+
+            // AI 학습이 완전히 끝났을 때 버튼 복구 이벤트 연결
+            donkeyTrainer.TrainingFinished += () =>
+            {
+                this.Invoke((MethodInvoker)delegate
+                {
+                    btnStartTraining.Enabled = true;
+                });
+            };
+
+            // 폼이 완전히 닫힐 때 백그라운드 좀비 프로세스 방지 안전장치 연결
+            this.FormClosing += (s, e) => donkeyTrainer.KillProcess();
+
         }
 
         /// <summary>
@@ -135,7 +162,7 @@ namespace DateManager
 
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
 
-             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
+            //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
             if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
@@ -170,7 +197,7 @@ namespace DateManager
             if (result == DialogResult.No) return; // 사용자가 삭제를 취소한 경우 함수 종료
 
             //!!!!!!아래 다중 삭제 로직 윤형규가 작성, 오류 발생 시 우선 주석처리 할 것
-            if(Math.Max(start, end) - Math.Min(start, end) > 0)
+            if (Math.Max(start, end) - Math.Min(start, end) > 0)
             {
                 DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
                                                   "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -179,7 +206,7 @@ namespace DateManager
                     try
                     {
                         _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
-                        start = 0; end = 0; 
+                        start = 0; end = 0;
                         lblSetRange.Text = "(0, 0)";
                         //_displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
                         RefreshFrameList(_masterFrameList);
@@ -411,13 +438,28 @@ namespace DateManager
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;
-            lblSetRange.Text = "(" + start + ", " + end +")";
+            lblSetRange.Text = "(" + start + ", " + end + ")";
         }
 
         private void btnSetRight_Click(object sender, EventArgs e)
         {
             end = lstFrameData.SelectedIndex;
-            lblSetRange.Text= "(" + start + ", " + end + ")";
+            lblSetRange.Text = "(" + start + ", " + end + ")";
+        }
+
+        private async void btnStart_Click(object sender, EventArgs e)
+        {
+            rtbTrainLog.Clear();
+            rtbTrainLog.AppendText("🚀 AI 학습 연동 테스트를 시작합니다...\r\n");
+
+            // 중복 클릭 방지 차단
+            btnStartTraining.Enabled = false;
+
+            string pythonPath = "wsl.exe";
+            string mycarDir = "/home/jaeseo03/mycar";
+
+            // 백그라운드 스레드에서 안전하게 리눅스 딥러닝 프로세스 구동
+            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
     }
 }
