@@ -33,8 +33,7 @@ namespace DateManager
 
     public class DataProcessor
     {
-        // 간단한 설명 주석 추가: 이 클래스는 카탈로그(.catalog) 파일을 읽어 DonkeyFrame 리스트로 반환합니다.
-        // 성능 개선 포인트: 스트리밍, 병렬 처리, 에러 격리
+        // 데이터 처리 클래스: 카탈로그(.catalog) 파일을 읽어 DonkeyFrame 리스트로 반환합니다.
         // 💡 [추가] 기존 호출 방식(인수 2개)과 호환을 위한 오버로드 메서드
         public List<DonkeyFrame> LoadCatalogData(string catalogFilePath, string imagesFolderPath)
         {
@@ -110,82 +109,7 @@ namespace DateManager
             return allFrames;
         }
 
-        // Overload: 진행률 보고를 지원하는 버전
-        public List<DonkeyFrame> LoadCatalogData(string folderPath, IProgress<int> progress)
-        {
-            string imagesFolderPath = Path.Combine(folderPath, "images");
-            string[] catalogFiles = Directory.GetFiles(folderPath, "*.catalog");
 
-            var allFramesBag = new ConcurrentBag<DonkeyFrame>();
-            var po = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1) };
-
-            int totalFiles = catalogFiles.Length;
-            int processedFiles = 0;
-
-            Parallel.ForEach(catalogFiles, po, file =>
-            {
-                try
-                {
-                    foreach (string line in File.ReadLines(file))
-                    {
-                        if (string.IsNullOrWhiteSpace(line)) continue;
-                        try
-                        {
-                            DonkeyFrame frame = JsonConvert.DeserializeObject<DonkeyFrame>(line);
-                            if (frame == null) continue;
-
-                            if (frame.SessionId == "26-05-21_1" || string.IsNullOrEmpty(frame.ImagePath))
-                            {
-                                frame.IsNewData = true;
-                                frame.DataTypeSummary = "신규 수집(이미지 누락)";
-                                frame.FullImagePath = "";
-                            }
-                            else
-                            {
-                                frame.IsNewData = false;
-                                frame.DataTypeSummary = "기존 데이터(정상)";
-                                frame.FullImagePath = Path.Combine(imagesFolderPath, frame.ImagePath);
-                            }
-
-                            allFramesBag.Add(frame);
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-                    }
-                }
-                catch
-                {
-                }
-                finally
-                {
-                    if (totalFiles > 0)
-                    {
-                        int processed = System.Threading.Interlocked.Increment(ref processedFiles);
-                        int percent = (int)Math.Round(processed * 100.0 / totalFiles);
-                        try { progress?.Report(percent); } catch { }
-                    }
-                }
-            });
-
-            List<DonkeyFrame> allFrames = allFramesBag.ToList();
-            if (allFrames.Count == 0)
-            {
-                try { progress?.Report(100); } catch { }
-                return allFrames;
-            }
-
-            allFrames = allFrames.OrderBy(f => f.Index).ToList();
-
-            for (int i = 0; i < allFrames.Count; i++)
-            {
-                allFrames[i].FrameIndex = i;
-            }
-
-            try { progress?.Report(100); } catch { }
-            return allFrames;
-        }
 
         // 이전에는 파일 전체를 한꺼번에 읽어들이는 방식이었으나
         // 이제 File.ReadLines 기반 스트리밍으로 처리하므로 이 헬퍼는 더이상 사용되지 않습니다.

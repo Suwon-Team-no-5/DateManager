@@ -97,23 +97,8 @@ namespace DateManager
 
                     try
                     {
-                        // 진행률 표시를 위한 Progress<int> 생성
-                        var progress = new Progress<int>(percent =>
-                        {
-                            // 간단히 로그 박스에 진행률을 출력
-                            try
-                            {
-                                rtbTrainLog.AppendText($"로드 진행: {percent}%\r\n");
-                                if (percent >= 100)
-                                {
-                                    rtbTrainLog.AppendText("로드 완료.\r\n");
-                                }
-                            }
-                            catch { }
-                        });
-
-                        // 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행, 진행률 보고 사용
-                        _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath, progress));
+                        // 💡 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행
+                        _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath));
 
                         // 로드 완료 후 UI 업데이트
                         if (_masterFrameList != null && _masterFrameList.Count > 0)
