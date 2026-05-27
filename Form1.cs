@@ -134,7 +134,7 @@ namespace DateManager
         {
             if (_masterFrameList == null || _masterFrameList.Count == 0)
             {
-                MessageBox.Show("먼저 데이터를 로드해 주세요!", "알림");
+                MessageBox.Show("먼저 데이터를 로드해 주세요!", "알림!");
                 return;
             }
 
