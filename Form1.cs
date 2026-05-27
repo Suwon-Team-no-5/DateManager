@@ -360,6 +360,35 @@ namespace DateManager
             {
                 ClearFramePreview();
             }
+
+            // 로드 후 UI 컨트롤 상태를 일관되게 유지
+            UpdateControlsAfterLoad();
+        }
+
+        // 데이터가 로드되거나 리스트가 갱신된 후에 각종 컨트롤(재생, 정지, 탐색 버튼 등)을
+        // 현재 표시 중인 데이터의 유무에 따라 적절히 활성/비활성화합니다.
+        private void UpdateControlsAfterLoad()
+        {
+            bool has = _displayedFrameList != null && _displayedFrameList.Count > 0;
+
+            // 탐색 관련
+            btnPlay.Enabled = has;
+            btnStop.Enabled = has;
+            btnPrev.Enabled = has;
+            btnNext.Enabled = has;
+            btnFastForward.Enabled = has;
+            btnFastRewind.Enabled = has;
+            trkFrameSlider.Enabled = has;
+
+            if (!has)
+            {
+                StopPlayback();
+            }
+            else
+            {
+                // 기본 재생 버튼 텍스트 및 상태 초기화
+                btnPlay.Text = _playbackTimer.Enabled ? "⏸ 일시정지" : "▶ 재생";
+            }
         }
 
         private void SelectFrame(int index)
