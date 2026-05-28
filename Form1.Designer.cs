@@ -390,6 +390,7 @@
             lstFrameData.FormattingEnabled = true;
             lstFrameData.Location = new Point(14, 45);
             lstFrameData.Name = "lstFrameData";
+            lstFrameData.SelectionMode = SelectionMode.MultiExtended;
             lstFrameData.Size = new Size(161, 240);
             lstFrameData.TabIndex = 0;
             lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;

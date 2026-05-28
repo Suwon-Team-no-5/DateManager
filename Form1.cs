@@ -191,8 +191,7 @@ namespace DateManager
             {
                 filteredList = filteredList.FindAll(frame => frame.Throttle == 0);
             }
-
-            // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
+            
             if (chkFilterLargeAngle.Checked)
             {
                 filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 5);
@@ -221,7 +220,7 @@ namespace DateManager
         private void btnDeleteData_Click(object sender, EventArgs e)
         {
             // 1. 선택된 데이터 확인
-            if (lstFrameData.SelectedIndex == -1)
+            if (lstFrameData.SelectedIndices.Count == 0)
             {
                 MessageBox.Show("삭제할 프레임을 리스트에서 선택해주세요!", "선택 필요");
                 return;
@@ -233,74 +232,53 @@ namespace DateManager
                 return;
             }
 
-            // 2. 삭제할 프레임 가져오기
-            int selectedIndex = lstFrameData.SelectedIndex;
-            DonkeyFrame targetFrame = _displayedFrameList[selectedIndex];
+            int firstSelectedIndex = lstFrameData.SelectedIndices.Cast<int>().Min();
+            List<DonkeyFrame> selectedFrames = lstFrameData.SelectedIndices
+                .Cast<int>()
+                .Where(index => index >= 0 && index < _displayedFrameList.Count)
+                .Select(index => _displayedFrameList[index])
+                .ToList();
 
-
-            // 3. 사용자 확인 및 범위 삭제 로직
-            // 3. 사용자 확인 절차
-            DialogResult result = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
-                                                  "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            if (result == DialogResult.No) return; // 사용자가 삭제를 취소한 경우 함수 종료
-
-            //!!!!!!아래 다중 삭제 로직 윤형규가 작성, 오류 발생 시 우선 주석처리 할 것
-            if (Math.Max(start, end) - Math.Min(start, end) > 0)
+            if (selectedFrames.Count == 0)
             {
-                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?",
-                                                  "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (rangeResult == DialogResult.Yes)
-                {
-                    try
-                    {
-                        // 💡 범위 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
-                        pbMainCam.Image?.Dispose();
-                        pbMainCam.Image = null;
-
-                        _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
-
-
-
-                        start = 0; end = 0;
-                        RefreshFrameList(_masterFrameList);
-                        MessageBox.Show("범위 삭제가 완료되었습니다.", "완료");
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러");
-                    }
-                    return;
-                }
+                MessageBox.Show("삭제할 프레임을 찾을 수 없습니다.", "알림");
+                return;
             }
 
-            // 4. 단일 삭제 로직
-            DialogResult singleResult = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?",
-                                                  "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            string previewText = selectedFrames.Count == 1
+                ? $"Frame {selectedFrames[0].FrameIndex}번 데이터를 catalog 파일에서 삭제할까요?"
+                : $"선택된 {selectedFrames.Count}개 데이터를 catalog 파일에서 삭제할까요?";
 
-            if (singleResult == DialogResult.Yes)
+            DialogResult confirmResult = MessageBox.Show(
+                $"{previewText}\n삭제 전 원본 catalog 파일은 backup 폴더에 저장됩니다.",
+                "삭제 확인",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            try
             {
-                try
-                {
-                    // 💡 단일 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
-                    pbMainCam.Image?.Dispose();
-                    pbMainCam.Image = null;
+                // 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
+                pbMainCam.Image?.Dispose();
+                pbMainCam.Image = null;
 
-                    _fileRemover.RemoveFrame(_masterFrameList, targetFrame);
+                DeleteResult deleteResult = _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, selectedFrames);
 
-                    // 5. UI 업데이트
-                    _displayedFrameList.Remove(targetFrame);
-                    RefreshFrameList(_displayedFrameList);
-                    if (_displayedFrameList.Count > 0)
-                    {
-                        SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
-                    }
-                    MessageBox.Show("삭제가 완료되었습니다.", "정제 완료");
-                }
-                catch (Exception ex)
+                _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
+                RefreshFrameList(_displayedFrameList);
+                if (_displayedFrameList.Count > 0)
                 {
-                    MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러");
+                    SelectFrame(Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1));
                 }
+
+                MessageBox.Show(
+                    $"{deleteResult.DeletedCount}개 데이터 삭제가 완료되었습니다.\n백업 파일 {deleteResult.BackupFiles.Count}개가 backup 폴더에 저장되었습니다.",
+                    "정제 완료");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러");
             }
         }
 
@@ -629,7 +607,7 @@ namespace DateManager
             btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/giju/mycar";
+            string mycarDir = "/home/jinchul04/mycar";
 
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
