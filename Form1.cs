@@ -85,7 +85,6 @@ namespace DateManager
             // 필요한 경우 여기에 초기화 코드를 넣습니다.
             // 요청된 탭 순서: 설정 파일 로드 -> 학습 데이터 로드 -> AI 학습 시작 -> 시작지점 -> 종료지점 -> 필터 적용 -> 삭제 -> 재생 -> 정지 -> 배속
             _focusOrder.Clear();
-            _focusOrder.Add(btnLoadConfig);    // 설정 파일 로드
             _focusOrder.Add(btnLoadTub);       // 학습 데이터 로드
             _focusOrder.Add(btnStartTraining); // AI 학습 시작
             _focusOrder.Add(btnSetLeft);       // 시작 지점
