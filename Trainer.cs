@@ -22,10 +22,31 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
             try
             {
                 ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = pythonPath; // "wsl.exe"가 들어옴
+                // 파라미터로 들어온 pythonPath가 wsl.exe인지 확인
+                string exeName = Path.GetFileName(pythonPath ?? "").ToLower();
 
-                // -u 옵션 대신 파이썬 환경변수(PYTHONUNBUFFERED=1)를 쉘에 주어 실시간 로그를 강제 보장합니다.
-                psi.Arguments = $"-e bash -lic \"export PYTHONUNBUFFERED=1 && conda activate e2e_env && cd {workingDir} && python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+                if (exeName.Contains("wsl"))
+                {
+                    psi.FileName = pythonPath; // wsl.exe
+
+                    // WSL 비인터랙티브 셸에서 conda를 사용하려면 shell hook 또는 bashrc를 명시적으로 불러와야 함
+                    string safeWorkingDir = workingDir?.Replace("\"", "\\\"") ?? string.Empty;
+                    psi.Arguments = $"-e bash -lic \"export PYTHONUNBUFFERED=1; source ~/.bashrc 2>/dev/null || true; eval \\\"$(conda shell.bash hook)\\\" 2>/dev/null || true; conda activate e2e_env && cd '{safeWorkingDir}' && python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+
+                    // 로그로 실행 명령 확인(디버깅용)
+                    LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments}\r\n");
+                }
+                else
+                {
+                    // 윈도우 로컬 Python 또는 절대 경로로 직접 실행하는 경우
+                    psi.FileName = pythonPath; // ex: "python" 또는 "C:\\Python\\python.exe"
+                    psi.WorkingDirectory = workingDir;
+                    // train.py 경로를 인수로 전달
+                    string scriptPath = Path.Combine(workingDir ?? string.Empty, "train.py");
+                    psi.Arguments = $"\"{scriptPath}\" --tub=./data/ --model=./models/mypilot.h5";
+
+                    LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments} (cwd={psi.WorkingDirectory})\r\n");
+                }
 
                 psi.UseShellExecute = false;
                 psi.CreateNoWindow = true;
