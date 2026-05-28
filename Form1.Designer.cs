@@ -35,6 +35,8 @@
             lblThrottleTop = new Label();
             lblTimestamp = new Label();
             pnlCamView = new Panel();
+            btnViewLog = new Button();
+            btnViewMonitor = new Button();
             lblCamViewTitle = new Label();
             pnlNavigation = new Panel();
             lblNavTitle = new Label();
@@ -50,10 +52,10 @@
             lblFrameListTitle = new Label();
             lstFrameData = new ListBox();
             pnlSystemOps = new Panel();
+            btnStopTraining = new Button();
             lblSystemOpsTitle = new Label();
             btnStartTraining = new Button();
             btnLoadTub = new Button();
-            btnLoadConfig = new Button();
             pnlDataManagement = new Panel();
             lblDataMgmtTitle = new Label();
             lblSetRange = new Label();
@@ -64,7 +66,7 @@
             pnlFilterOptions = new Panel();
             lblFilterTitle = new Label();
             chkFilterLargeAngle = new CheckBox();
-            chkFilterAngleZero = new CheckBox();
+            chkFilterLargeThr = new CheckBox();
             chkFilterThr = new CheckBox();
             pnlTrainingLog = new Panel();
             lblLogTitle = new Label();
@@ -117,7 +119,7 @@
             lblAngle.AutoSize = true;
             lblAngle.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             lblAngle.ForeColor = Color.White;
-            lblAngle.Location = new Point(221, 45);
+            lblAngle.Location = new Point(332, 45);
             lblAngle.Name = "lblAngle";
             lblAngle.Size = new Size(104, 23);
             lblAngle.TabIndex = 3;
@@ -128,7 +130,7 @@
             lblThrottleTop.AutoSize = true;
             lblThrottleTop.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             lblThrottleTop.ForeColor = Color.White;
-            lblThrottleTop.Location = new Point(404, 45);
+            lblThrottleTop.Location = new Point(518, 45);
             lblThrottleTop.Name = "lblThrottleTop";
             lblThrottleTop.Size = new Size(87, 23);
             lblThrottleTop.TabIndex = 4;
@@ -139,7 +141,7 @@
             lblTimestamp.AutoSize = true;
             lblTimestamp.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             lblTimestamp.ForeColor = Color.DarkGray;
-            lblTimestamp.Location = new Point(588, 45);
+            lblTimestamp.Location = new Point(676, 45);
             lblTimestamp.Name = "lblTimestamp";
             lblTimestamp.Size = new Size(83, 23);
             lblTimestamp.TabIndex = 5;
@@ -149,6 +151,8 @@
             // 
             pnlCamView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlCamView.BackColor = Color.FromArgb(45, 45, 48);
+            pnlCamView.Controls.Add(btnViewLog);
+            pnlCamView.Controls.Add(btnViewMonitor);
             pnlCamView.Controls.Add(lblCamViewTitle);
             pnlCamView.Controls.Add(prgThrottle);
             pnlCamView.Controls.Add(pbMainCam);
@@ -160,6 +164,34 @@
             pnlCamView.Name = "pnlCamView";
             pnlCamView.Size = new Size(845, 529);
             pnlCamView.TabIndex = 6;
+            // 
+            // btnViewLog
+            // 
+            btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewLog.FlatStyle = FlatStyle.Flat;
+            btnViewLog.Font = new Font("Segoe UI", 9.5F);
+            btnViewLog.ForeColor = Color.White;
+            btnViewLog.Location = new Point(725, 0);
+            btnViewLog.Name = "btnViewLog";
+            btnViewLog.Size = new Size(120, 29);
+            btnViewLog.TabIndex = 8;
+            btnViewLog.Text = "AI 학습 로그";
+            btnViewLog.UseVisualStyleBackColor = false;
+            btnViewLog.Visible = false;
+            // 
+            // btnViewMonitor
+            // 
+            btnViewMonitor.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewMonitor.FlatStyle = FlatStyle.Flat;
+            btnViewMonitor.Font = new Font("Segoe UI", 9.5F);
+            btnViewMonitor.ForeColor = Color.White;
+            btnViewMonitor.Location = new Point(603, 0);
+            btnViewMonitor.Name = "btnViewMonitor";
+            btnViewMonitor.Size = new Size(120, 29);
+            btnViewMonitor.TabIndex = 7;
+            btnViewMonitor.Text = "주행 모니터";
+            btnViewMonitor.UseVisualStyleBackColor = false;
+            btnViewMonitor.Visible = false;
             // 
             // lblCamViewTitle
             // 
@@ -361,14 +393,28 @@
             // 
             pnlSystemOps.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             pnlSystemOps.BackColor = Color.FromArgb(45, 45, 48);
+            pnlSystemOps.Controls.Add(btnStopTraining);
             pnlSystemOps.Controls.Add(lblSystemOpsTitle);
             pnlSystemOps.Controls.Add(btnStartTraining);
             pnlSystemOps.Controls.Add(btnLoadTub);
-            pnlSystemOps.Controls.Add(btnLoadConfig);
             pnlSystemOps.Location = new Point(1096, 71);
             pnlSystemOps.Name = "pnlSystemOps";
             pnlSystemOps.Size = new Size(175, 315);
             pnlSystemOps.TabIndex = 9;
+            // 
+            // btnStopTraining
+            // 
+            btnStopTraining.BackColor = Color.FromArgb(211, 47, 47);
+            btnStopTraining.FlatAppearance.BorderSize = 0;
+            btnStopTraining.FlatStyle = FlatStyle.Flat;
+            btnStopTraining.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            btnStopTraining.ForeColor = Color.White;
+            btnStopTraining.Location = new Point(14, 233);
+            btnStopTraining.Name = "btnStopTraining";
+            btnStopTraining.Size = new Size(147, 62);
+            btnStopTraining.TabIndex = 9;
+            btnStopTraining.Text = "AI 학습\r\n중지";
+            btnStopTraining.UseVisualStyleBackColor = false;
             // 
             // lblSystemOpsTitle
             // 
@@ -388,12 +434,13 @@
             btnStartTraining.FlatStyle = FlatStyle.Flat;
             btnStartTraining.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             btnStartTraining.ForeColor = Color.White;
-            btnStartTraining.Location = new Point(14, 165);
+            btnStartTraining.Location = new Point(14, 106);
             btnStartTraining.Name = "btnStartTraining";
-            btnStartTraining.Size = new Size(147, 134);
+            btnStartTraining.Size = new Size(147, 121);
             btnStartTraining.TabIndex = 2;
             btnStartTraining.Text = "AI 학습\r\n시작";
             btnStartTraining.UseVisualStyleBackColor = false;
+            btnStartTraining.Click += btnStart_Click;
             // 
             // btnLoadTub
             // 
@@ -402,27 +449,13 @@
             btnLoadTub.FlatStyle = FlatStyle.Flat;
             btnLoadTub.Font = new Font("Segoe UI", 9.5F);
             btnLoadTub.ForeColor = Color.White;
-            btnLoadTub.Location = new Point(14, 101);
+            btnLoadTub.Location = new Point(14, 50);
             btnLoadTub.Name = "btnLoadTub";
             btnLoadTub.Size = new Size(147, 50);
             btnLoadTub.TabIndex = 1;
             btnLoadTub.Text = "학습 데이터 로드";
             btnLoadTub.UseVisualStyleBackColor = false;
             btnLoadTub.Click += btnLoadTub_Click;
-            // 
-            // btnLoadConfig
-            // 
-            btnLoadConfig.BackColor = Color.FromArgb(62, 62, 66);
-            btnLoadConfig.FlatAppearance.BorderSize = 0;
-            btnLoadConfig.FlatStyle = FlatStyle.Flat;
-            btnLoadConfig.Font = new Font("Segoe UI", 9.5F);
-            btnLoadConfig.ForeColor = Color.White;
-            btnLoadConfig.Location = new Point(14, 45);
-            btnLoadConfig.Name = "btnLoadConfig";
-            btnLoadConfig.Size = new Size(147, 45);
-            btnLoadConfig.TabIndex = 0;
-            btnLoadConfig.Text = "설정 파일 로드";
-            btnLoadConfig.UseVisualStyleBackColor = false;
             // 
             // pnlDataManagement
             // 
@@ -525,7 +558,7 @@
             pnlFilterOptions.BackColor = Color.FromArgb(30, 30, 30);
             pnlFilterOptions.Controls.Add(lblFilterTitle);
             pnlFilterOptions.Controls.Add(chkFilterLargeAngle);
-            pnlFilterOptions.Controls.Add(chkFilterAngleZero);
+            pnlFilterOptions.Controls.Add(chkFilterLargeThr);
             pnlFilterOptions.Controls.Add(chkFilterThr);
             pnlFilterOptions.Location = new Point(14, 45);
             pnlFilterOptions.Name = "pnlFilterOptions";
@@ -554,16 +587,16 @@
             chkFilterLargeAngle.Text = "급커브 데이터";
             chkFilterLargeAngle.UseVisualStyleBackColor = true;
             // 
-            // chkFilterAngleZero
+            // chkFilterLargeThr
             // 
-            chkFilterAngleZero.AutoSize = true;
-            chkFilterAngleZero.ForeColor = Color.White;
-            chkFilterAngleZero.Location = new Point(91, 30);
-            chkFilterAngleZero.Name = "chkFilterAngleZero";
-            chkFilterAngleZero.Size = new Size(61, 24);
-            chkFilterAngleZero.TabIndex = 1;
-            chkFilterAngleZero.Text = "직진";
-            chkFilterAngleZero.UseVisualStyleBackColor = true;
+            chkFilterLargeThr.AutoSize = true;
+            chkFilterLargeThr.ForeColor = Color.White;
+            chkFilterLargeThr.Location = new Point(91, 30);
+            chkFilterLargeThr.Name = "chkFilterLargeThr";
+            chkFilterLargeThr.Size = new Size(111, 24);
+            chkFilterLargeThr.TabIndex = 1;
+            chkFilterLargeThr.Text = "과속 데이터";
+            chkFilterLargeThr.UseVisualStyleBackColor = true;
             // 
             // chkFilterThr
             // 
@@ -573,7 +606,7 @@
             chkFilterThr.Name = "chkFilterThr";
             chkFilterThr.Size = new Size(80, 24);
             chkFilterThr.TabIndex = 0;
-            chkFilterThr.Text = "속도>0";
+            chkFilterThr.Text = "속도=0";
             chkFilterThr.UseVisualStyleBackColor = true;
             // 
             // pnlTrainingLog
@@ -693,11 +726,10 @@
         private Button btnNext;
         private Button btnPrev;
         private Button btnPlay;
-        private Button btnLoadConfig;
         private Button btnStartTraining;
         private Button btnLoadTub;
         private CheckBox chkFilterLargeAngle;
-        private CheckBox chkFilterAngleZero;
+        private CheckBox chkFilterLargeThr;
         private CheckBox chkFilterThr;
         private Button btnApplyFilter;
         private Button btnSetLeft;
@@ -706,5 +738,8 @@
         private Button btnSpeed;
         private Label lblSetRange;
         private RichTextBox rtbTrainLog;
+        private Button btnViewLog;
+        private Button btnViewMonitor;
+        private Button btnStopTraining;
     }
 }

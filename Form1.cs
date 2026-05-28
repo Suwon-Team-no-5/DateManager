@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -10,6 +10,9 @@ namespace DateManager
         // 데이터 정제 및 로드를 담당하는 핵심 백엔드 클래스 선언
         private DataProcessor _dataProcessor;
 
+        // AI 백엔드 엔진 클래스 선언
+        private Trainer donkeyTrainer = new Trainer();
+
         // 메모리에 로드된 전체 카탈로그 데이터를 담아둘 마스터 리스트
         private List<DonkeyFrame> _masterFrameList;
         private List<DonkeyFrame> _displayedFrameList;
@@ -18,7 +21,7 @@ namespace DateManager
 
         private Picture _pictureHandler;
         private readonly System.Windows.Forms.Timer _playbackTimer;
-        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
+        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0, 8.0 };
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
 
@@ -26,6 +29,13 @@ namespace DateManager
         {
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
             InitializeComponent();
+
+            // 폼에서 키 입력을 전역으로 처리하도록 설정
+            this.KeyPreview = true;
+            this.KeyDown += Form1_KeyDown;
+
+            // 탭 순서를 명시적으로 관리하기 위한 리스트 초기화
+            _focusOrder = new List<Control>();
 
             // 프로그램이 켜질 때 객체들을 초기화해 줍니다.
             _dataProcessor = new DataProcessor();
@@ -36,7 +46,36 @@ namespace DateManager
             _playbackTimer = new System.Windows.Forms.Timer(); //재생하면서 넘길 타이머
             _playbackTimer.Tick += PlaybackTimer_Tick;
             UpdatePlaybackInterval();// 타이머 간격을 초기 배속에 맞게 설정
+
+            // 프로그램 켜질 때 AI 실시간 로그 이벤트 연결
+            donkeyTrainer.LogReceived += (logText) =>
+            {
+                this.Invoke((MethodInvoker)delegate
+                {
+                    rtbTrainLog.AppendText(logText);
+                    rtbTrainLog.SelectionStart = rtbTrainLog.TextLength;
+                    rtbTrainLog.ScrollToCaret();
+                });
+            };
+
+            // AI 학습이 완전히 끝났을 때 버튼 복구 이벤트 연결
+            donkeyTrainer.TrainingFinished += () =>
+            {
+                this.Invoke((MethodInvoker)delegate
+                {
+                    btnStartTraining.Enabled = true;   // ⭕ 시작 버튼 다시 켜고
+                    btnStopTraining.Enabled = false;  // ❌ 중단 버튼은 다시 잠그기
+                });
+            };
+
+            // 폼이 완전히 닫힐 때 백그라운드 좀비 프로세스 방지 안전장치 연결
+            this.FormClosing += (s, e) => donkeyTrainer.KillProcess();
+
         }
+
+        // 탭 순서 제어를 위한 컨트롤 리스트
+        private List<Control> _focusOrder;
+
 
         /// <summary>
         /// 폼이 처음 로드될 때 실행되는 함수입니다. (중복 제거 완료)
@@ -44,6 +83,21 @@ namespace DateManager
         private void Form1_Load(object sender, EventArgs e)
         {
             // 필요한 경우 여기에 초기화 코드를 넣습니다.
+            // 요청된 탭 순서: 설정 파일 로드 -> 학습 데이터 로드 -> AI 학습 시작 -> 시작지점 -> 종료지점 -> 필터 적용 -> 삭제 -> 재생 -> 정지 -> 배속
+            _focusOrder.Clear();
+            _focusOrder.Add(btnLoadConfig);    // 설정 파일 로드
+            _focusOrder.Add(btnLoadTub);       // 학습 데이터 로드
+            _focusOrder.Add(btnStartTraining); // AI 학습 시작
+            _focusOrder.Add(btnSetLeft);       // 시작 지점
+            _focusOrder.Add(btnSetRight);      // 종료 지점
+            _focusOrder.Add(btnApplyFilter);   // 필터 적용
+            _focusOrder.Add(btnDeleteData);    // 삭제
+            _focusOrder.Add(btnPlay);          // 재생
+            _focusOrder.Add(btnStop);          // 정지
+            _focusOrder.Add(btnSpeed);         // 배속
+
+            // 포커스 가능한 컨트롤들에 TabStop 활성화
+            foreach (var c in _focusOrder) c.TabStop = true;
         }
 
         /// <summary>
@@ -81,20 +135,40 @@ namespace DateManager
             // 라벨 클릭 이벤트가 필요 없다면 비워둡니다.
         }
 
-        private void btnLoadTub_Click(object sender, EventArgs e)
+        private async void btnLoadTub_Click(object sender, EventArgs e)
         {
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
+                fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
-                    // 💡 파일 1개가 아니라 폴더 전체 경로를 넘김
-                    _masterFrameList = _dataProcessor.LoadCatalogData(fbd.SelectedPath);
+                    string selectedPath = fbd.SelectedPath;
 
-                    if (_masterFrameList != null && _masterFrameList.Count > 0)
+                    // 로딩 중임을 사용자에게 알림 (UI가 멈추지 않음)
+                    this.Cursor = Cursors.WaitCursor;
+                    lstFrameData.Items.Clear();
+                    lstFrameData.Items.Add("데이터 로드 중... 잠시만 기다려주세요.");
+
+                    try
                     {
-                        RefreshFrameList(_masterFrameList);
+                        // 💡 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행
+                        _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath));
 
-                        MessageBox.Show($"총 {_masterFrameList.Count}개의 프레임 데이터 로드 완료!");
+                        // 로드 완료 후 UI 업데이트: 마스터 리스트를 바로 표시 리스트로 반영
+                        if (_masterFrameList != null && _masterFrameList.Count > 0)
+                        {
+                            RefreshFrameList(_masterFrameList);
+                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터를 로드했습니다!");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"데이터 로드 중 오류가 발생했습니다: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // 커서 복구
+                        this.Cursor = Cursors.Default;
                     }
                 }
             }
@@ -104,7 +178,7 @@ namespace DateManager
         {
             if (_masterFrameList == null || _masterFrameList.Count == 0)
             {
-                MessageBox.Show("먼저 데이터를 로드해 주세요!", "알림");
+                MessageBox.Show("먼저 데이터를 로드해 주세요!", "알림!");
                 return;
             }
 
@@ -119,14 +193,14 @@ namespace DateManager
             }
 
             // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
-            if (chkFilterAngleZero.Checked)
+            if (chkFilterLargeThr.Checked)
             {
                 filteredList = filteredList.FindAll(frame => frame.Angle == 0);
             }
 
-            if (chkFilterLargeAngle.Checked)
+            if (chkFilterLargeThr.Checked)
             {
-                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 0.5);
+                filteredList = filteredList.FindAll(frame => frame.Throttle >= 0.5);
             }
 
             // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
@@ -135,8 +209,8 @@ namespace DateManager
 
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
 
-             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
-            if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
+            //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
+            if (!chkFilterThr.Checked && !chkFilterLargeThr.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
                 //필터 없으면 원본 리스트 불러옴
@@ -146,7 +220,7 @@ namespace DateManager
 
         private void btnDeleteData_Click(object sender, EventArgs e)
         {
-            // 1. 선택된 데이터가 있는지 확인// 1. 선택된 데이터가 있는지 확인 (리스트박스에서 선택된 항목이 없으면 -1 반환)
+            // 1. 선택된 데이터 확인
             if (lstFrameData.SelectedIndex == -1)
             {
                 MessageBox.Show("삭제할 프레임을 리스트에서 선택해주세요!", "선택 필요");
@@ -159,10 +233,12 @@ namespace DateManager
                 return;
             }
 
-            // 2. 삭제할 프레임 객체 가져오기
+            // 2. 삭제할 프레임 가져오기
             int selectedIndex = lstFrameData.SelectedIndex;
             DonkeyFrame targetFrame = _displayedFrameList[selectedIndex];
 
+
+            // 3. 사용자 확인 및 범위 삭제 로직
             // 3. 사용자 확인 절차
             DialogResult result = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
                                                   "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
@@ -170,51 +246,62 @@ namespace DateManager
             if (result == DialogResult.No) return; // 사용자가 삭제를 취소한 경우 함수 종료
 
             //!!!!!!아래 다중 삭제 로직 윤형규가 작성, 오류 발생 시 우선 주석처리 할 것
-            if(Math.Max(start, end) - Math.Min(start, end) > 0)
+            if (Math.Max(start, end) - Math.Min(start, end) > 0)
             {
-                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.",
+                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?",
                                                   "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (rangeResult == DialogResult.Yes)
                 {
                     try
                     {
-                        _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
-                        start = 0; end = 0; 
-                        lblSetRange.Text = "(0, 0)";
-                        //_displayedFrameList.RemoveAll(frame => frame.FrameIndex >= Math.Min(start, end) && frame.FrameIndex <= Math.Max(start, end));
-                        RefreshFrameList(_masterFrameList);
+                        // 💡 범위 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
+                        pbMainCam.Image?.Dispose();
+                        pbMainCam.Image = null;
 
-                        MessageBox.Show("선택된 범위의 데이터가 성공적으로 삭제되었습니다.", "범위 삭제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
+
+
+
+                        start = 0; end = 0;
+                        lblSetRange.Text = "(0, 0)";
+                        RefreshFrameList(_masterFrameList);
+                        MessageBox.Show("범위 삭제가 완료되었습니다.", "완료");
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러");
                     }
                     return;
                 }
             }
 
-            // 4. 새로운 클래스(FileRemover)를 사용하여 파일 및 리스트 삭제 호출
-            try
-            {
-                // 💡 여기서 분리한 클래스의 메서드를 호출합니다.
-                // _fileRemover는 Form1 생성자에서 미리 선언 및 초기화해 두어야 합니다.
-                _fileRemover.RemoveFrame(_masterFrameList, targetFrame);
+            // 4. 단일 삭제 로직
+            DialogResult singleResult = MessageBox.Show($"Frame {targetFrame.FrameIndex}번 데이터를 삭제할까요?",
+                                                  "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
-                // 5. UI 업데이트: 리스트박스에서 해당 항목 제거
-                _displayedFrameList.Remove(targetFrame);
-                RefreshFrameList(_displayedFrameList);
-                if (_displayedFrameList.Count > 0)
+            if (singleResult == DialogResult.Yes)
+            {
+                try
                 {
-                    SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
-                }
+                    // 💡 단일 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
+                    pbMainCam.Image?.Dispose();
+                    pbMainCam.Image = null;
 
-                MessageBox.Show("삭제가 성공적으로 완료되었습니다.", "정제 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                // 삭제 과정에서 발생한 에러 처리
-                MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    _fileRemover.RemoveFrame(_masterFrameList, targetFrame);
+
+                    // 5. UI 업데이트
+                    _displayedFrameList.Remove(targetFrame);
+                    RefreshFrameList(_displayedFrameList);
+                    if (_displayedFrameList.Count > 0)
+                    {
+                        SelectFrame(Math.Min(selectedIndex, _displayedFrameList.Count - 1));
+                    }
+                    MessageBox.Show("삭제가 완료되었습니다.", "정제 완료");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러");
+                }
             }
         }
 
@@ -285,6 +372,80 @@ namespace DateManager
             UpdatePlaybackInterval();
         }
 
+        // 폼 전체에 대한 키보드 단축키 핸들러
+        private void Form1_KeyDown(object? sender, KeyEventArgs e)
+        {
+            // 스페이스: 재생/일시정지 토글
+            if (e.KeyCode == Keys.Space)
+            {
+                btnPlay.PerformClick();
+                e.Handled = true;
+            }
+
+            // 화살표 위/아래: 포커스 이동
+            if (e.KeyCode == Keys.Up)
+            {
+                MoveFocus(-1);
+                e.Handled = true;
+            }
+
+            if (e.KeyCode == Keys.Down)
+            {
+                MoveFocus(1);
+                e.Handled = true;
+            }
+
+            // Home/End: 첫 프레임 / 마지막 프레임으로 이동
+            if (e.KeyCode == Keys.Home)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(0);
+                }
+                e.Handled = true;
+            }
+
+            if (e.KeyCode == Keys.End)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(_displayedFrameList.Count - 1);
+                }
+                e.Handled = true;
+            }
+
+            // Enter: 포커스가 올라간 버튼을 클릭 처리
+            if (e.KeyCode == Keys.Enter)
+            {
+                try
+                {
+                    Control ctrl = this.ActiveControl;
+                    // 컨테이너 내부에 포커스된 자식 컨트롤이 있는 경우 가장 깊은 ActiveControl을 찾음
+                    while (ctrl is ContainerControl container && container.ActiveControl != null)
+                    {
+                        ctrl = container.ActiveControl;
+                    }
+
+                    if (ctrl is Button btn)
+                    {
+                        btn.PerformClick();
+                        e.Handled = true;
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void MoveFocus(int delta)
+        {
+            if (_focusOrder == null || _focusOrder.Count == 0) return;
+            Control active = this.ActiveControl ?? _focusOrder[0];
+            int idx = _focusOrder.IndexOf(active);
+            if (idx == -1) idx = 0;
+            int next = (idx + delta + _focusOrder.Count) % _focusOrder.Count;
+            _focusOrder[next].Focus();
+        }
+
         private void PlaybackTimer_Tick(object? sender, EventArgs e) // 타이머가 틱할 때마다 다음 프레임으로 이동하는 이벤트 핸들러
         {
             if (!HasDisplayedFrames(false))
@@ -321,11 +482,43 @@ namespace DateManager
 
             if (_displayedFrameList.Count > 0)
             {
+                // 선택 인덱스를 0으로 설정하고 직접 프레임 표시를 한 번 강제합니다.
                 SelectFrame(0);
+                // SelectedIndexChanged 이벤트가 정상적으로 호출되지 않는 환경을 대비해 직접 호출
+                try { DisplayFrame(0); } catch { }
             }
             else
             {
                 ClearFramePreview();
+            }
+
+            // 로드 후 UI 컨트롤 상태를 일관되게 유지
+            UpdateControlsAfterLoad();
+        }
+
+        // 데이터가 로드되거나 리스트가 갱신된 후에 각종 컨트롤(재생, 정지, 탐색 버튼 등)을
+        // 현재 표시 중인 데이터의 유무에 따라 적절히 활성/비활성화합니다.
+        private void UpdateControlsAfterLoad()
+        {
+            bool has = _displayedFrameList != null && _displayedFrameList.Count > 0;
+
+            // 탐색 관련
+            btnPlay.Enabled = has;
+            btnStop.Enabled = has;
+            btnPrev.Enabled = has;
+            btnNext.Enabled = has;
+            btnFastForward.Enabled = has;
+            btnFastRewind.Enabled = has;
+            trkFrameSlider.Enabled = has;
+
+            if (!has)
+            {
+                StopPlayback();
+            }
+            else
+            {
+                // 기본 재생 버튼 텍스트 및 상태 초기화
+                btnPlay.Text = _playbackTimer.Enabled ? "⏸ 일시정지" : "▶ 재생";
             }
         }
 
@@ -411,13 +604,38 @@ namespace DateManager
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;
-            lblSetRange.Text = "(" + start + ", " + end +")";
+            lblSetRange.Text = "(" + start + ", " + end + ")";
         }
 
         private void btnSetRight_Click(object sender, EventArgs e)
         {
             end = lstFrameData.SelectedIndex;
-            lblSetRange.Text= "(" + start + ", " + end + ")";
+            lblSetRange.Text = "(" + start + ", " + end + ")";
+        }
+
+        private async void btnStart_Click(object sender, EventArgs e)
+        {
+            rtbTrainLog.Clear();
+            rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
+
+            // 버튼 제어
+            btnStartTraining.Enabled = false; // 시작 버튼 잠그기
+            btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
+
+            string pythonPath = "wsl.exe";
+            string mycarDir = "/home/giju/mycar";
+
+            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+        }
+        private void btnStopTraining_Click(object sender, EventArgs e)
+        {
+            rtbTrainLog.AppendText("\r\n🛑 사용자의 요청으로 AI 학습을 강제 중단합니다...\r\n");
+
+            // 버튼 중복 클릭 방지 차단
+            btnStopTraining.Enabled = false;
+
+            // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
+            donkeyTrainer.KillProcess();
         }
     }
 }
