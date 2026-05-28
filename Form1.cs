@@ -2,11 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using System.Runtime.InteropServices; // 이 줄을 코드 맨 위에 추가하세요.
 
 namespace DateManager
 {
     public partial class Form1 : Form
     {
+        // Form 클래스 내부나 코드 상단에 아래 API 호출을 정의합니다.
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+
+        private const uint LB_SETSEL = 0x0185; // 리스트박스 선택 메시지 코드
+
         // 데이터 정제 및 로드를 담당하는 핵심 백엔드 클래스 선언
         private DataProcessor _dataProcessor;
 
@@ -27,10 +34,20 @@ namespace DateManager
 
         private int _currentFrameIndex = 0; // 🌟 [변경] 미래의 데이터를 꺼내오기 위해 현재 인덱스를 저장
 
+        // 클래스 상단에 선언
+        private readonly Font _bigFont = new Font("Segoe UI", 32, FontStyle.Bold);
+        private readonly Font _smallFont = new Font("Segoe UI", 10, FontStyle.Bold);
+
+        private readonly SolidBrush _shadowBrush = new SolidBrush(Color.FromArgb(80, 0, 0, 0));
+        private readonly SolidBrush _bgBrush = new SolidBrush(Color.FromArgb(100, 200, 200, 200));
+        private readonly SolidBrush _barBlueBrush = new SolidBrush(Color.DeepSkyBlue);
+        private readonly SolidBrush _barOrangeBrush = new SolidBrush(Color.Orange);
+
         public Form1()
         {
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
             InitializeComponent();
+            this.DoubleBuffered = true;
 
             // 폼에서 키 입력을 전역으로 처리하도록 설정
             this.KeyPreview = true;
@@ -101,40 +118,19 @@ namespace DateManager
             foreach (var c in _focusOrder) c.TabStop = true;
         }
 
-        /// <summary>
-        /// 디자이너 창에서 추가한 테스트 버튼(button1)을 더블클릭했을 때 실행되는 함수입니다.
-        /// </summary>
-        private void button1_Click(object sender, EventArgs e)
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            //// 💡 진철님 컴퓨터의 실제 WSL Ubuntu 경로 설정 완료!
-            //string catalogPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\catalog_0.catalog";
-            //string imagesFolderPath = @"\\wsl.localhost\Ubuntu-22.04\home\jinchul04\mycar\data\images";
+            // 리소스 정리 (중요!)
+            _bigFont?.Dispose();
+            _smallFont?.Dispose();
+            _shadowBrush?.Dispose();
+            _bgBrush?.Dispose();
+            _barBlueBrush?.Dispose();
+            _barOrangeBrush?.Dispose();
 
-            //// 1. 테스트 시작 알림
-            //MessageBox.Show("진철님의 데이터 엔진으로 파일 읽기를 시작합니다!", "테스트 시작", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            //// 2. data.cs에 구현해 둔 가공(파싱) 및 자동 분류 함수 호출
-            //_masterFrameList = _dataProcessor.LoadCatalogData(catalogPath, imagesFolderPath);
-
-            //// 3. 데이터가 성공적으로 로드되었다면 신규/기존 데이터 분리 결과 최종 검증
-            //if (_masterFrameList != null && _masterFrameList.Count > 0)
-            //{
-            //    // IsNewData 깃발이 true인 새로 수집된 불량 데이터만 골라내기
-            //    List<DonkeyFrame> newDataOnly = _masterFrameList.FindAll(frame => frame.IsNewData == true);
-
-            //    string resultReport = $"🏁 [검증 결과 최종 리포트]\n\n" +
-            //                          $"📊 전체 데이터 수: {_masterFrameList.Count}개\n" +
-            //                          $"❌ 새로 수집된 불량 데이터(정제 대상): {newDataOnly.Count}개\n\n" +
-            //                          $"자동 구분이 정상적으로 작동합니다. 이제 UI 팀원에게 코드를 넘겨도 좋습니다!";
-
-            //    MessageBox.Show(resultReport, "엔진 검증 완료", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-            //}
+            donkeyTrainer.KillProcess();
         }
 
-        private void label1_Click(object sender, EventArgs e)
-        {
-            // 라벨 클릭 이벤트가 필요 없다면 비워둡니다.
-        }
 
         private async void btnLoadTub_Click(object sender, EventArgs e)
         {
@@ -148,7 +144,7 @@ namespace DateManager
                     // 로딩 중임을 사용자에게 알림 (UI가 멈추지 않음)
                     this.Cursor = Cursors.WaitCursor;
                     lstFrameData.Items.Clear();
-                    lstFrameData.Items.Add("데이터 로드 중... 잠시만 기다려주세요.");
+                    //lstFrameData.Items.Add("데이터 로드 중... 잠시만 기다려주세요.");
 
                     try
                     {
@@ -191,10 +187,10 @@ namespace DateManager
             {
                 filteredList = filteredList.FindAll(frame => frame.Throttle == 0);
             }
-            
+
             if (chkFilterLargeAngle.Checked)
             {
-                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 5);
+                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 0.5);
             }
 
             if (chkFilterLargeThr.Checked)
@@ -446,10 +442,17 @@ namespace DateManager
             StopPlayback();
             _displayedFrameList = frames?.ToList() ?? new List<DonkeyFrame>();
 
-            lstFrameData.Items.Clear();
-            foreach (DonkeyFrame frame in _displayedFrameList)
+            lstFrameData.BeginUpdate();
+            try
             {
-                lstFrameData.Items.Add($"{prefix}Frame {frame.FrameIndex} | Angle: {frame.Angle:F2} | Thr: {frame.Throttle:F2}");
+                string[] items = _displayedFrameList
+            .Select(f => $"{prefix}Frame {f.FrameIndex}") // 여기를 수정했습니다.
+            .ToArray();
+                lstFrameData.Items.AddRange(items);
+            }
+            finally
+            {
+                lstFrameData.EndUpdate();
             }
 
             trkFrameSlider.Minimum = 0;
@@ -459,17 +462,13 @@ namespace DateManager
 
             if (_displayedFrameList.Count > 0)
             {
-                // 선택 인덱스를 0으로 설정하고 직접 프레임 표시를 한 번 강제합니다.
                 SelectFrame(0);
-                // SelectedIndexChanged 이벤트가 정상적으로 호출되지 않는 환경을 대비해 직접 호출
                 try { DisplayFrame(0); } catch { }
             }
             else
             {
                 ClearFramePreview();
             }
-
-            // 로드 후 UI 컨트롤 상태를 일관되게 유지
             UpdateControlsAfterLoad();
         }
 
@@ -529,11 +528,10 @@ namespace DateManager
 
             _currentFrameIndex = index;
 
-            lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
-            lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
+            lblAngle.Text = $"방향: {selectedFrame.Angle:F3}";
+            lblThrottleTop.Text = $"속도: {selectedFrame.Throttle:F3}";
             lblFrameIndex.Text = $"프레임 인덱스: {index + 1}/{_displayedFrameList.Count} (원본 {selectedFrame.FrameIndex})";
             lblTimestamp.Text = string.IsNullOrWhiteSpace(selectedFrame.SessionId) ? selectedFrame.DataTypeSummary : selectedFrame.SessionId;
-            prgThrottle.Value = Math.Max(0, Math.Min(100, (int)Math.Round(selectedFrame.Throttle * 100)));
 
             if (trkFrameSlider.Value != index)
             {
@@ -554,11 +552,10 @@ namespace DateManager
             _currentFrameIndex = 0; // 🌟 [추가] 초기화 시 각도도 0으로 복구
             pbMainCam.Invalidate();      // 🌟 [추가] 그려진 선 지우기
 
-            lblAngle.Text = "조향각: +0.0";
-            lblThrottleTop.Text = "출력: +0.0";
+            lblAngle.Text = "방향: +0.0";
+            lblThrottleTop.Text = "속도: +0.0";
             lblFrameIndex.Text = "프레임 번호 0/0";
             lblTimestamp.Text = "기록 시간";
-            prgThrottle.Value = 0;
         }
 
         private void StopPlayback()
@@ -645,7 +642,7 @@ namespace DateManager
 
             // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
             donkeyTrainer.KillProcess();
-            
+
         }
 
         private void btnRestartTraining_Click(object sender, EventArgs e)
@@ -661,7 +658,7 @@ namespace DateManager
             btnStartTraining.Visible = true;
         }
 
-        // 🌟🌟🌟 다중 세그먼트(미래 궤적 예측) 및 HUD UI 그리기 🌟🌟🌟
+        // 🌟🌟🌟 궤적 부드러움 보정 & HUD 우측 하단 배치 버전 🌟🌟🌟
         private void pbMainCam_Paint(object sender, PaintEventArgs e)
         {
             if (_displayedFrameList == null || _displayedFrameList.Count == 0 || pbMainCam.Image == null) return;
@@ -673,68 +670,47 @@ namespace DateManager
             float height = pbMainCam.Height;
 
             // =========================================================
-            // 1. 테슬라 스타일 AR 궤적 그리기 (미래 데이터 활용)
+            // 1. 테슬라 스타일 AR 궤적 (10개 세그먼트 고정)
             // =========================================================
-
-            int segments = 8;        // 그릴 막대기(세그먼트)의 개수
-            int lookAheadStep = 3;   // 한 막대기당 몇 프레임 앞의 미래를 볼 것인지 (8 x 3 = 24프레임 앞까지 예측)
-
-            float pathHeight = height * 0.6f; // 화면의 60% 높이까지 길게 뻗어나감
-            float bottomWidth = 140f;         // 차 앞부분 막대기 너비
-            float topWidth = 20f;             // 가장 먼 미래의 막대기 너비
-
-            // 궤적 계산을 위한 변수
+            int segments = 10;
+            int lookAheadStep = 2;
+            float pathHeight = height * 0.6f;
+            float bottomWidth = 140f;
+            float topWidth = 20f;
             float curX = width / 2.0f;
-            float angleSum = 0f;              // 조향각 누적(적분) 변수
-            float maxDeflection = width * 0.012f; // 각도에 따른 X축 이동 가중치
+            float angleSum = 0f;
+            float maxDeflection = width * 0.012f;
 
-            // 좌우 좌표를 저장할 배열
             PointF[] leftEdge = new PointF[segments + 1];
             PointF[] rightEdge = new PointF[segments + 1];
 
             leftEdge[0] = new PointF(curX - bottomWidth / 2, height);
             rightEdge[0] = new PointF(curX + bottomWidth / 2, height);
 
-            // 미래의 궤적 좌표 점들 계산
+            float smoothedAngle = 0f;
+
             for (int i = 1; i <= segments; i++)
             {
-                // 미래의 인덱스 가져오기 (리스트 범위를 넘지 않게 안전장치)
                 int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
-                float futureAngle = (float)_displayedFrameList[futureIndex].Angle;
+                float targetAngle = (float)_displayedFrameList[futureIndex].Angle;
+                smoothedAngle = (smoothedAngle * 0.7f) + (targetAngle * 0.3f);
+                angleSum += smoothedAngle;
 
-                // 실제 차가 움직이는 것처럼 조향각을 계속 더해줍니다 (핸들을 꺾고 있으면 곡선이 됨)
-                angleSum += futureAngle;
-
-                // 진행률 (0.0 ~ 1.0)
                 float progress = i / (float)segments;
                 float nextY = height - (pathHeight * progress);
-
-                // 누적된 각도를 바탕으로 다음 막대기의 중심 X 좌표 이동
                 float nextX = curX + (angleSum * maxDeflection);
                 curX = nextX;
-
-                // 원근감에 따른 현재 막대기의 너비
                 float currentWidth = bottomWidth - ((bottomWidth - topWidth) * progress);
-
                 leftEdge[i] = new PointF(curX - currentWidth / 2, nextY);
                 rightEdge[i] = new PointF(curX + currentWidth / 2, nextY);
             }
 
-            // 계산된 좌표들을 바탕으로 분리된 막대기(세그먼트) 그리기
             for (int i = 0; i < segments; i++)
             {
-                // 막대기 사이에 간격(Gap)을 주어 디지털 내비게이션 느낌 강조
                 float gap = 5f;
+                PointF[] poly = { leftEdge[i], rightEdge[i], new PointF(rightEdge[i + 1].X, rightEdge[i + 1].Y + gap), new PointF(leftEdge[i + 1].X, leftEdge[i + 1].Y + gap) };
+                int alpha = 180 - (int)(150 * (i / (float)segments));
 
-                PointF[] poly = {
-            leftEdge[i],
-            rightEdge[i],
-            new PointF(rightEdge[i + 1].X, rightEdge[i + 1].Y + gap), // Y를 살짝 내려서 간격 만듦
-            new PointF(leftEdge[i + 1].X, leftEdge[i + 1].Y + gap)
-        };
-
-                // 멀어질수록 점점 투명해지는 그라데이션 효과
-                int alpha = 180 - (int)(160 * (i / (float)segments));
                 using (SolidBrush pathBrush = new SolidBrush(Color.FromArgb(alpha, 30, 144, 255)))
                 {
                     g.FillPolygon(pathBrush, poly);
@@ -742,43 +718,61 @@ namespace DateManager
             }
 
             // =========================================================
-            // 2. 화면 위 다이렉트 HUD (속도/스레틀 UI)
+            // 2. HUD를 오른쪽 아래로 이동 (Segoe UI 사용)
             // =========================================================
-
             float throttle = (float)_displayedFrameList[_currentFrameIndex].Throttle;
-            int displaySpeed = (int)Math.Round(Math.Abs(throttle) * 100); // 0~100으로 스케일업
+            int displaySpeed = (int)Math.Round(Math.Abs(throttle) * 100);
+            float hudRight = width - 50;
+            float hudBottom = height - 20;
+            string speedText = displaySpeed.ToString();
+            SizeF size = g.MeasureString(speedText, _bigFont);
 
-            // 폰트 설정
-            using (Font bigFont = new Font("Arial", 36, FontStyle.Bold))
-            using (Font smallFont = new Font("Arial", 12, FontStyle.Bold))
-            {
-                string speedText = displaySpeed.ToString();
+            float textX = hudRight - size.Width;
+            float textY = hudBottom - size.Height - 15;
 
-                // 시인성을 위해 그림자 먼저 그리기
-                g.DrawString(speedText, bigFont, new SolidBrush(Color.FromArgb(100, 0, 0, 0)), new PointF(12, 12));
-                g.DrawString(speedText, bigFont, Brushes.White, new PointF(10, 10));
+            // 멤버 변수 브러시 사용
+            g.DrawString(speedText, _bigFont, _shadowBrush, new PointF(textX + 2, textY + 2));
+            g.DrawString(speedText, _bigFont, Brushes.White, new PointF(textX, textY));
+            g.DrawString("Km/h", _smallFont, Brushes.LightGray, new PointF(textX + size.Width - 10, textY + 15));
 
-                // 글자 길이를 측정해서 'PWR' 글자 위치 잡기
-                SizeF size = g.MeasureString(speedText, bigFont);
-                g.DrawString("% PWR", smallFont, Brushes.LightGray, new PointF(10 + size.Width - 10, 40));
-            }
-
-            // 속도 게이지 바 그리기 (얇고 모던한 느낌)
-            int barWidth = 120;
+            // 게이지 바
+            int barWidth = 100;
             int barHeight = 6;
-            int fillWidth = (int)(barWidth * Math.Abs(throttle));
+            int fillWidth = (int)(barWidth * Math.Min(Math.Abs(throttle), 1.0f));
+            float barX = hudRight - barWidth;
+            float barY = hudBottom - 10;
 
-            // 게이지 배경(회색)
-            using (SolidBrush bgBrush = new SolidBrush(Color.FromArgb(100, 200, 200, 200)))
+            g.FillRectangle(_bgBrush, barX, barY, barWidth, barHeight);
+
+            SolidBrush barColorBrush = throttle >= 0 ? _barBlueBrush : _barOrangeBrush;
+            g.FillRectangle(barColorBrush, barX, barY, fillWidth, barHeight);
+        }
+
+        private void btnSelectAll_Click(object sender, EventArgs e)
+        {
+            if (lstFrameData.Items.Count == 0) return;
+
+            // 1. 이벤트 구독 해제 (혹시 모를 이벤트 발생 방지)
+            lstFrameData.SelectedIndexChanged -= lstFrameData_SelectedIndexChanged;
+
+            // 2. 화면 갱신 멈춤
+            lstFrameData.BeginUpdate();
+
+            try
             {
-                g.FillRectangle(bgBrush, 15, 65, barWidth, barHeight);
+                // 3. 윈도우 API를 사용하여 리스트박스에 '전체 선택' 명령을 직접 보냅니다.
+                // wParam: 1 (선택), lParam: -1 (전체 항목)
+                SendMessage(lstFrameData.Handle, LB_SETSEL, 1, -1);
             }
-            // 게이지 채우기(파란색, 후진일 경우 주황색 등 응용 가능하지만 일단 파란색 통일)
-            Color barColor = throttle >= 0 ? Color.DeepSkyBlue : Color.Orange;
-            using (SolidBrush fillBrush = new SolidBrush(barColor))
+            finally
             {
-                g.FillRectangle(fillBrush, 15, 65, fillWidth, barHeight);
+                lstFrameData.EndUpdate();
+                // 4. 이벤트 구독 복구
+                lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
             }
+
+            // 마지막으로 화면에 반영
+            DisplayFrame(lstFrameData.Items.Count - 1);
         }
     }
 }

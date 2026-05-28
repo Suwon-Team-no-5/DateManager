@@ -9,7 +9,6 @@ namespace DateManager
         // 픽처박스에 이미지를 띄워주는 전용 기능
         public void LoadImageToPictureBox(PictureBox pb, string imagePath)
         {
-            // 1. 기존 이미지 해제 (필수!)
             if (pb.Image != null)
             {
                 pb.Image.Dispose();
@@ -18,11 +17,20 @@ namespace DateManager
 
             if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
             {
-                // 2. 파일 스트림을 사용하여 파일 잠금 방지
-                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                try
                 {
-                    pb.SizeMode = PictureBoxSizeMode.Zoom;
-                    pb.Image = Image.FromStream(fs);
+                    // 파일을 메모리로 한번에 읽어서 바로 닫음 (파일 점유 해제)
+                    byte[] imageBytes = File.ReadAllBytes(imagePath);
+                    using (MemoryStream ms = new MemoryStream(imageBytes))
+                    {
+                        pb.SizeMode = PictureBoxSizeMode.Zoom;
+                        pb.Image = Image.FromStream(ms);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 이미지 로드 실패 시 무시하거나 에러 처리
+                    Console.WriteLine("이미지 로드 오류: " + ex.Message);
                 }
             }
         }
