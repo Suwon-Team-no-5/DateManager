@@ -607,5 +607,10 @@ namespace DateManager
             // 백그라운드 스레드에서 안전하게 리눅스 딥러닝 프로세스 구동
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
+
+        private void Form1_Load_1(object sender, EventArgs e)
+        {
+
+        }
     }
 }
