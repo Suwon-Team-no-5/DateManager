@@ -87,8 +87,6 @@ namespace DateManager
             _focusOrder.Clear();
             _focusOrder.Add(btnLoadTub);       // 학습 데이터 로드
             _focusOrder.Add(btnStartTraining); // AI 학습 시작
-            _focusOrder.Add(btnSetLeft);       // 시작 지점
-            _focusOrder.Add(btnSetRight);      // 종료 지점
             _focusOrder.Add(btnApplyFilter);   // 필터 적용
             _focusOrder.Add(btnDeleteData);    // 삭제
             _focusOrder.Add(btnPlay);          // 재생
@@ -262,7 +260,6 @@ namespace DateManager
 
 
                         start = 0; end = 0;
-                        lblSetRange.Text = "(0, 0)";
                         RefreshFrameList(_masterFrameList);
                         MessageBox.Show("범위 삭제가 완료되었습니다.", "완료");
                     }
@@ -603,17 +600,17 @@ namespace DateManager
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;
-            lblSetRange.Text = "(" + start + ", " + end + ")";
         }
 
         private void btnSetRight_Click(object sender, EventArgs e)
         {
             end = lstFrameData.SelectedIndex;
-            lblSetRange.Text = "(" + start + ", " + end + ")";
         }
 
         private async void btnStart_Click(object sender, EventArgs e)
         {
+            btnStartTraining.Visible = false;
+            btnStopTraining.Visible = true;
             rtbTrainLog.Clear();
             rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
@@ -626,8 +623,33 @@ namespace DateManager
 
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
+
+        private void btnViewMonitor_Click(object sender, EventArgs e)
+        {
+            // 주행 모니터 패널은 켜고, 학습 로그 패널은 끕니다.
+            pnlCamView.Visible = true;
+            pnlTrainingLog.Visible = false;
+
+            // 버튼 색상 변경
+            btnViewMonitor.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewLog.BackColor = Color.FromArgb(62, 62, 66);
+        }
+
+        private void btnViewLog_Click(object sender, EventArgs e)
+        {
+            // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
+            pnlCamView.Visible = false;
+            pnlTrainingLog.Visible = true;
+
+            // 버튼 색상 변경
+            btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
+        }
+
         private void btnStopTraining_Click(object sender, EventArgs e)
         {
+            btnStopTraining.Visible = false;
+            btnRestartTraining.Visible = true;
             rtbTrainLog.AppendText("\r\n🛑 사용자의 요청으로 AI 학습을 강제 중단합니다...\r\n");
 
             // 버튼 중복 클릭 방지 차단
@@ -635,6 +657,20 @@ namespace DateManager
 
             // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
             donkeyTrainer.KillProcess();
+            
+        }
+
+        private void btnRestartTraining_Click(object sender, EventArgs e)
+        {
+            btnRestartTraining.Visible = false;
+            btnStopTraining.Visible = true;
+        }
+
+        private void btnEndTraining_Click(object sender, EventArgs e)
+        {
+            btnRestartTraining.Visible = false;
+            btnStopTraining.Visible = false;
+            btnStartTraining.Visible = true;
         }
     }
 }
