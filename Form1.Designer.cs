@@ -710,7 +710,7 @@
             MinimumSize = new Size(1310, 842);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
-            Load += Form1_Load_1;
+            Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
             pnlCamView.ResumeLayout(false);
             pnlCamView.PerformLayout();

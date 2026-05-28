@@ -260,7 +260,6 @@ namespace DateManager
                     return;
                 }
             }
-            }
 
             // 3. 전체 리스트 갱신 (교수님이 지적하신 느린 부분)
             RefreshFrameList(_displayedFrameList);
@@ -274,7 +273,7 @@ namespace DateManager
             // 단순히 인덱스만 갱신하던 수준
             start = lstFrameData.SelectedIndex;
             end = lstFrameData.SelectedIndex;
-            lblSetRange.Text = $"({start}, {end})";
+            //lblSetRange.Text = $"({start}, {end})";
         }
 
         private void trkFrameSlider_Scroll(object sender, EventArgs e)
@@ -595,6 +594,7 @@ namespace DateManager
             string mycarDir = "/home/jinchul04/mycar";
 
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+        }
 
         private void btnViewMonitor_Click(object sender, EventArgs e)
         {
@@ -643,7 +643,6 @@ namespace DateManager
             btnRestartTraining.Visible = false;
             btnStopTraining.Visible = false;
             btnStartTraining.Visible = true;
-        }
         }
     }
 }
