@@ -65,7 +65,8 @@ namespace DateManager
             {
                 this.Invoke((MethodInvoker)delegate
                 {
-                    btnStartTraining.Enabled = true;
+                    btnStartTraining.Enabled = true;   // ⭕ 시작 버튼 다시 켜고
+                    btnStopTraining.Enabled = false;  // ❌ 중단 버튼은 다시 잠그기
                 });
             };
 
@@ -621,15 +622,15 @@ namespace DateManager
             btnStartTraining.Visible = false;
             btnStopTraining.Visible = true;
             rtbTrainLog.Clear();
-            rtbTrainLog.AppendText("🚀 AI 학습 연동 테스트를 시작합니다...\r\n");
+            rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
-            // 중복 클릭 방지 차단
-            btnStartTraining.Enabled = false;
+            // 버튼 제어
+            btnStartTraining.Enabled = false; // 시작 버튼 잠그기
+            btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/jaeseo03/mycar";
+            string mycarDir = "/home/giju/mycar";
 
-            // 백그라운드 스레드에서 안전하게 리눅스 딥러닝 프로세스 구동
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
 
@@ -659,6 +660,14 @@ namespace DateManager
         {
             btnStopTraining.Visible = false;
             btnRestartTraining.Visible = true;
+            rtbTrainLog.AppendText("\r\n🛑 사용자의 요청으로 AI 학습을 강제 중단합니다...\r\n");
+
+            // 버튼 중복 클릭 방지 차단
+            btnStopTraining.Enabled = false;
+
+            // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
+            donkeyTrainer.KillProcess();
+            
         }
 
         private void btnRestartTraining_Click(object sender, EventArgs e)
