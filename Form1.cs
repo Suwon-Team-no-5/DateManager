@@ -21,7 +21,7 @@ namespace DateManager
 
         private Picture _pictureHandler;
         private readonly System.Windows.Forms.Timer _playbackTimer;
-        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
+        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0, 8.0 };
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
 
