@@ -35,9 +35,9 @@
             lblThrottleTop = new Label();
             lblTimestamp = new Label();
             pnlCamView = new Panel();
+            lblCamViewTitle = new Label();
             btnViewLog = new Button();
             btnViewMonitor = new Button();
-            lblCamViewTitle = new Label();
             pnlNavigation = new Panel();
             lblNavTitle = new Label();
             btnSpeed = new Button();
@@ -52,26 +52,28 @@
             lblFrameListTitle = new Label();
             lstFrameData = new ListBox();
             pnlSystemOps = new Panel();
+            btnRestartTraining = new Button();
             btnStopTraining = new Button();
+            btnEndTraining = new Button();
             lblSystemOpsTitle = new Label();
             btnStartTraining = new Button();
             btnLoadTub = new Button();
             pnlDataManagement = new Panel();
             lblDataMgmtTitle = new Label();
-            lblSetRange = new Label();
-            btnSetLeft = new Button();
-            btnDeleteData = new Button();
-            btnSetRight = new Button();
             btnApplyFilter = new Button();
             pnlFilterOptions = new Panel();
             lblFilterTitle = new Label();
             chkFilterLargeAngle = new CheckBox();
             chkFilterLargeThr = new CheckBox();
             chkFilterThr = new CheckBox();
+            btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
             lblTitle = new Label();
+            panel1 = new Panel();
+            btnRestoreData = new Button();
+            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -81,6 +83,7 @@
             pnlDataManagement.SuspendLayout();
             pnlFilterOptions.SuspendLayout();
             pnlTrainingLog.SuspendLayout();
+            panel1.SuspendLayout();
             SuspendLayout();
             // 
             // pbMainCam
@@ -97,7 +100,7 @@
             // prgThrottle
             // 
             prgThrottle.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            prgThrottle.Location = new Point(628, 488);
+            prgThrottle.Location = new Point(628, 492);
             prgThrottle.Name = "prgThrottle";
             prgThrottle.Size = new Size(200, 20);
             prgThrottle.Style = ProgressBarStyle.Continuous;
@@ -151,8 +154,6 @@
             // 
             pnlCamView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlCamView.BackColor = Color.FromArgb(45, 45, 48);
-            pnlCamView.Controls.Add(btnViewLog);
-            pnlCamView.Controls.Add(btnViewMonitor);
             pnlCamView.Controls.Add(lblCamViewTitle);
             pnlCamView.Controls.Add(prgThrottle);
             pnlCamView.Controls.Add(pbMainCam);
@@ -165,34 +166,6 @@
             pnlCamView.Size = new Size(845, 529);
             pnlCamView.TabIndex = 6;
             // 
-            // btnViewLog
-            // 
-            btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
-            btnViewLog.FlatStyle = FlatStyle.Flat;
-            btnViewLog.Font = new Font("Segoe UI", 9.5F);
-            btnViewLog.ForeColor = Color.White;
-            btnViewLog.Location = new Point(725, 0);
-            btnViewLog.Name = "btnViewLog";
-            btnViewLog.Size = new Size(120, 29);
-            btnViewLog.TabIndex = 8;
-            btnViewLog.Text = "AI 학습 로그";
-            btnViewLog.UseVisualStyleBackColor = false;
-            btnViewLog.Visible = false;
-            // 
-            // btnViewMonitor
-            // 
-            btnViewMonitor.BackColor = Color.FromArgb(0, 122, 204);
-            btnViewMonitor.FlatStyle = FlatStyle.Flat;
-            btnViewMonitor.Font = new Font("Segoe UI", 9.5F);
-            btnViewMonitor.ForeColor = Color.White;
-            btnViewMonitor.Location = new Point(603, 0);
-            btnViewMonitor.Name = "btnViewMonitor";
-            btnViewMonitor.Size = new Size(120, 29);
-            btnViewMonitor.TabIndex = 7;
-            btnViewMonitor.Text = "주행 모니터";
-            btnViewMonitor.UseVisualStyleBackColor = false;
-            btnViewMonitor.Visible = false;
-            // 
             // lblCamViewTitle
             // 
             lblCamViewTitle.AutoSize = true;
@@ -203,6 +176,38 @@
             lblCamViewTitle.Size = new Size(100, 23);
             lblCamViewTitle.TabIndex = 6;
             lblCamViewTitle.Text = "주행 모니터";
+            // 
+            // btnViewLog
+            // 
+            btnViewLog.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnViewLog.BackColor = Color.FromArgb(62, 62, 66);
+            btnViewLog.FlatAppearance.BorderSize = 0;
+            btnViewLog.FlatStyle = FlatStyle.Flat;
+            btnViewLog.Font = new Font("Segoe UI Semibold", 9F);
+            btnViewLog.ForeColor = Color.White;
+            btnViewLog.Location = new Point(791, 33);
+            btnViewLog.Name = "btnViewLog";
+            btnViewLog.Size = new Size(85, 32);
+            btnViewLog.TabIndex = 8;
+            btnViewLog.Text = "📝 로그";
+            btnViewLog.UseVisualStyleBackColor = false;
+            btnViewLog.Click += btnViewLog_Click;
+            // 
+            // btnViewMonitor
+            // 
+            btnViewMonitor.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnViewMonitor.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewMonitor.FlatAppearance.BorderSize = 0;
+            btnViewMonitor.FlatStyle = FlatStyle.Flat;
+            btnViewMonitor.Font = new Font("Segoe UI Semibold", 9F);
+            btnViewMonitor.ForeColor = Color.White;
+            btnViewMonitor.Location = new Point(692, 33);
+            btnViewMonitor.Name = "btnViewMonitor";
+            btnViewMonitor.Size = new Size(93, 32);
+            btnViewMonitor.TabIndex = 7;
+            btnViewMonitor.Text = "📊 모니터";
+            btnViewMonitor.UseVisualStyleBackColor = false;
+            btnViewMonitor.Click += btnViewMonitor_Click;
             // 
             // pnlNavigation
             // 
@@ -309,7 +314,7 @@
             btnStop.Name = "btnStop";
             btnStop.Size = new Size(100, 42);
             btnStop.TabIndex = 0;
-            btnStop.Text = "⏹ 정지";
+            btnStop.Text = "⏹ 초기화";
             btnStop.UseVisualStyleBackColor = false;
             btnStop.Click += btnStop_Click;
             // 
@@ -393,7 +398,9 @@
             // 
             pnlSystemOps.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             pnlSystemOps.BackColor = Color.FromArgb(45, 45, 48);
+            pnlSystemOps.Controls.Add(btnRestartTraining);
             pnlSystemOps.Controls.Add(btnStopTraining);
+            pnlSystemOps.Controls.Add(btnEndTraining);
             pnlSystemOps.Controls.Add(lblSystemOpsTitle);
             pnlSystemOps.Controls.Add(btnStartTraining);
             pnlSystemOps.Controls.Add(btnLoadTub);
@@ -402,19 +409,52 @@
             pnlSystemOps.Size = new Size(175, 315);
             pnlSystemOps.TabIndex = 9;
             // 
+            // btnRestartTraining
+            // 
+            btnRestartTraining.BackColor = Color.FromArgb(0, 176, 255);
+            btnRestartTraining.FlatAppearance.BorderSize = 0;
+            btnRestartTraining.FlatStyle = FlatStyle.Flat;
+            btnRestartTraining.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            btnRestartTraining.ForeColor = Color.White;
+            btnRestartTraining.Location = new Point(14, 106);
+            btnRestartTraining.Name = "btnRestartTraining";
+            btnRestartTraining.Size = new Size(147, 121);
+            btnRestartTraining.TabIndex = 11;
+            btnRestartTraining.Text = "AI 학습\r\n 재시작";
+            btnRestartTraining.UseVisualStyleBackColor = false;
+            btnRestartTraining.Visible = false;
+            btnRestartTraining.Click += btnRestartTraining_Click;
+            // 
             // btnStopTraining
             // 
-            btnStopTraining.BackColor = Color.FromArgb(211, 47, 47);
+            btnStopTraining.BackColor = Color.FromArgb(255, 160, 0);
             btnStopTraining.FlatAppearance.BorderSize = 0;
             btnStopTraining.FlatStyle = FlatStyle.Flat;
             btnStopTraining.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             btnStopTraining.ForeColor = Color.White;
-            btnStopTraining.Location = new Point(14, 233);
+            btnStopTraining.Location = new Point(14, 106);
             btnStopTraining.Name = "btnStopTraining";
-            btnStopTraining.Size = new Size(147, 62);
-            btnStopTraining.TabIndex = 9;
-            btnStopTraining.Text = "AI 학습\r\n중지";
+            btnStopTraining.Size = new Size(147, 121);
+            btnStopTraining.TabIndex = 10;
+            btnStopTraining.Text = "AI 학습\r\n 정지";
             btnStopTraining.UseVisualStyleBackColor = false;
+            btnStopTraining.Visible = false;
+            btnStopTraining.Click += btnStopTraining_Click;
+            // 
+            // btnEndTraining
+            // 
+            btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
+            btnEndTraining.FlatAppearance.BorderSize = 0;
+            btnEndTraining.FlatStyle = FlatStyle.Flat;
+            btnEndTraining.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            btnEndTraining.ForeColor = Color.White;
+            btnEndTraining.Location = new Point(14, 233);
+            btnEndTraining.Name = "btnEndTraining";
+            btnEndTraining.Size = new Size(147, 62);
+            btnEndTraining.TabIndex = 9;
+            btnEndTraining.Text = "AI 학습\r\n 종료";
+            btnEndTraining.UseVisualStyleBackColor = false;
+            btnEndTraining.Click += btnEndTraining_Click;
             // 
             // lblSystemOpsTitle
             // 
@@ -462,10 +502,6 @@
             pnlDataManagement.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             pnlDataManagement.BackColor = Color.FromArgb(45, 45, 48);
             pnlDataManagement.Controls.Add(lblDataMgmtTitle);
-            pnlDataManagement.Controls.Add(lblSetRange);
-            pnlDataManagement.Controls.Add(btnSetLeft);
-            pnlDataManagement.Controls.Add(btnDeleteData);
-            pnlDataManagement.Controls.Add(btnSetRight);
             pnlDataManagement.Controls.Add(btnApplyFilter);
             pnlDataManagement.Controls.Add(pnlFilterOptions);
             pnlDataManagement.Location = new Point(893, 399);
@@ -480,63 +516,9 @@
             lblDataMgmtTitle.ForeColor = Color.DeepSkyBlue;
             lblDataMgmtTitle.Location = new Point(11, 10);
             lblDataMgmtTitle.Name = "lblDataMgmtTitle";
-            lblDataMgmtTitle.Size = new Size(200, 23);
+            lblDataMgmtTitle.Size = new Size(83, 23);
             lblDataMgmtTitle.TabIndex = 9;
-            lblDataMgmtTitle.Text = "데이터 관리 및 필터 설정";
-            // 
-            // lblSetRange
-            // 
-            lblSetRange.AutoSize = true;
-            lblSetRange.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-            lblSetRange.ForeColor = Color.White;
-            lblSetRange.Location = new Point(255, 103);
-            lblSetRange.Name = "lblSetRange";
-            lblSetRange.Size = new Size(58, 25);
-            lblSetRange.TabIndex = 8;
-            lblSetRange.Text = "(0, 0)";
-            // 
-            // btnSetLeft
-            // 
-            btnSetLeft.BackColor = Color.FromArgb(62, 62, 66);
-            btnSetLeft.FlatAppearance.BorderSize = 0;
-            btnSetLeft.FlatStyle = FlatStyle.Flat;
-            btnSetLeft.ForeColor = Color.White;
-            btnSetLeft.Location = new Point(203, 45);
-            btnSetLeft.Name = "btnSetLeft";
-            btnSetLeft.Size = new Size(76, 49);
-            btnSetLeft.TabIndex = 7;
-            btnSetLeft.Text = "시작 지점";
-            btnSetLeft.UseVisualStyleBackColor = false;
-            btnSetLeft.Click += btnSetLeft_Click;
-            // 
-            // btnDeleteData
-            // 
-            btnDeleteData.BackColor = Color.FromArgb(211, 47, 47);
-            btnDeleteData.FlatAppearance.BorderSize = 0;
-            btnDeleteData.FlatStyle = FlatStyle.Flat;
-            btnDeleteData.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-            btnDeleteData.ForeColor = Color.White;
-            btnDeleteData.Location = new Point(203, 142);
-            btnDeleteData.Name = "btnDeleteData";
-            btnDeleteData.Size = new Size(160, 42);
-            btnDeleteData.TabIndex = 6;
-            btnDeleteData.Text = "범위 데이터 삭제";
-            btnDeleteData.UseVisualStyleBackColor = false;
-            btnDeleteData.Click += btnDeleteData_Click;
-            // 
-            // btnSetRight
-            // 
-            btnSetRight.BackColor = Color.FromArgb(62, 62, 66);
-            btnSetRight.FlatAppearance.BorderSize = 0;
-            btnSetRight.FlatStyle = FlatStyle.Flat;
-            btnSetRight.ForeColor = Color.White;
-            btnSetRight.Location = new Point(287, 45);
-            btnSetRight.Name = "btnSetRight";
-            btnSetRight.Size = new Size(76, 49);
-            btnSetRight.TabIndex = 5;
-            btnSetRight.Text = "종료 지점";
-            btnSetRight.UseVisualStyleBackColor = false;
-            btnSetRight.Click += btnSetRight_Click;
+            lblDataMgmtTitle.Text = "필터 설정";
             // 
             // btnApplyFilter
             // 
@@ -547,7 +529,7 @@
             btnApplyFilter.ForeColor = Color.White;
             btnApplyFilter.Location = new Point(14, 142);
             btnApplyFilter.Name = "btnApplyFilter";
-            btnApplyFilter.Size = new Size(175, 42);
+            btnApplyFilter.Size = new Size(350, 42);
             btnApplyFilter.TabIndex = 3;
             btnApplyFilter.Text = "필터 적용";
             btnApplyFilter.UseVisualStyleBackColor = false;
@@ -562,7 +544,7 @@
             pnlFilterOptions.Controls.Add(chkFilterThr);
             pnlFilterOptions.Location = new Point(14, 45);
             pnlFilterOptions.Name = "pnlFilterOptions";
-            pnlFilterOptions.Size = new Size(175, 87);
+            pnlFilterOptions.Size = new Size(350, 87);
             pnlFilterOptions.TabIndex = 0;
             // 
             // lblFilterTitle
@@ -609,16 +591,32 @@
             chkFilterThr.Text = "속도=0";
             chkFilterThr.UseVisualStyleBackColor = true;
             // 
+            // btnDeleteData
+            // 
+            btnDeleteData.BackColor = Color.FromArgb(211, 47, 47);
+            btnDeleteData.FlatAppearance.BorderSize = 0;
+            btnDeleteData.FlatStyle = FlatStyle.Flat;
+            btnDeleteData.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            btnDeleteData.ForeColor = Color.White;
+            btnDeleteData.Location = new Point(15, 107);
+            btnDeleteData.Name = "btnDeleteData";
+            btnDeleteData.Size = new Size(160, 42);
+            btnDeleteData.TabIndex = 6;
+            btnDeleteData.Text = "데이터 삭제";
+            btnDeleteData.UseVisualStyleBackColor = false;
+            btnDeleteData.Click += btnDeleteData_Click;
+            // 
             // pnlTrainingLog
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
-            pnlTrainingLog.Location = new Point(893, 615);
+            pnlTrainingLog.Location = new Point(31, 71);
             pnlTrainingLog.Name = "pnlTrainingLog";
-            pnlTrainingLog.Size = new Size(378, 160);
+            pnlTrainingLog.Size = new Size(845, 529);
             pnlTrainingLog.TabIndex = 11;
+            pnlTrainingLog.Visible = false;
             // 
             // lblLogTitle
             // 
@@ -640,7 +638,7 @@
             rtbTrainLog.Location = new Point(14, 45);
             rtbTrainLog.Name = "rtbTrainLog";
             rtbTrainLog.ReadOnly = true;
-            rtbTrainLog.Size = new Size(349, 99);
+            rtbTrainLog.Size = new Size(816, 467);
             rtbTrainLog.TabIndex = 1;
             rtbTrainLog.Text = "";
             // 
@@ -655,19 +653,59 @@
             lblTitle.TabIndex = 12;
             lblTitle.Text = "5팀 동키카 UI";
             // 
+            // panel1
+            // 
+            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            panel1.BackColor = Color.FromArgb(45, 45, 48);
+            panel1.Controls.Add(btnRestoreData);
+            panel1.Controls.Add(label1);
+            panel1.Controls.Add(btnDeleteData);
+            panel1.Location = new Point(893, 615);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(378, 160);
+            panel1.TabIndex = 11;
+            // 
+            // btnRestoreData
+            // 
+            btnRestoreData.BackColor = Color.FromArgb(0, 230, 118);
+            btnRestoreData.FlatAppearance.BorderSize = 0;
+            btnRestoreData.FlatStyle = FlatStyle.Flat;
+            btnRestoreData.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            btnRestoreData.ForeColor = Color.Black;
+            btnRestoreData.Location = new Point(203, 107);
+            btnRestoreData.Name = "btnRestoreData";
+            btnRestoreData.Size = new Size(160, 42);
+            btnRestoreData.TabIndex = 10;
+            btnRestoreData.Text = "삭제 데이터 복원";
+            btnRestoreData.UseVisualStyleBackColor = false;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            label1.ForeColor = Color.DeepSkyBlue;
+            label1.Location = new Point(11, 10);
+            label1.Name = "label1";
+            label1.Size = new Size(100, 23);
+            label1.TabIndex = 9;
+            label1.Text = "데이터 삭제";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(30, 30, 30);
             ClientSize = new Size(1295, 805);
+            Controls.Add(panel1);
+            Controls.Add(btnViewLog);
             Controls.Add(lblTitle);
+            Controls.Add(pnlCamView);
+            Controls.Add(btnViewMonitor);
             Controls.Add(pnlTrainingLog);
             Controls.Add(pnlDataManagement);
             Controls.Add(pnlSystemOps);
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
-            Controls.Add(pnlCamView);
             Margin = new Padding(4);
             MinimumSize = new Size(1310, 842);
             Name = "Form1";
@@ -688,6 +726,8 @@
             pnlFilterOptions.PerformLayout();
             pnlTrainingLog.ResumeLayout(false);
             pnlTrainingLog.PerformLayout();
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -732,14 +772,16 @@
         private CheckBox chkFilterLargeThr;
         private CheckBox chkFilterThr;
         private Button btnApplyFilter;
-        private Button btnSetLeft;
         private Button btnDeleteData;
-        private Button btnSetRight;
         private Button btnSpeed;
-        private Label lblSetRange;
         private RichTextBox rtbTrainLog;
         private Button btnViewLog;
         private Button btnViewMonitor;
+        private Button btnEndTraining;
+        private Panel panel1;
+        private Label label1;
         private Button btnStopTraining;
+        private Button btnRestoreData;
+        private Button btnRestartTraining;
     }
 }
