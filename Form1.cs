@@ -247,7 +247,6 @@ namespace DateManager
 
             foreach (var f in toRemove)
             {
-                _masterFrameList.Remove(f);
                 _displayedFrameList.Remove(f);
             }
 
