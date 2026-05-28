@@ -64,7 +64,34 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                 pythonProcess.EnableRaisingEvents = true;
 
                 pythonProcess.OutputDataReceived += (s, args) => {
-                    if (!string.IsNullOrEmpty(args.Data)) LogReceived?.Invoke(args.Data + "\r\n");
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        string data = args.Data;
+
+                        // 1. 특수 제어 문자(백스페이스 등)가 포함되어 있다면 청소
+                        if (data.Contains("\b") || data.Contains("\r"))
+                        {
+                            data = data.Replace("\b", "").Replace("\r", "");
+                        }
+
+                        // 2. 텐서플로우 특유의 지저분한 로딩바(>>>>, ====>)가 포함된 줄은 화면 낭비를 막기 위해 패스!
+                        if (data.Contains("==========") || data.Contains(">....") || data.Contains("64/64"))
+                        {
+                            // 단, 실시간 수치가 포함되어 있다면 로딩바 분수(5/64 등)만 깔끔하게 정돈
+                            if (data.Contains("loss:"))
+                            {
+                                // 로딩바 기호(====>....) 부분을 공백으로 변환해서 수치만 남김
+                                data = System.Text.RegularExpressions.Regex.Replace(data, @"[=>\s\.]{5,}", " ");
+                            }
+                            else
+                            {
+                                return; // 완전히 지저분한 줄은 출력하지 않고 무시
+                            }
+                        }
+
+                        // 3. 최종 정돈된 예쁜 데이터만 UI로 전송!
+                        LogReceived?.Invoke(data.Trim() + "\r\n");
+                    }
                 };
                 pythonProcess.ErrorDataReceived += (s, args) => {
                     if (!string.IsNullOrEmpty(args.Data)) LogReceived?.Invoke("[ERROR] " + args.Data + "\r\n");
