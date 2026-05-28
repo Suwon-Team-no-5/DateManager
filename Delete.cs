@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace DateManager
 {
-    public class DeleteResult
+    public class DeleteResult //몇 줄 삭제했고 몇 줄 백업했는지 메세지 띄우기 위한 메서드
     {
         public int DeletedCount { get; set; }
         public List<string> BackupFiles { get; } = new List<string>();
@@ -56,23 +56,24 @@ namespace DateManager
                     .Select(CreateFrameKey)
                     .ToHashSet();
 
-                string catalogFolder = Path.GetDirectoryName(catalogPath) ?? "";
-                string backupFolder = Path.Combine(catalogFolder, "backup");
-                Directory.CreateDirectory(backupFolder);
+                string catalogFolder = Path.GetDirectoryName(catalogPath) ?? ""; // catalog 파일의 폴더 경로
+                string backupFolder = Path.Combine(catalogFolder, "backup"); // 백업 폴더 경로
+                Directory.CreateDirectory(backupFolder); // 백업 폴더가 없으면 생성
 
                 string backupPath = Path.Combine(
                     backupFolder,
                     $"{Path.GetFileNameWithoutExtension(catalogPath)}_{timestamp}{Path.GetExtension(catalogPath)}");
-                File.Copy(catalogPath, backupPath, overwrite: false);
-                result.BackupFiles.Add(backupPath);
+                // 원본 catalog 파일을 백업 폴더로 복사 (덮어쓰기 방지)
+                File.Copy(catalogPath, backupPath, overwrite: false); // 백업 파일이 이미 존재하는 경우 예외 발생
+                result.BackupFiles.Add(backupPath); // 백업 파일 경로를 결과에 추가
 
-                string[] originalLines = File.ReadAllLines(catalogPath);
-                var remainingLines = new List<string>(originalLines.Length);
-                int deletedInFile = 0;
+                string[] originalLines = File.ReadAllLines(catalogPath); // 원본 catalog 파일의 모든 라인을 읽어옴
+                var remainingLines = new List<string>(originalLines.Length); // 삭제되지 않은 라인들을 저장할 리스트
+                int deletedInFile = 0; // 현재 catalog 파일에서 삭제된 라인 수를 카운트
 
                 foreach (string line in originalLines)
                 {
-                    if (ShouldDeleteLine(line, deleteKeys))
+                    if (ShouldDeleteLine(line, deleteKeys))// 해당 라인이 삭제 대상인지 확인
                     {
                         deletedInFile++;
                         continue;
@@ -91,7 +92,7 @@ namespace DateManager
             return result;
         }
 
-        private bool ShouldDeleteLine(string line, HashSet<string> deleteKeys)
+        private bool ShouldDeleteLine(string line, HashSet<string> deleteKeys) //라인이 삭제 대상인지 확인하는 메서드
         {
             if (string.IsNullOrWhiteSpace(line)) return false;
 
@@ -115,7 +116,7 @@ namespace DateManager
             return $"{frame.Index}|{sessionId}|{imagePath}";
         }
 
-        private void DeleteCatalogCaches(string folderPath)
+        private void DeleteCatalogCaches(string folderPath) //캐시에서도 지우는 메서드
         {
             try
             {
@@ -126,7 +127,7 @@ namespace DateManager
             }
             catch
             {
-                // 캐시 삭제 실패는 catalog 삭제 결과에 영향을 주지 않습니다.
+                // 캐시 삭제 실패는 catalog 삭제 결과에 영향을 주지 않음
             }
         }
     }

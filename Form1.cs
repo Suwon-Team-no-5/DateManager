@@ -185,14 +185,13 @@ namespace DateManager
             // 1. Thr > 0 체크박스가 켜져있을 때
             if (chkFilterThr.Checked)
             {
-                // Throttle 값이 0보다 큰 것만 남기기 (변수명은 진철님 DonkeyFrame 구조에 맞춤)
-                filteredList = filteredList.FindAll(frame => frame.Throttle > 0);
+                filteredList = filteredList.FindAll(frame => frame.Throttle == 0);
             }
 
-            // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
-            if (chkFilterLargeThr.Checked)
+            // 2. Angle > 체크박스가 켜져있을 때 (직진 데이터만 필터링)
+            if (chkFilterLargeAngle.Checked)
             {
-                filteredList = filteredList.FindAll(frame => frame.Angle == 0);
+                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 5);
             }
 
             if (chkFilterLargeThr.Checked)
