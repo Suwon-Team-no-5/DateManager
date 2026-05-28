@@ -21,7 +21,7 @@ namespace DateManager
 
         private Picture _pictureHandler;
         private readonly System.Windows.Forms.Timer _playbackTimer;
-        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
+        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0, 8.0 };
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
         private int _lastSelectedIndex = -1; // 마지막으로 클릭한 인덱스 저장
@@ -64,7 +64,8 @@ namespace DateManager
             {
                 this.Invoke((MethodInvoker)delegate
                 {
-                    btnStartTraining.Enabled = true;
+                    btnStartTraining.Enabled = true;   // ⭕ 시작 버튼 다시 켜고
+                    btnStopTraining.Enabled = false;  // ❌ 중단 버튼은 다시 잠그기
                 });
             };
 
@@ -85,11 +86,8 @@ namespace DateManager
             // 필요한 경우 여기에 초기화 코드를 넣습니다.
             // 요청된 탭 순서: 설정 파일 로드 -> 학습 데이터 로드 -> AI 학습 시작 -> 시작지점 -> 종료지점 -> 필터 적용 -> 삭제 -> 재생 -> 정지 -> 배속
             _focusOrder.Clear();
-            _focusOrder.Add(btnLoadConfig);    // 설정 파일 로드
             _focusOrder.Add(btnLoadTub);       // 학습 데이터 로드
             _focusOrder.Add(btnStartTraining); // AI 학습 시작
-            _focusOrder.Add(btnSetLeft);       // 시작 지점
-            _focusOrder.Add(btnSetRight);      // 종료 지점
             _focusOrder.Add(btnApplyFilter);   // 필터 적용
             _focusOrder.Add(btnDeleteData);    // 삭제
             _focusOrder.Add(btnPlay);          // 재생
@@ -193,14 +191,14 @@ namespace DateManager
             }
 
             // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
-            if (chkFilterAngleZero.Checked)
+            if (chkFilterLargeThr.Checked)
             {
                 filteredList = filteredList.FindAll(frame => frame.Angle == 0);
             }
 
-            if (chkFilterLargeAngle.Checked)
+            if (chkFilterLargeThr.Checked)
             {
-                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 0.5);
+                filteredList = filteredList.FindAll(frame => frame.Throttle >= 0.5);
             }
 
             // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
@@ -210,7 +208,7 @@ namespace DateManager
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
 
             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
-            if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
+            if (!chkFilterThr.Checked && !chkFilterLargeThr.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
                 //필터 없으면 원본 리스트 불러옴
@@ -237,8 +235,31 @@ namespace DateManager
 
             foreach (var f in toRemove)
             {
-                _displayedFrameList.Remove(f);
-                _masterFrameList.Remove(f); // 이때는 마스터도 같이 지움
+                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?",
+                                                  "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (rangeResult == DialogResult.Yes)
+                {
+                    try
+                    {
+                        // 💡 범위 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
+                        pbMainCam.Image?.Dispose();
+                        pbMainCam.Image = null;
+
+                        _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
+
+
+
+                        start = 0; end = 0;
+                        RefreshFrameList(_masterFrameList);
+                        MessageBox.Show("범위 삭제가 완료되었습니다.", "완료");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러");
+                    }
+                    return;
+                }
+            }
             }
 
             // 3. 전체 리스트 갱신 (교수님이 지적하신 느린 부분)
@@ -334,6 +355,25 @@ namespace DateManager
             if (e.KeyCode == Keys.Down)
             {
                 MoveFocus(1);
+                e.Handled = true;
+            }
+
+            // Home/End: 첫 프레임 / 마지막 프레임으로 이동
+            if (e.KeyCode == Keys.Home)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(0);
+                }
+                e.Handled = true;
+            }
+
+            if (e.KeyCode == Keys.End)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(_displayedFrameList.Count - 1);
+                }
                 e.Handled = true;
             }
 
@@ -533,70 +573,77 @@ namespace DateManager
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;
-            lblSetRange.Text = "(" + start + ", " + end + ")";
         }
 
         private void btnSetRight_Click(object sender, EventArgs e)
         {
             end = lstFrameData.SelectedIndex;
-            lblSetRange.Text = "(" + start + ", " + end + ")";
         }
 
         private async void btnStart_Click(object sender, EventArgs e)
         {
+            btnStartTraining.Visible = false;
+            btnStopTraining.Visible = true;
             rtbTrainLog.Clear();
-            rtbTrainLog.AppendText("🚀 AI 학습 연동 테스트를 시작합니다...\r\n");
+            rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
-            // 중복 클릭 방지 차단
-            btnStartTraining.Enabled = false;
+            // 버튼 제어
+            btnStartTraining.Enabled = false; // 시작 버튼 잠그기
+            btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/jaeseo03/mycar";
+            string mycarDir = "/home/jinchul04/mycar";
 
-            // 백그라운드 스레드에서 안전하게 리눅스 딥러닝 프로세스 구동
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+
+        private void btnViewMonitor_Click(object sender, EventArgs e)
+        {
+            // 주행 모니터 패널은 켜고, 학습 로그 패널은 끕니다.
+            pnlCamView.Visible = true;
+            pnlTrainingLog.Visible = false;
+
+            // 버튼 색상 변경
+            btnViewMonitor.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewLog.BackColor = Color.FromArgb(62, 62, 66);
         }
 
-        private void Form1_Load_1(object sender, EventArgs e)
+        private void btnViewLog_Click(object sender, EventArgs e)
         {
+            // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
+            pnlCamView.Visible = false;
+            pnlTrainingLog.Visible = true;
 
+            // 버튼 색상 변경
+            btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
         }
 
-        private void lstFrameData_MouseClick(object sender, MouseEventArgs e)
+        private void btnStopTraining_Click(object sender, EventArgs e)
         {
-            int currentIdx = lstFrameData.SelectedIndex;
-            if (currentIdx == -1) return;
+            btnStopTraining.Visible = false;
+            btnRestartTraining.Visible = true;
+            rtbTrainLog.AppendText("\r\n🛑 사용자의 요청으로 AI 학습을 강제 중단합니다...\r\n");
 
-            // Shift 키를 누른 상태에서 클릭했는지 확인
-            if (ModifierKeys == Keys.Shift && _lastSelectedIndex != -1)
-            {
-                // 1. 여기서 인덱스 범위 계산
-                int min = Math.Min(_lastSelectedIndex, currentIdx);
-                int max = Math.Max(_lastSelectedIndex, currentIdx);
+            // 버튼 중복 클릭 방지 차단
+            btnStopTraining.Enabled = false;
 
-                // 2. Clear 대신, 루프를 돌며 필요한 것만 선택
-                // 이미 선택된 항목을 무시하고 새로 범위를 씌우는 방식
-                lstFrameData.BeginUpdate();
-                lstFrameData.SelectedIndices.Clear(); // 이제 이 줄이 에러 안 날 겁니다!
+            // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
+            donkeyTrainer.KillProcess();
+            
+        }
 
-                for (int i = min; i <= max; i++)
-                {
-                    lstFrameData.SetSelected(i, true);
-                }
-                lstFrameData.EndUpdate();
+        private void btnRestartTraining_Click(object sender, EventArgs e)
+        {
+            btnRestartTraining.Visible = false;
+            btnStopTraining.Visible = true;
+        }
 
-                start = min;
-                end = max;
-                lblSetRange.Text = $"({start}, {end})";
-            }
-            else
-            {
-                // Shift 안 눌렀을 때의 일반 동작
-                start = currentIdx;
-                end = currentIdx;
-                _lastSelectedIndex = currentIdx;
-                lblSetRange.Text = $"({start}, {end})";
-            }
+        private void btnEndTraining_Click(object sender, EventArgs e)
+        {
+            btnRestartTraining.Visible = false;
+            btnStopTraining.Visible = false;
+            btnStartTraining.Visible = true;
+        }
         }
     }
 }
