@@ -597,7 +597,7 @@ namespace DateManager
             btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/giju/mycar";
+            string mycarDir = "/home/jinchul04/mycar";
 
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
