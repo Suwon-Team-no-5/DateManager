@@ -25,6 +25,8 @@ namespace DateManager
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
 
+        private int _currentFrameIndex = 0; // 🌟 [변경] 미래의 데이터를 꺼내오기 위해 현재 인덱스를 저장
+
         public Form1()
         {
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
@@ -69,6 +71,8 @@ namespace DateManager
 
             // 폼이 완전히 닫힐 때 백그라운드 좀비 프로세스 방지 안전장치 연결
             this.FormClosing += (s, e) => donkeyTrainer.KillProcess();
+
+            this.pbMainCam.Paint += pbMainCam_Paint;
 
         }
 
@@ -184,14 +188,13 @@ namespace DateManager
             // 1. Thr > 0 체크박스가 켜져있을 때
             if (chkFilterThr.Checked)
             {
-                // Throttle 값이 0보다 큰 것만 남기기 (변수명은 진철님 DonkeyFrame 구조에 맞춤)
-                filteredList = filteredList.FindAll(frame => frame.Throttle > 0);
+                filteredList = filteredList.FindAll(frame => frame.Throttle == 0);
             }
 
             // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
-            if (chkFilterLargeThr.Checked)
+            if (chkFilterLargeAngle.Checked)
             {
-                filteredList = filteredList.FindAll(frame => frame.Angle == 0);
+                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 5);
             }
 
             if (chkFilterLargeThr.Checked)
@@ -545,6 +548,8 @@ namespace DateManager
             DonkeyFrame selectedFrame = _displayedFrameList[index];
             _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
 
+            _currentFrameIndex = index;
+
             lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
             lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
             lblFrameIndex.Text = $"프레임 인덱스: {index + 1}/{_displayedFrameList.Count} (원본 {selectedFrame.FrameIndex})";
@@ -555,6 +560,8 @@ namespace DateManager
             {
                 trkFrameSlider.Value = index;
             }
+
+            pbMainCam.Invalidate();
         }
 
         private void ClearFramePreview()
@@ -564,6 +571,9 @@ namespace DateManager
                 pbMainCam.Image.Dispose();
                 pbMainCam.Image = null;
             }
+
+            _currentFrameIndex = 0; // 🌟 [추가] 초기화 시 각도도 0으로 복구
+            pbMainCam.Invalidate();      // 🌟 [추가] 그려진 선 지우기
 
             lblAngle.Text = "조향각: +0.0";
             lblThrottleTop.Text = "출력: +0.0";
@@ -662,6 +672,126 @@ namespace DateManager
             btnRestartTraining.Visible = false;
             btnStopTraining.Visible = false;
             btnStartTraining.Visible = true;
+        }
+
+        // 🌟🌟🌟 다중 세그먼트(미래 궤적 예측) 및 HUD UI 그리기 🌟🌟🌟
+        private void pbMainCam_Paint(object sender, PaintEventArgs e)
+        {
+            if (_displayedFrameList == null || _displayedFrameList.Count == 0 || pbMainCam.Image == null) return;
+
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            float width = pbMainCam.Width;
+            float height = pbMainCam.Height;
+
+            // =========================================================
+            // 1. 테슬라 스타일 AR 궤적 그리기 (미래 데이터 활용)
+            // =========================================================
+
+            int segments = 8;        // 그릴 막대기(세그먼트)의 개수
+            int lookAheadStep = 3;   // 한 막대기당 몇 프레임 앞의 미래를 볼 것인지 (8 x 3 = 24프레임 앞까지 예측)
+
+            float pathHeight = height * 0.6f; // 화면의 60% 높이까지 길게 뻗어나감
+            float bottomWidth = 140f;         // 차 앞부분 막대기 너비
+            float topWidth = 20f;             // 가장 먼 미래의 막대기 너비
+
+            // 궤적 계산을 위한 변수
+            float curX = width / 2.0f;
+            float angleSum = 0f;              // 조향각 누적(적분) 변수
+            float maxDeflection = width * 0.012f; // 각도에 따른 X축 이동 가중치
+
+            // 좌우 좌표를 저장할 배열
+            PointF[] leftEdge = new PointF[segments + 1];
+            PointF[] rightEdge = new PointF[segments + 1];
+
+            leftEdge[0] = new PointF(curX - bottomWidth / 2, height);
+            rightEdge[0] = new PointF(curX + bottomWidth / 2, height);
+
+            // 미래의 궤적 좌표 점들 계산
+            for (int i = 1; i <= segments; i++)
+            {
+                // 미래의 인덱스 가져오기 (리스트 범위를 넘지 않게 안전장치)
+                int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
+                float futureAngle = (float)_displayedFrameList[futureIndex].Angle;
+
+                // 실제 차가 움직이는 것처럼 조향각을 계속 더해줍니다 (핸들을 꺾고 있으면 곡선이 됨)
+                angleSum += futureAngle;
+
+                // 진행률 (0.0 ~ 1.0)
+                float progress = i / (float)segments;
+                float nextY = height - (pathHeight * progress);
+
+                // 누적된 각도를 바탕으로 다음 막대기의 중심 X 좌표 이동
+                float nextX = curX + (angleSum * maxDeflection);
+                curX = nextX;
+
+                // 원근감에 따른 현재 막대기의 너비
+                float currentWidth = bottomWidth - ((bottomWidth - topWidth) * progress);
+
+                leftEdge[i] = new PointF(curX - currentWidth / 2, nextY);
+                rightEdge[i] = new PointF(curX + currentWidth / 2, nextY);
+            }
+
+            // 계산된 좌표들을 바탕으로 분리된 막대기(세그먼트) 그리기
+            for (int i = 0; i < segments; i++)
+            {
+                // 막대기 사이에 간격(Gap)을 주어 디지털 내비게이션 느낌 강조
+                float gap = 5f;
+
+                PointF[] poly = {
+            leftEdge[i],
+            rightEdge[i],
+            new PointF(rightEdge[i + 1].X, rightEdge[i + 1].Y + gap), // Y를 살짝 내려서 간격 만듦
+            new PointF(leftEdge[i + 1].X, leftEdge[i + 1].Y + gap)
+        };
+
+                // 멀어질수록 점점 투명해지는 그라데이션 효과
+                int alpha = 180 - (int)(160 * (i / (float)segments));
+                using (SolidBrush pathBrush = new SolidBrush(Color.FromArgb(alpha, 30, 144, 255)))
+                {
+                    g.FillPolygon(pathBrush, poly);
+                }
+            }
+
+            // =========================================================
+            // 2. 화면 위 다이렉트 HUD (속도/스레틀 UI)
+            // =========================================================
+
+            float throttle = (float)_displayedFrameList[_currentFrameIndex].Throttle;
+            int displaySpeed = (int)Math.Round(Math.Abs(throttle) * 100); // 0~100으로 스케일업
+
+            // 폰트 설정
+            using (Font bigFont = new Font("Arial", 36, FontStyle.Bold))
+            using (Font smallFont = new Font("Arial", 12, FontStyle.Bold))
+            {
+                string speedText = displaySpeed.ToString();
+
+                // 시인성을 위해 그림자 먼저 그리기
+                g.DrawString(speedText, bigFont, new SolidBrush(Color.FromArgb(100, 0, 0, 0)), new PointF(12, 12));
+                g.DrawString(speedText, bigFont, Brushes.White, new PointF(10, 10));
+
+                // 글자 길이를 측정해서 'PWR' 글자 위치 잡기
+                SizeF size = g.MeasureString(speedText, bigFont);
+                g.DrawString("% PWR", smallFont, Brushes.LightGray, new PointF(10 + size.Width - 10, 40));
+            }
+
+            // 속도 게이지 바 그리기 (얇고 모던한 느낌)
+            int barWidth = 120;
+            int barHeight = 6;
+            int fillWidth = (int)(barWidth * Math.Abs(throttle));
+
+            // 게이지 배경(회색)
+            using (SolidBrush bgBrush = new SolidBrush(Color.FromArgb(100, 200, 200, 200)))
+            {
+                g.FillRectangle(bgBrush, 15, 65, barWidth, barHeight);
+            }
+            // 게이지 채우기(파란색, 후진일 경우 주황색 등 응용 가능하지만 일단 파란색 통일)
+            Color barColor = throttle >= 0 ? Color.DeepSkyBlue : Color.Orange;
+            using (SolidBrush fillBrush = new SolidBrush(barColor))
+            {
+                g.FillRectangle(fillBrush, 15, 65, fillWidth, barHeight);
+            }
         }
     }
 }

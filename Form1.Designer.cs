@@ -185,11 +185,11 @@
             btnViewLog.FlatStyle = FlatStyle.Flat;
             btnViewLog.Font = new Font("Segoe UI Semibold", 9F);
             btnViewLog.ForeColor = Color.White;
-            btnViewLog.Location = new Point(791, 33);
+            btnViewLog.Location = new Point(771, 33);
             btnViewLog.Name = "btnViewLog";
-            btnViewLog.Size = new Size(85, 32);
+            btnViewLog.Size = new Size(105, 32);
             btnViewLog.TabIndex = 8;
-            btnViewLog.Text = "📝 로그";
+            btnViewLog.Text = "📝 로그화면";
             btnViewLog.UseVisualStyleBackColor = false;
             btnViewLog.Click += btnViewLog_Click;
             // 
@@ -201,7 +201,7 @@
             btnViewMonitor.FlatStyle = FlatStyle.Flat;
             btnViewMonitor.Font = new Font("Segoe UI Semibold", 9F);
             btnViewMonitor.ForeColor = Color.White;
-            btnViewMonitor.Location = new Point(692, 33);
+            btnViewMonitor.Location = new Point(672, 33);
             btnViewMonitor.Name = "btnViewMonitor";
             btnViewMonitor.Size = new Size(93, 32);
             btnViewMonitor.TabIndex = 7;
@@ -248,7 +248,7 @@
             btnSpeed.ForeColor = Color.White;
             btnSpeed.Location = new Point(14, 105);
             btnSpeed.Name = "btnSpeed";
-            btnSpeed.Size = new Size(100, 42);
+            btnSpeed.Size = new Size(120, 42);
             btnSpeed.TabIndex = 7;
             btnSpeed.Text = "배속 x 1.0";
             btnSpeed.UseVisualStyleBackColor = false;
@@ -411,7 +411,7 @@
             // 
             // btnRestartTraining
             // 
-            btnRestartTraining.BackColor = Color.FromArgb(0, 176, 255);
+            btnRestartTraining.BackColor = Color.FromArgb(0, 122, 204);
             btnRestartTraining.FlatAppearance.BorderSize = 0;
             btnRestartTraining.FlatStyle = FlatStyle.Flat;
             btnRestartTraining.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
@@ -489,11 +489,11 @@
             btnLoadTub.FlatStyle = FlatStyle.Flat;
             btnLoadTub.Font = new Font("Segoe UI", 9.5F);
             btnLoadTub.ForeColor = Color.White;
-            btnLoadTub.Location = new Point(14, 50);
+            btnLoadTub.Location = new Point(14, 38);
             btnLoadTub.Name = "btnLoadTub";
-            btnLoadTub.Size = new Size(147, 50);
+            btnLoadTub.Size = new Size(147, 62);
             btnLoadTub.TabIndex = 1;
-            btnLoadTub.Text = "학습 데이터 로드";
+            btnLoadTub.Text = "학습 데이터 \r\n로드";
             btnLoadTub.UseVisualStyleBackColor = false;
             btnLoadTub.Click += btnLoadTub_Click;
             // 
@@ -667,11 +667,11 @@
             // 
             // btnRestoreData
             // 
-            btnRestoreData.BackColor = Color.FromArgb(0, 230, 118);
+            btnRestoreData.BackColor = Color.FromArgb(0, 122, 204);
             btnRestoreData.FlatAppearance.BorderSize = 0;
             btnRestoreData.FlatStyle = FlatStyle.Flat;
             btnRestoreData.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-            btnRestoreData.ForeColor = Color.Black;
+            btnRestoreData.ForeColor = Color.White;
             btnRestoreData.Location = new Point(203, 107);
             btnRestoreData.Name = "btnRestoreData";
             btnRestoreData.Size = new Size(160, 42);
