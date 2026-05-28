@@ -16,10 +16,10 @@ namespace DateManager
         public int Index { get; set; }
 
         [JsonPropertyName("_session_id")]
-        public string SessionId { get; set; }
+        public string SessionId { get; set; } = "";
 
         [JsonPropertyName("cam/image_array")]
-        public string ImagePath { get; set; }
+        public string ImagePath { get; set; } = "";
 
         [JsonPropertyName("user/angle")]
         public double Angle { get; set; }
@@ -28,9 +28,10 @@ namespace DateManager
         public double Throttle { get; set; }
 
         public int FrameIndex { get; set; }
-        public string FullImagePath { get; set; }
+        public string FullImagePath { get; set; } = "";
         public bool IsNewData { get; set; }
-        public string DataTypeSummary { get; set; }
+        public string DataTypeSummary { get; set; } = "";
+        public string SourceCatalogPath { get; set; } = "";
     }
 
     public class DataProcessor
@@ -40,7 +41,7 @@ namespace DateManager
         public List<DonkeyFrame> LoadCatalogData(string catalogFilePath, string imagesFolderPath)
         {
             // catalogFilePath의 상위 폴더 경로를 추출하여 폴더 기반 로드 메서드 호출
-            string folderPath = Path.GetDirectoryName(catalogFilePath);
+            string folderPath = Path.GetDirectoryName(catalogFilePath) ?? "";
             return LoadCatalogData(folderPath);
         }
 
@@ -54,7 +55,8 @@ namespace DateManager
 
             // 간단한 디스크 캐시 도입: 카탈로그 파일들의 경로와 최종 수정시간을 기반으로 해시를 만들어
             // 해당 해시에 대응하는 캐시 파일이 있으면 파싱을 건너뛰고 캐시를 로드합니다.
-            string cacheHashSource = string.Join("|", catalogFiles.Select(p => p + ":" + File.GetLastWriteTimeUtc(p).Ticks));
+            const string cacheVersion = "catalog-source-v1";
+            string cacheHashSource = cacheVersion + "|" + string.Join("|", catalogFiles.Select(p => p + ":" + File.GetLastWriteTimeUtc(p).Ticks));
             string cacheHash;
             using (var sha = System.Security.Cryptography.SHA256.Create())
             {
@@ -116,6 +118,7 @@ namespace DateManager
                             {
                                 var frame = JsonSerializer.Deserialize<DonkeyFrame>(line, jsonOptions);
                                 if (frame == null) continue;
+                                frame.SourceCatalogPath = file;
 
                                 if (frame.SessionId == "26-05-21_1" || string.IsNullOrEmpty(frame.ImagePath))
                                 {
@@ -214,6 +217,7 @@ namespace DateManager
                 {
                     var frame = JsonSerializer.Deserialize<DonkeyFrame>(line, jsonOptions);
                     if (frame == null) continue;
+                    frame.SourceCatalogPath = catalogFilePath;
                     if (frame.SessionId == "26-05-21_1" || string.IsNullOrEmpty(frame.ImagePath))
                     {
                         frame.IsNewData = true;
