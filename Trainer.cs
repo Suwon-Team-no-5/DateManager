@@ -8,6 +8,8 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
     public class Trainer
     {
         private Process pythonProcess;
+        private string condaPath = "/home/jaeseo03/miniconda3/bin/conda"; // WSL2 conda 경로
+        private string condaEnvName = "e2e_env"; // conda 환경 이름
 
         public event Action<string> LogReceived;
         public event Action TrainingFinished;
@@ -22,10 +24,33 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
             try
             {
                 ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = pythonPath; // "wsl.exe"가 들어옴
+                // 파라미터로 들어온 pythonPath가 wsl.exe인지 확인
+                string exeName = Path.GetFileName(pythonPath ?? "").ToLower();
 
-                // -u 옵션 대신 파이썬 환경변수(PYTHONUNBUFFERED=1)를 쉘에 주어 실시간 로그를 강제 보장합니다.
-                psi.Arguments = $"-e bash -lic \"export PYTHONUNBUFFERED=1 && conda activate e2e_env && cd {workingDir} && python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+                if (exeName.Contains("wsl"))
+                {
+                    psi.FileName = pythonPath; // wsl.exe
+
+                    // WSL2에서 conda 환경을 확실하게 활성화하는 방법
+                    // 특정 배포판 지정 (-d Ubuntu-22.04)
+                    string safeWorkingDir = workingDir?.Replace("\"", "\\\"") ?? string.Empty;
+                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -lic \"export PYTHONUNBUFFERED=1; " +
+                        $"cd '{safeWorkingDir}' && {condaPath} run -n {condaEnvName} python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+
+                    // 로그로 실행 명령 확인(디버깅용)
+                    LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments}\r\n");
+                }
+                else
+                {
+                    // 윈도우 로컬 Python 또는 절대 경로로 직접 실행하는 경우
+                    psi.FileName = pythonPath; // ex: "python" 또는 "C:\\Python\\python.exe"
+                    psi.WorkingDirectory = workingDir;
+                    // train.py 경로를 인수로 전달
+                    string scriptPath = Path.Combine(workingDir ?? string.Empty, "train.py");
+                    psi.Arguments = $"\"{scriptPath}\" --tub=./data/ --model=./models/mypilot.h5";
+
+                    LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments} (cwd={psi.WorkingDirectory})\r\n");
+                }
 
                 psi.UseShellExecute = false;
                 psi.CreateNoWindow = true;

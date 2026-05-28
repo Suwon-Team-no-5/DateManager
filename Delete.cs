@@ -18,22 +18,18 @@ namespace DateManager
 
             try
             {
-                if (!string.IsNullOrEmpty(targetFrame.FullImagePath) && File.Exists(targetFrame.FullImagePath))
-                {
-                    File.Delete(targetFrame.FullImagePath);
-                }
-
+                // 실제 파일은 삭제하지 않고 메모리(리스트)에서만 제거합니다.
+                // 이렇게 하면 실수로 삭제해도 카탈로그를 다시 로드하면 파일 목록이 복구됩니다.
                 if (frameList.Contains(targetFrame))
                 {
                     frameList.Remove(targetFrame);
-
                 }
             }
             // 성공 알림은 UI 호출부에서 처리하거나 여기서 처리
-
             catch (System.Exception ex)
             {
-                throw new System.Exception($"파일 삭제 실패: {ex.Message}");
+                // 예외는 호출자에게 전달
+                throw new System.Exception($"프레임 제거 실패: {ex.Message}");
             }
         }
 
@@ -48,26 +44,12 @@ namespace DateManager
             int endIndex = targetFrame2.FrameIndex;
             try
             {
-                
-                for (int i = startIndex; i <= endIndex; i++)
-                {
-                    if (i >= 0 && i < frameList.Count)
-                    {
-                        //리스트에서 파일위치를 가져온 후 파일부터삭제
-                        //파일부터 지우지 않으면 리스트의 인덱스가 바뀌면서 듬성듬성 지워지더라
-                        string path = frameList[i].FullImagePath;
-                        if (!string.IsNullOrEmpty(path) && File.Exists(path))
-                        {
-                            File.Delete(path);
-                        }
-                    }
-                }
-                //리스트에서 일괄 삭제
+                // 실제 파일은 삭제하지 않고 리스트 항목만 제거
                 frameList.RemoveAll(f => f.FrameIndex >= startIndex && f.FrameIndex <= endIndex);
-
             }
-            catch (System.Exception ex) { 
-                throw new System.Exception($"파일 삭제 실패: {ex.Message}");
+            catch (System.Exception ex)
+            {
+                throw new System.Exception($"프레임 일괄 제거 실패: {ex.Message}");
             }
         }
         //아래 메서드 윤형규 작성 / 오류시 우선적으로 주석처리 해볼 것   
