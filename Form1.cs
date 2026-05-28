@@ -621,7 +621,7 @@ namespace DateManager
             btnStartTraining.Enabled = false;
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/jaeseo03/mycar";
+            string mycarDir = "/home/jinchul04/mycar";
 
             // 백그라운드 스레드에서 안전하게 리눅스 딥러닝 프로세스 구동
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
