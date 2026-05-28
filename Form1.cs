@@ -480,13 +480,19 @@ namespace DateManager
 
         private void DisplayFrame(int index)
         {
+            if (index < 0 || index >= _displayedFrameList.Count) return;
+
             DonkeyFrame selectedFrame = _displayedFrameList[index];
             _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
 
-            lblAngle.Text = $"조향값(앵글): {selectedFrame.Angle:F3}";
-            lblThrottleTop.Text = $"출력(스레틀): {selectedFrame.Throttle:F3}";
-            lblFrameIndex.Text = $"프레임 인덱스: {index + 1}/{_displayedFrameList.Count} (원본 {selectedFrame.FrameIndex})";
+            lblFrameIndex.Text = $"프레임 번호: {index + 1}/{_displayedFrameList.Count}";
+            lblAngle.Text = $"조향각: {selectedFrame.Angle:F3}";
+            lblThrottleTop.Text = $"출력: {selectedFrame.Throttle:F3}";
+            lblTimestamp.Text = $"기록 시간: {selectedFrame.SessionId}"; // 또는 세션 정보
+
+            // 💡 기록 시간 라벨 수정: 로드 후에도 라벨의 성격을 유지하도록 설정
             lblTimestamp.Text = string.IsNullOrWhiteSpace(selectedFrame.SessionId) ? selectedFrame.DataTypeSummary : selectedFrame.SessionId;
+
             prgThrottle.Value = Math.Max(0, Math.Min(100, (int)Math.Round(selectedFrame.Throttle * 100)));
 
             if (trkFrameSlider.Value != index)
