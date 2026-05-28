@@ -21,7 +21,7 @@ namespace DateManager
 
         private Picture _pictureHandler;
         private readonly System.Windows.Forms.Timer _playbackTimer;
-        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
+        private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0, 8.0 };
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
 
@@ -391,6 +391,25 @@ namespace DateManager
             if (e.KeyCode == Keys.Down)
             {
                 MoveFocus(1);
+                e.Handled = true;
+            }
+
+            // Home/End: 첫 프레임 / 마지막 프레임으로 이동
+            if (e.KeyCode == Keys.Home)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(0);
+                }
+                e.Handled = true;
+            }
+
+            if (e.KeyCode == Keys.End)
+            {
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
+                {
+                    SelectFrame(_displayedFrameList.Count - 1);
+                }
                 e.Handled = true;
             }
 
