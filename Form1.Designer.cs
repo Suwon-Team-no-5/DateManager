@@ -373,8 +373,10 @@
             lstFrameData.Location = new Point(22, 72);
             lstFrameData.Margin = new Padding(5);
             lstFrameData.Name = "lstFrameData";
+            lstFrameData.SelectionMode = SelectionMode.MultiExtended;
             lstFrameData.Size = new Size(250, 384);
             lstFrameData.TabIndex = 15;
+            lstFrameData.MouseClick += lstFrameData_MouseClick;
             lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
             // 
             // pnlSystemOps

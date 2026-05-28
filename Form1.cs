@@ -24,6 +24,7 @@ namespace DateManager
         private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0 };
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
+        private int _lastSelectedIndex = -1; // 마지막으로 클릭한 인덱스 저장
 
         public Form1()
         {
@@ -221,48 +222,38 @@ namespace DateManager
         {
             if (!HasDisplayedFrames()) return;
 
-            // 1. 범위 설정 확인
+            // 1. 삭제할 대상 리스트 구성
+            List<DonkeyFrame> toRemove = new List<DonkeyFrame>();
+
+            // 이 당시에는 범위를 단순히 start~end 인덱스로만 계산함
             int min = Math.Min(start, end);
             int max = Math.Max(start, end);
-            bool isRange = (max > min);
 
-            // 2. 삭제할 대상 리스트 구성
-            List<DonkeyFrame> toRemove = new List<DonkeyFrame>();
-            if (isRange)
-            {
-                toRemove = _displayedFrameList.Where(f => f.FrameIndex >= min && f.FrameIndex <= max).ToList();
-            }
-            else
-            {
-                if (lstFrameData.SelectedIndex == -1) { MessageBox.Show("선택하세요!"); return; }
-                toRemove.Add(_displayedFrameList[lstFrameData.SelectedIndex]);
-            }
+            // 리스트에서 찾아서 삭제
+            toRemove = _displayedFrameList.Where(f => f.FrameIndex >= min && f.FrameIndex <= max).ToList();
 
-            // 3. 사용자 확인 (범위냐 단일이냐에 따라 메시지만 동적 변경)
-            string msg = isRange ? $"범위({min}~{max})의 {toRemove.Count}개 프레임을 삭제할까요?" : $"프레임 {toRemove[0].FrameIndex}번을 삭제할까요?";
-            if (MessageBox.Show(msg, "삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
-
-            // 4. 실행
-            pbMainCam.Image?.Dispose(); pbMainCam.Image = null; // 공통: 이미지 비우기
+            // 2. 삭제 확인 및 실행
+            if (MessageBox.Show("삭제하시겠습니까?", "삭제 확인", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
 
             foreach (var f in toRemove)
             {
                 _displayedFrameList.Remove(f);
+                _masterFrameList.Remove(f); // 이때는 마스터도 같이 지움
             }
 
-            // 5. 정리
-            start = 0; end = 0; lblSetRange.Text = "(0, 0)";
+            // 3. 전체 리스트 갱신 (교수님이 지적하신 느린 부분)
             RefreshFrameList(_displayedFrameList);
             MessageBox.Show("삭제 완료!");
         }
 
         private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
         {
-            int index = lstFrameData.SelectedIndex;
-            if (index >= 0 && index < _displayedFrameList.Count)
-            {
-                DisplayFrame(index);
-            }
+            if (lstFrameData.SelectedIndex == -1) return;
+
+            // 단순히 인덱스만 갱신하던 수준
+            start = lstFrameData.SelectedIndex;
+            end = lstFrameData.SelectedIndex;
+            lblSetRange.Text = $"({start}, {end})";
         }
 
         private void trkFrameSlider_Scroll(object sender, EventArgs e)
@@ -569,6 +560,43 @@ namespace DateManager
         private void Form1_Load_1(object sender, EventArgs e)
         {
 
+        }
+
+        private void lstFrameData_MouseClick(object sender, MouseEventArgs e)
+        {
+            int currentIdx = lstFrameData.SelectedIndex;
+            if (currentIdx == -1) return;
+
+            // Shift 키를 누른 상태에서 클릭했는지 확인
+            if (ModifierKeys == Keys.Shift && _lastSelectedIndex != -1)
+            {
+                // 1. 여기서 인덱스 범위 계산
+                int min = Math.Min(_lastSelectedIndex, currentIdx);
+                int max = Math.Max(_lastSelectedIndex, currentIdx);
+
+                // 2. Clear 대신, 루프를 돌며 필요한 것만 선택
+                // 이미 선택된 항목을 무시하고 새로 범위를 씌우는 방식
+                lstFrameData.BeginUpdate();
+                lstFrameData.SelectedIndices.Clear(); // 이제 이 줄이 에러 안 날 겁니다!
+
+                for (int i = min; i <= max; i++)
+                {
+                    lstFrameData.SetSelected(i, true);
+                }
+                lstFrameData.EndUpdate();
+
+                start = min;
+                end = max;
+                lblSetRange.Text = $"({start}, {end})";
+            }
+            else
+            {
+                // Shift 안 눌렀을 때의 일반 동작
+                start = currentIdx;
+                end = currentIdx;
+                _lastSelectedIndex = currentIdx;
+                lblSetRange.Text = $"({start}, {end})";
+            }
         }
     }
 }
