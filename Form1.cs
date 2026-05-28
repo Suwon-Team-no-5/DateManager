@@ -184,18 +184,22 @@ namespace DateManager
             // 마스터 리스트를 복사해서 필터링을 시작할 임시 리스트 생성
             List<DonkeyFrame> filteredList = new List<DonkeyFrame>(_masterFrameList);
 
-            // 1. Thr > 0 체크박스가 켜져있을 때
+            // 1. Thr == 0 체크박스가 켜져있을 때
             if (chkFilterThr.Checked)
             {
-                // Throttle 값이 0보다 큰 것만 남기기 (변수명은 진철님 DonkeyFrame 구조에 맞춤)
-                filteredList = filteredList.FindAll(frame => frame.Throttle > 0);
+                // Throttle 값이 0인것만 남기기 (변수명은 진철님 DonkeyFrame 구조에 맞춤)
+                filteredList = filteredList.FindAll(frame => frame.Throttle == 0);
+            }
+            if (chkFilterLargeThr.Checked)
+            {
+                filteredList = filteredList.FindAll(frame => frame.Throttle > 0.5);
             }
 
             // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
-            if (chkFilterAngleZero.Checked)
-            {
-                filteredList = filteredList.FindAll(frame => frame.Angle == 0);
-            }
+            //if (chkFilterAngleZero.Checked)
+            //{
+            //    filteredList = filteredList.FindAll(frame => frame.Angle == 0);
+            //}
 
             if (chkFilterLargeAngle.Checked)
             {
@@ -209,7 +213,7 @@ namespace DateManager
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
 
             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
-            if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
+            if (!chkFilterThr.Checked && !chkFilterLargeThr.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
                 //필터 없으면 원본 리스트 불러옴
@@ -621,10 +625,15 @@ namespace DateManager
             btnStartTraining.Enabled = false;
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/jaeseo03/mycar";
+            string mycarDir = " mycar";
 
             // 백그라운드 스레드에서 안전하게 리눅스 딥러닝 프로세스 구동
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+        }
+
+        private void chkFilterThr_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

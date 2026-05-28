@@ -53,7 +53,6 @@
             lblSystemOpsTitle = new Label();
             btnStartTraining = new Button();
             btnLoadTub = new Button();
-            btnLoadConfig = new Button();
             pnlDataManagement = new Panel();
             lblDataMgmtTitle = new Label();
             lblSetRange = new Label();
@@ -64,7 +63,7 @@
             pnlFilterOptions = new Panel();
             lblFilterTitle = new Label();
             chkFilterLargeAngle = new CheckBox();
-            chkFilterAngleZero = new CheckBox();
+            chkFilterLargeThr = new CheckBox();
             chkFilterThr = new CheckBox();
             pnlTrainingLog = new Panel();
             lblLogTitle = new Label();
@@ -364,7 +363,6 @@
             pnlSystemOps.Controls.Add(lblSystemOpsTitle);
             pnlSystemOps.Controls.Add(btnStartTraining);
             pnlSystemOps.Controls.Add(btnLoadTub);
-            pnlSystemOps.Controls.Add(btnLoadConfig);
             pnlSystemOps.Location = new Point(1096, 71);
             pnlSystemOps.Name = "pnlSystemOps";
             pnlSystemOps.Size = new Size(175, 315);
@@ -403,27 +401,13 @@
             btnLoadTub.FlatStyle = FlatStyle.Flat;
             btnLoadTub.Font = new Font("Segoe UI", 9.5F);
             btnLoadTub.ForeColor = Color.White;
-            btnLoadTub.Location = new Point(14, 101);
+            btnLoadTub.Location = new Point(14, 80);
             btnLoadTub.Name = "btnLoadTub";
             btnLoadTub.Size = new Size(147, 50);
             btnLoadTub.TabIndex = 1;
             btnLoadTub.Text = "학습 데이터 로드";
             btnLoadTub.UseVisualStyleBackColor = false;
             btnLoadTub.Click += btnLoadTub_Click;
-            // 
-            // btnLoadConfig
-            // 
-            btnLoadConfig.BackColor = Color.FromArgb(62, 62, 66);
-            btnLoadConfig.FlatAppearance.BorderSize = 0;
-            btnLoadConfig.FlatStyle = FlatStyle.Flat;
-            btnLoadConfig.Font = new Font("Segoe UI", 9.5F);
-            btnLoadConfig.ForeColor = Color.White;
-            btnLoadConfig.Location = new Point(14, 45);
-            btnLoadConfig.Name = "btnLoadConfig";
-            btnLoadConfig.Size = new Size(147, 45);
-            btnLoadConfig.TabIndex = 0;
-            btnLoadConfig.Text = "설정 파일 로드";
-            btnLoadConfig.UseVisualStyleBackColor = false;
             // 
             // pnlDataManagement
             // 
@@ -526,7 +510,7 @@
             pnlFilterOptions.BackColor = Color.FromArgb(30, 30, 30);
             pnlFilterOptions.Controls.Add(lblFilterTitle);
             pnlFilterOptions.Controls.Add(chkFilterLargeAngle);
-            pnlFilterOptions.Controls.Add(chkFilterAngleZero);
+            pnlFilterOptions.Controls.Add(chkFilterLargeThr);
             pnlFilterOptions.Controls.Add(chkFilterThr);
             pnlFilterOptions.Location = new Point(14, 45);
             pnlFilterOptions.Name = "pnlFilterOptions";
@@ -555,16 +539,16 @@
             chkFilterLargeAngle.Text = "급커브 데이터";
             chkFilterLargeAngle.UseVisualStyleBackColor = true;
             // 
-            // chkFilterAngleZero
+            // chkFilterLargeThr
             // 
-            chkFilterAngleZero.AutoSize = true;
-            chkFilterAngleZero.ForeColor = Color.White;
-            chkFilterAngleZero.Location = new Point(91, 30);
-            chkFilterAngleZero.Name = "chkFilterAngleZero";
-            chkFilterAngleZero.Size = new Size(61, 24);
-            chkFilterAngleZero.TabIndex = 1;
-            chkFilterAngleZero.Text = "직진";
-            chkFilterAngleZero.UseVisualStyleBackColor = true;
+            chkFilterLargeThr.AutoSize = true;
+            chkFilterLargeThr.ForeColor = Color.White;
+            chkFilterLargeThr.Location = new Point(91, 30);
+            chkFilterLargeThr.Name = "chkFilterLargeThr";
+            chkFilterLargeThr.Size = new Size(61, 24);
+            chkFilterLargeThr.TabIndex = 1;
+            chkFilterLargeThr.Text = "과속";
+            chkFilterLargeThr.UseVisualStyleBackColor = true;
             // 
             // chkFilterThr
             // 
@@ -572,9 +556,9 @@
             chkFilterThr.ForeColor = Color.White;
             chkFilterThr.Location = new Point(5, 30);
             chkFilterThr.Name = "chkFilterThr";
-            chkFilterThr.Size = new Size(80, 24);
+            chkFilterThr.Size = new Size(91, 24);
             chkFilterThr.TabIndex = 0;
-            chkFilterThr.Text = "속도>0";
+            chkFilterThr.Text = "속도==0";
             chkFilterThr.UseVisualStyleBackColor = true;
             // 
             // pnlTrainingLog
@@ -698,7 +682,7 @@
         private Button btnStartTraining;
         private Button btnLoadTub;
         private CheckBox chkFilterLargeAngle;
-        private CheckBox chkFilterAngleZero;
+        private CheckBox chkFilterLargeThr;
         private CheckBox chkFilterThr;
         private Button btnApplyFilter;
         private Button btnSetLeft;
