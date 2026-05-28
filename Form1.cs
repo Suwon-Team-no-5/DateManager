@@ -63,7 +63,8 @@ namespace DateManager
             {
                 this.Invoke((MethodInvoker)delegate
                 {
-                    btnStartTraining.Enabled = true;
+                    btnStartTraining.Enabled = true;   // ⭕ 시작 버튼 다시 켜고
+                    btnStopTraining.Enabled = false;  // ❌ 중단 버튼은 다시 잠그기
                 });
             };
 
@@ -192,14 +193,14 @@ namespace DateManager
             }
 
             // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
-            if (chkFilterAngleZero.Checked)
+            if (chkFilterLargeThr.Checked)
             {
                 filteredList = filteredList.FindAll(frame => frame.Angle == 0);
             }
 
-            if (chkFilterLargeAngle.Checked)
+            if (chkFilterLargeThr.Checked)
             {
-                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 0.5);
+                filteredList = filteredList.FindAll(frame => frame.Throttle >= 0.5);
             }
 
             // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
@@ -209,7 +210,7 @@ namespace DateManager
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
 
             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
-            if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
+            if (!chkFilterThr.Checked && !chkFilterLargeThr.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
                 //필터 없으면 원본 리스트 불러옴
@@ -615,16 +616,26 @@ namespace DateManager
         private async void btnStart_Click(object sender, EventArgs e)
         {
             rtbTrainLog.Clear();
-            rtbTrainLog.AppendText("🚀 AI 학습 연동 테스트를 시작합니다...\r\n");
+            rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
-            // 중복 클릭 방지 차단
-            btnStartTraining.Enabled = false;
+            // 버튼 제어
+            btnStartTraining.Enabled = false; // 시작 버튼 잠그기
+            btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
             string mycarDir = "/home/jinchul04/mycar";
 
-            // 백그라운드 스레드에서 안전하게 리눅스 딥러닝 프로세스 구동
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+        }
+        private void btnStopTraining_Click(object sender, EventArgs e)
+        {
+            rtbTrainLog.AppendText("\r\n🛑 사용자의 요청으로 AI 학습을 강제 중단합니다...\r\n");
+
+            // 버튼 중복 클릭 방지 차단
+            btnStopTraining.Enabled = false;
+
+            // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
+            donkeyTrainer.KillProcess();
         }
     }
 }
