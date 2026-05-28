@@ -193,14 +193,14 @@ namespace DateManager
             }
 
             // 2. Angle == 0 체크박스가 켜져있을 때 (직진 데이터만 필터링)
-            if (chkFilterAngleZero.Checked)
+            if (chkFilterLargeThr.Checked)
             {
                 filteredList = filteredList.FindAll(frame => frame.Angle == 0);
             }
 
-            if (chkFilterLargeAngle.Checked)
+            if (chkFilterLargeThr.Checked)
             {
-                filteredList = filteredList.FindAll(frame => Math.Abs(frame.Angle) >= 0.5);
+                filteredList = filteredList.FindAll(frame => frame.Throttle >= 0.5);
             }
 
             // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
@@ -210,7 +210,7 @@ namespace DateManager
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
 
             //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
-            if (!chkFilterThr.Checked && !chkFilterAngleZero.Checked && !chkFilterLargeAngle.Checked)
+            if (!chkFilterThr.Checked && !chkFilterLargeThr.Checked && !chkFilterLargeAngle.Checked)
             {
                 RefreshFrameList(_masterFrameList);
                 //필터 없으면 원본 리스트 불러옴

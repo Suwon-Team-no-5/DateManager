@@ -8,6 +8,8 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
     public class Trainer
     {
         private Process pythonProcess;
+        private string condaPath = "/home/jaeseo03/miniconda3/bin/conda"; // WSL2 conda 경로
+        private string condaEnvName = "e2e_env"; // conda 환경 이름
 
         public event Action<string> LogReceived;
         public event Action TrainingFinished;
@@ -29,9 +31,11 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                 {
                     psi.FileName = pythonPath; // wsl.exe
 
-                    // WSL 비인터랙티브 셸에서 conda를 사용하려면 shell hook 또는 bashrc를 명시적으로 불러와야 함
+                    // WSL2에서 conda 환경을 확실하게 활성화하는 방법
+                    // 특정 배포판 지정 (-d Ubuntu-22.04)
                     string safeWorkingDir = workingDir?.Replace("\"", "\\\"") ?? string.Empty;
-                    psi.Arguments = $"-e bash -lic \"export PYTHONUNBUFFERED=1; source ~/.bashrc 2>/dev/null || true; eval \\\"$(conda shell.bash hook)\\\" 2>/dev/null || true; conda activate e2e_env && cd '{safeWorkingDir}' && python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -lic \"export PYTHONUNBUFFERED=1; " +
+                        $"cd '{safeWorkingDir}' && {condaPath} run -n {condaEnvName} python train.py --tub=./data/ --model=./models/mypilot.h5\"";
 
                     // 로그로 실행 명령 확인(디버깅용)
                     LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments}\r\n");
