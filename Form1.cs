@@ -218,52 +218,64 @@ namespace DateManager
 
         private void btnDeleteData_Click(object sender, EventArgs e)
         {
-            if (!HasDisplayedFrames()) return;
+            // 1. 선택된 데이터 확인
+            if (lstFrameData.SelectedIndices.Count == 0)
+            {
+                MessageBox.Show("삭제할 프레임을 리스트에서 선택해주세요!", "선택 필요");
+                return;
+            }
 
             // 1. 삭제할 대상 리스트 구성
             List<DonkeyFrame> toRemove = new List<DonkeyFrame>();
 
-            // 이 당시에는 범위를 단순히 start~end 인덱스로만 계산함
-            int min = Math.Min(start, end);
-            int max = Math.Max(start, end);
+            int firstSelectedIndex = lstFrameData.SelectedIndices.Cast<int>().Min();
+            List<DonkeyFrame> selectedFrames = lstFrameData.SelectedIndices
+                .Cast<int>()
+                .Where(index => index >= 0 && index < _displayedFrameList.Count)
+                .Select(index => _displayedFrameList[index])
+                .ToList();
 
-            // 리스트에서 찾아서 삭제
-            toRemove = _displayedFrameList.Where(f => f.FrameIndex >= min && f.FrameIndex <= max).ToList();
-
-            // 2. 삭제 확인 및 실행
-            if (MessageBox.Show("삭제하시겠습니까?", "삭제 확인", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
-
-            foreach (var f in toRemove)
+            if (selectedFrames.Count == 0)
             {
-                DialogResult rangeResult = MessageBox.Show($"선택된 범위 ({start}, {end})의 데이터를 모두 삭제할까요?",
-                                                  "범위 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (rangeResult == DialogResult.Yes)
-                {
-                    try
-                    {
-                        // 💡 범위 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
-                        pbMainCam.Image?.Dispose();
-                        pbMainCam.Image = null;
-
-                        _fileRemover.RemoveFrames(_masterFrameList, _masterFrameList[Math.Min(start, end)], _masterFrameList[Math.Max(start, end)]);
-
-
-
-                        start = 0; end = 0;
-                        RefreshFrameList(_masterFrameList);
-                        MessageBox.Show("범위 삭제가 완료되었습니다.", "완료");
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"범위 삭제 중 오류 발생: {ex.Message}", "에러");
-                    }
-                    return;
-                }
+                MessageBox.Show("삭제할 프레임을 찾을 수 없습니다.", "알림");
+                return;
             }
 
-            // 3. 전체 리스트 갱신 (교수님이 지적하신 느린 부분)
-            RefreshFrameList(_displayedFrameList);
-            MessageBox.Show("삭제 완료!");
+            string previewText = selectedFrames.Count == 1
+                ? $"Frame {selectedFrames[0].FrameIndex}번 데이터를 catalog 파일에서 삭제할까요?"
+                : $"선택된 {selectedFrames.Count}개 데이터를 catalog 파일에서 삭제할까요?";
+
+            DialogResult confirmResult = MessageBox.Show(
+                $"{previewText}\n삭제 전 원본 catalog 파일은 backup 폴더에 저장됩니다.",
+                "삭제 확인",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirmResult != DialogResult.Yes) return;
+
+            try
+            {
+                // 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
+                pbMainCam.Image?.Dispose();
+                pbMainCam.Image = null;
+
+                DeleteResult deleteResult = _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, selectedFrames);
+
+                _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
+                RefreshFrameList(_displayedFrameList);
+                if (_displayedFrameList.Count > 0)
+                {
+                    SelectFrame(Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1));
+                }
+
+                MessageBox.Show(
+                    $"{deleteResult.DeletedCount}개 데이터 삭제가 완료되었습니다.\n백업 파일 {deleteResult.BackupFiles.Count}개가 backup 폴더에 저장되었습니다.",
+                    "정제 완료");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러");
+            }
         }
 
         private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
