@@ -554,8 +554,6 @@ namespace DateManager
                 ? selectedFrame.DataTypeSummary
                 : selectedFrame.SessionId;
 
-            prgThrottle.Value = Math.Max(0, Math.Min(100, (int)Math.Round(selectedFrame.Throttle * 100)));
-
             if (trkFrameSlider.Value != index)
             {
                 trkFrameSlider.Value = index;
@@ -718,6 +716,7 @@ namespace DateManager
                     MessageBox.Show($"복원 실패: {ex.Message}");
                 }
             }
+        }
 
         // 🌟🌟🌟 궤적 부드러움 보정 & HUD 우측 하단 배치 버전 🌟🌟🌟
         private void pbMainCam_Paint(object sender, PaintEventArgs e)
