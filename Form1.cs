@@ -29,6 +29,10 @@ namespace DateManager
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
         private int _lastSelectedIndex = -1; // 마지막으로 클릭한 인덱스 저장
 
+        private SelectionMode _normalListSelectionMode = SelectionMode.MultiExtended;
+        private bool _isPlaybackSelecting = false;
+        private bool _playbackSelectionModeSaved = false;
+
         public Form1()
         {
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
@@ -272,10 +276,13 @@ namespace DateManager
         {
             if (lstFrameData.SelectedIndex == -1) return;
 
-            // 단순히 인덱스만 갱신하던 수준
+            // 재생 코드가 선택을 바꾸는 중이면 start/end를 건드리지 않음
+            if (_isPlaybackSelecting)
+                return;
+
             start = lstFrameData.SelectedIndex;
             end = lstFrameData.SelectedIndex;
-            //lblSetRange.Text = $"({start}, {end})";
+
             DisplayFrame(lstFrameData.SelectedIndex);
         }
 
@@ -316,6 +323,24 @@ namespace DateManager
             {
                 StopPlayback();
                 return;
+            }
+
+            if (!_playbackSelectionModeSaved)
+            {
+                _normalListSelectionMode = lstFrameData.SelectionMode;
+                _playbackSelectionModeSaved = true;
+            }
+
+            // 재생 중에는 다중 선택을 잠시 끄기
+            if (lstFrameData.SelectionMode != SelectionMode.One)
+            {
+                lstFrameData.ClearSelected();
+                lstFrameData.SelectionMode = SelectionMode.One;
+            }
+
+            if (lstFrameData.SelectedIndex < 0)
+            {
+                SelectFrame(0);
             }
 
             _playbackTimer.Start();
@@ -493,16 +518,23 @@ namespace DateManager
 
             int safeIndex = Math.Max(0, Math.Min(index, _displayedFrameList.Count - 1));
 
-            if (lstFrameData.SelectedIndex != safeIndex)
+            _isPlaybackSelecting = true;
+
+            try
             {
+                lstFrameData.ClearSelected();
                 lstFrameData.SelectedIndex = safeIndex;
+
+                int visibleCount = Math.Max(1, lstFrameData.ClientSize.Height / Math.Max(1, lstFrameData.ItemHeight));
+                int topIndex = Math.Max(0, safeIndex - visibleCount / 2);
+
+                if (topIndex < lstFrameData.Items.Count)
+                    lstFrameData.TopIndex = topIndex;
             }
-
-            int visibleCount = Math.Max(1, lstFrameData.ClientSize.Height / Math.Max(1, lstFrameData.ItemHeight));
-            int topIndex = Math.Max(0, safeIndex - visibleCount / 2);
-
-            if (topIndex < lstFrameData.Items.Count)
-                lstFrameData.TopIndex = topIndex;
+            finally
+            {
+                _isPlaybackSelecting = false;
+            }
 
             DisplayFrame(safeIndex);
         }
@@ -555,6 +587,13 @@ namespace DateManager
         {
             _playbackTimer.Stop();
             btnPlay.Text = "▶ 재생";
+
+            // 재생이 끝나면 원래 다중 선택 모드로 복구
+            if (_playbackSelectionModeSaved)
+            {
+                lstFrameData.SelectionMode = _normalListSelectionMode;
+                _playbackSelectionModeSaved = false;
+            }
         }
 
         private void UpdatePlaybackInterval()
