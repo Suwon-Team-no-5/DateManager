@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
@@ -17,10 +18,17 @@ namespace DateManager
             if (string.IsNullOrWhiteSpace(imagePath) || !File.Exists(imagePath))
                 return;
 
-            using (var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var temp = Image.FromStream(fs))
+            try
             {
-                pb.Image = new Bitmap(temp);
+                using (var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var temp = Image.FromStream(fs))
+                {
+                    pb.Image = new Bitmap(temp);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("이미지 로드 오류: " + ex.Message);
             }
         }
     }

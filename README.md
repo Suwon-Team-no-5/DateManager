@@ -87,7 +87,7 @@ DateManager/
 
 ---
 
-### 👥 팀 구성 및 역할 (Team Members)Team 05 - 이름전공주요 역할
+### 👥 팀 구성 및 역할 (Team Members)
 - 김재서(컴퓨터소프트웨어학과)(팀장/UI 총괄): 전체 WinForms 레이아웃 설계, 이미지 표시 및 슬라이더 연동 담당
 - 박진철(컴퓨터소프트웨어학과)(데이터 엔지니어): JSON 파싱 및 파일 시스템 삭제 로직 담당
 - 윤형규(컴퓨터소프트웨어학과)(로직 개발자): 리스트 선택 및 LINQ 기반 데이터 필터링 알고리즘 구현]
@@ -97,9 +97,16 @@ DateManager/
 
 ### 진행 상황
 ![기초 UI 설계](img/screenshot-1.png)
+- 기초 UI 설계
 
 
 ![기능 구현](img/screenshot-2.png)
+- 기초 기능 구현
 
 
 ![UI 고도화](img/screenshot-3.png)
+- UI 업그레이드 version 1.0
+
+
+![UI 고도화](img/screenshot-4.png)
+- UI 업그레이드 version 2.0
