@@ -18,6 +18,9 @@ namespace DateManager
         private List<DonkeyFrame> _displayedFrameList;
 
         private FileRemover _fileRemover;
+        // 카탈로그 경로를 저장할 변수
+        private string _currentCatalogPath = "";
+        private BackupManager _backupManager = new BackupManager();
 
         private Picture _pictureHandler;
         private readonly System.Windows.Forms.Timer _playbackTimer;
@@ -140,6 +143,8 @@ namespace DateManager
                 fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
+                    _currentCatalogPath = fbd.SelectedPath; //(경로 저장)
+                    _backupManager.CurrentCatalogPath = _currentCatalogPath;
                     string selectedPath = fbd.SelectedPath;
 
                     // 로딩 중임을 사용자에게 알림 (UI가 멈추지 않음)
@@ -225,9 +230,6 @@ namespace DateManager
                 return;
             }
 
-            // 1. 삭제할 대상 리스트 구성
-            List<DonkeyFrame> toRemove = new List<DonkeyFrame>();
-
             int firstSelectedIndex = lstFrameData.SelectedIndices.Cast<int>().Min();
             List<DonkeyFrame> selectedFrames = lstFrameData.SelectedIndices
                 .Cast<int>()
@@ -235,47 +237,35 @@ namespace DateManager
                 .Select(index => _displayedFrameList[index])
                 .ToList();
 
-            if (selectedFrames.Count == 0)
-            {
-                MessageBox.Show("삭제할 프레임을 찾을 수 없습니다.", "알림");
-                return;
-            }
+            if (selectedFrames.Count == 0) return;
 
-            string previewText = selectedFrames.Count == 1
-                ? $"Frame {selectedFrames[0].FrameIndex}번 데이터를 catalog 파일에서 삭제할까요?"
-                : $"선택된 {selectedFrames.Count}개 데이터를 catalog 파일에서 삭제할까요?";
-
-            DialogResult confirmResult = MessageBox.Show(
-                $"{previewText}\n삭제 전 원본 catalog 파일은 backup 폴더에 저장됩니다.",
-                "삭제 확인",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-
-            if (confirmResult != DialogResult.Yes) return;
+            if (MessageBox.Show("선택된 데이터를 삭제할까요?", "삭제 확인", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
 
             try
             {
-                // 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
                 pbMainCam.Image?.Dispose();
                 pbMainCam.Image = null;
 
                 DeleteResult deleteResult = _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, selectedFrames);
-
                 _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
+
+                // 1. 리스트 갱신
                 RefreshFrameList(_displayedFrameList);
+
+                // 2. 삭제 후 선택 위치 조정 (범위 초과 방지)
                 if (_displayedFrameList.Count > 0)
                 {
-                    SelectFrame(Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1));
+                    int nextIndex = Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1);
+                    SelectFrame(nextIndex); // 💡 여기서 인덱스 설정 및 DisplayFrame 호출 발생
                 }
 
-                MessageBox.Show(
-                    $"{deleteResult.DeletedCount}개 데이터 삭제가 완료되었습니다.\n백업 파일 {deleteResult.BackupFiles.Count}개가 backup 폴더에 저장되었습니다.",
-                    "정제 완료");
+                MessageBox.Show($"{deleteResult.DeletedCount}개 삭제 완료.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러");
+                MessageBox.Show($"삭제 오류: {ex.Message}");
             }
+
         }
 
         private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
@@ -286,6 +276,7 @@ namespace DateManager
             start = lstFrameData.SelectedIndex;
             end = lstFrameData.SelectedIndex;
             //lblSetRange.Text = $"({start}, {end})";
+            DisplayFrame(lstFrameData.SelectedIndex);
         }
 
         private void trkFrameSlider_Scroll(object sender, EventArgs e)
@@ -501,14 +492,19 @@ namespace DateManager
             if (!HasDisplayedFrames(false)) return;
 
             int safeIndex = Math.Max(0, Math.Min(index, _displayedFrameList.Count - 1));
+
             if (lstFrameData.SelectedIndex != safeIndex)
             {
                 lstFrameData.SelectedIndex = safeIndex;
             }
-            else
-            {
-                DisplayFrame(safeIndex);
-            }
+
+            int visibleCount = Math.Max(1, lstFrameData.ClientSize.Height / Math.Max(1, lstFrameData.ItemHeight));
+            int topIndex = Math.Max(0, safeIndex - visibleCount / 2);
+
+            if (topIndex < lstFrameData.Items.Count)
+                lstFrameData.TopIndex = topIndex;
+
+            DisplayFrame(safeIndex);
         }
 
         private void MoveFrame(int offset)
@@ -521,25 +517,23 @@ namespace DateManager
 
         private void DisplayFrame(int index)
         {
-            if (index < 0 || index >= _displayedFrameList.Count) return;
+            if (_displayedFrameList == null || index < 0 || index >= _displayedFrameList.Count) return;
 
             DonkeyFrame selectedFrame = _displayedFrameList[index];
+
             _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
 
             lblFrameIndex.Text = $"프레임 번호: {index + 1}/{_displayedFrameList.Count}";
             lblAngle.Text = $"조향각: {selectedFrame.Angle:F3}";
             lblThrottleTop.Text = $"출력: {selectedFrame.Throttle:F3}";
-            lblTimestamp.Text = $"기록 시간: {selectedFrame.SessionId}"; // 또는 세션 정보
-
-            // 💡 기록 시간 라벨 수정: 로드 후에도 라벨의 성격을 유지하도록 설정
-            lblTimestamp.Text = string.IsNullOrWhiteSpace(selectedFrame.SessionId) ? selectedFrame.DataTypeSummary : selectedFrame.SessionId;
+            lblTimestamp.Text = string.IsNullOrWhiteSpace(selectedFrame.SessionId)
+                ? selectedFrame.DataTypeSummary
+                : selectedFrame.SessionId;
 
             prgThrottle.Value = Math.Max(0, Math.Min(100, (int)Math.Round(selectedFrame.Throttle * 100)));
 
             if (trkFrameSlider.Value != index)
-            {
                 trkFrameSlider.Value = index;
-            }
         }
 
         private void ClearFramePreview()
@@ -641,7 +635,7 @@ namespace DateManager
 
             // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
             donkeyTrainer.KillProcess();
-            
+
         }
 
         private void btnRestartTraining_Click(object sender, EventArgs e)
@@ -655,6 +649,35 @@ namespace DateManager
             btnRestartTraining.Visible = false;
             btnStopTraining.Visible = false;
             btnStartTraining.Visible = true;
+        }
+
+        private void btnRestoreData_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
+
+            OpenFileDialog ofd = new OpenFileDialog();
+            string backupDir = Path.Combine(_currentCatalogPath, "backup");
+            if (Directory.Exists(backupDir)) ofd.InitialDirectory = backupDir;
+            ofd.Filter = "Catalog Files (*.catalog)|*.catalog";
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    _backupManager.RestoreFromBackup(ofd.FileName, _currentCatalogPath);
+                    _masterFrameList = _dataProcessor.LoadCatalogData(_currentCatalogPath);
+
+                    // 💡 RefreshFrameList 내부에서 SelectFrame(0)과 DisplayFrame(0)이 호출되므로 
+                    // 별도 로직 없이 이것만으로 충분합니다.
+                    RefreshFrameList(_masterFrameList);
+
+                    MessageBox.Show("복원이 완료되었습니다!");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"복원 실패: {ex.Message}");
+                }
+            }
         }
     }
 }
