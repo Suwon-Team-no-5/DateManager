@@ -51,7 +51,9 @@ namespace DateManager
         public List<DonkeyFrame> LoadCatalogData(string folderPath)
         {
             string imagesFolderPath = Path.Combine(folderPath, "images");
-            string[] catalogFiles = Directory.GetFiles(folderPath, "*.catalog");
+            string[] catalogFiles = Directory.GetFiles(folderPath, "*.catalog", SearchOption.TopDirectoryOnly)
+    .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}backup{Path.DirectorySeparatorChar}"))
+    .ToArray();
 
             // 간단한 디스크 캐시 도입: 카탈로그 파일들의 경로와 최종 수정시간을 기반으로 해시를 만들어
             // 해당 해시에 대응하는 캐시 파일이 있으면 파싱을 건너뛰고 캐시를 로드합니다.

@@ -226,7 +226,6 @@ namespace DateManager
 
         private void btnDeleteData_Click(object sender, EventArgs e)
         {
-            // 1. 선택된 데이터 확인
             if (lstFrameData.SelectedIndices.Count == 0)
             {
                 MessageBox.Show("삭제할 프레임을 리스트에서 선택해주세요!", "선택 필요");
@@ -234,6 +233,7 @@ namespace DateManager
             }
 
             int firstSelectedIndex = lstFrameData.SelectedIndices.Cast<int>().Min();
+
             List<DonkeyFrame> selectedFrames = lstFrameData.SelectedIndices
                 .Cast<int>()
                 .Where(index => index >= 0 && index < _displayedFrameList.Count)
@@ -242,24 +242,29 @@ namespace DateManager
 
             if (selectedFrames.Count == 0) return;
 
-            if (MessageBox.Show("선택된 데이터를 삭제할까요?", "삭제 확인", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            if (MessageBox.Show("선택된 데이터를 삭제할까요?", "삭제 확인", MessageBoxButtons.YesNo) != DialogResult.Yes)
+                return;
 
             try
             {
+                StopPlayback();
+
                 pbMainCam.Image?.Dispose();
                 pbMainCam.Image = null;
 
                 DeleteResult deleteResult = _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, selectedFrames);
+
                 _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
 
-                // 1. 리스트 갱신
                 RefreshFrameList(_displayedFrameList);
 
-                // 2. 삭제 후 선택 위치 조정 (범위 초과 방지)
                 if (_displayedFrameList.Count > 0)
                 {
                     int nextIndex = Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1);
-                    SelectFrame(nextIndex); // 💡 여기서 인덱스 설정 및 DisplayFrame 호출 발생
+                    SelectFrame(nextIndex);
+
+                    if (nextIndex < lstFrameData.Items.Count)
+                        lstFrameData.TopIndex = nextIndex;
                 }
 
                 MessageBox.Show($"{deleteResult.DeletedCount}개 삭제 완료.");
@@ -449,6 +454,8 @@ namespace DateManager
             lstFrameData.BeginUpdate();
             try
             {
+                lstFrameData.Items.Clear();
+
                 string[] items = _displayedFrameList
             .Select(f => $"{prefix}Frame {f.FrameIndex}") // 여기를 수정했습니다.
             .ToArray();
@@ -834,45 +841,6 @@ namespace DateManager
             // 마지막으로 화면에 반영
             DisplayFrame(lstFrameData.Items.Count - 1);
 
-        }
-
-        private void btnRestoreData_Click_1(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
-
-            int restoreIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : start;
-            if (restoreIndex < 0) restoreIndex = 0;
-
-            OpenFileDialog ofd = new OpenFileDialog();
-            string backupDir = Path.Combine(_currentCatalogPath, "backup");
-            if (Directory.Exists(backupDir)) ofd.InitialDirectory = backupDir;
-            ofd.Filter = "Catalog Files (*.catalog)|*.catalog";
-
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                try
-                {
-                    _backupManager.RestoreFromBackup(ofd.FileName, _currentCatalogPath);
-                    _masterFrameList = _dataProcessor.LoadCatalogData(_currentCatalogPath);
-
-                    RefreshFrameList(_masterFrameList);
-
-                    if (_displayedFrameList.Count > 0)
-                    {
-                        int nextIndex = Math.Min(restoreIndex, _displayedFrameList.Count - 1);
-                        SelectFrame(nextIndex);
-
-                        if (nextIndex < lstFrameData.Items.Count)
-                            lstFrameData.TopIndex = nextIndex;
-                    }
-
-                    MessageBox.Show("복원이 완료되었습니다!");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"복원 실패: {ex.Message}");
-                }
-            }
         }
     }
 }

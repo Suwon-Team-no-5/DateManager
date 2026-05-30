@@ -729,7 +729,6 @@ namespace DateManager
             btnRestoreData.TabIndex = 10;
             btnRestoreData.Text = "삭제 데이터 복원";
             btnRestoreData.UseVisualStyleBackColor = false;
-            btnRestoreData.Click += btnRestoreData_Click_1;
             // 
             // label1
             // 
