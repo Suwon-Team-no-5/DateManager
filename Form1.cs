@@ -32,6 +32,7 @@ namespace DateManager
         private SelectionMode _normalListSelectionMode = SelectionMode.MultiExtended;
         private bool _isPlaybackSelecting = false;
         private bool _playbackSelectionModeSaved = false;
+        private int _playIndex = -1;
 
         public Form1()
         {
@@ -325,23 +326,9 @@ namespace DateManager
                 return;
             }
 
-            if (!_playbackSelectionModeSaved)
-            {
-                _normalListSelectionMode = lstFrameData.SelectionMode;
-                _playbackSelectionModeSaved = true;
-            }
-
-            // 재생 중에는 다중 선택을 잠시 끄기
-            if (lstFrameData.SelectionMode != SelectionMode.One)
-            {
-                lstFrameData.ClearSelected();
-                lstFrameData.SelectionMode = SelectionMode.One;
-            }
-
-            if (lstFrameData.SelectedIndex < 0)
-            {
-                SelectFrame(0);
-            }
+            // 재생중일 때 다중선택 잠시 끄기
+            _playIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : 0;
+            SelectFrame(_playIndex);
 
             _playbackTimer.Start();
             btnPlay.Text = "⏸ 일시정지";
@@ -352,6 +339,7 @@ namespace DateManager
             StopPlayback();
             if (HasDisplayedFrames(false))
             {
+                _playIndex = 0;
                 SelectFrame(0);
             }
         }
@@ -444,14 +432,15 @@ namespace DateManager
                 return;
             }
 
-            int currentIndex = lstFrameData.SelectedIndex < 0 ? 0 : lstFrameData.SelectedIndex; // 현재 선택된 프레임의 인덱스 가져오기 (선택된 항목이 없으면 0으로 간주)
-            if (currentIndex >= _displayedFrameList.Count - 1)
+            _playIndex++;
+
+            if (_playIndex >= _displayedFrameList.Count)
             {
                 StopPlayback();
                 return;
             }
 
-            SelectFrame(currentIndex + 1);
+            SelectFrame(_playIndex);
         }
 
         private void RefreshFrameList(IEnumerable<DonkeyFrame> frames, string prefix = "")
@@ -587,13 +576,6 @@ namespace DateManager
         {
             _playbackTimer.Stop();
             btnPlay.Text = "▶ 재생";
-
-            // 재생이 끝나면 원래 다중 선택 모드로 복구
-            if (_playbackSelectionModeSaved)
-            {
-                lstFrameData.SelectionMode = _normalListSelectionMode;
-                _playbackSelectionModeSaved = false;
-            }
         }
 
         private void UpdatePlaybackInterval()
@@ -694,6 +676,9 @@ namespace DateManager
         {
             if (string.IsNullOrEmpty(_currentCatalogPath)) return;
 
+            int restoreIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : start;
+            if (restoreIndex < 0) restoreIndex = 0;
+
             OpenFileDialog ofd = new OpenFileDialog();
             string backupDir = Path.Combine(_currentCatalogPath, "backup");
             if (Directory.Exists(backupDir)) ofd.InitialDirectory = backupDir;
@@ -706,9 +691,16 @@ namespace DateManager
                     _backupManager.RestoreFromBackup(ofd.FileName, _currentCatalogPath);
                     _masterFrameList = _dataProcessor.LoadCatalogData(_currentCatalogPath);
 
-                    // 💡 RefreshFrameList 내부에서 SelectFrame(0)과 DisplayFrame(0)이 호출되므로 
-                    // 별도 로직 없이 이것만으로 충분합니다.
                     RefreshFrameList(_masterFrameList);
+
+                    if (_displayedFrameList.Count > 0)
+                    {
+                        int nextIndex = Math.Min(restoreIndex, _displayedFrameList.Count - 1);
+                        SelectFrame(nextIndex);
+
+                        if (nextIndex < lstFrameData.Items.Count)
+                            lstFrameData.TopIndex = nextIndex;
+                    }
 
                     MessageBox.Show("복원이 완료되었습니다!");
                 }
