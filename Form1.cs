@@ -838,7 +838,41 @@ namespace DateManager
 
         private void btnRestoreData_Click_1(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
 
+            int restoreIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : start;
+            if (restoreIndex < 0) restoreIndex = 0;
+
+            OpenFileDialog ofd = new OpenFileDialog();
+            string backupDir = Path.Combine(_currentCatalogPath, "backup");
+            if (Directory.Exists(backupDir)) ofd.InitialDirectory = backupDir;
+            ofd.Filter = "Catalog Files (*.catalog)|*.catalog";
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    _backupManager.RestoreFromBackup(ofd.FileName, _currentCatalogPath);
+                    _masterFrameList = _dataProcessor.LoadCatalogData(_currentCatalogPath);
+
+                    RefreshFrameList(_masterFrameList);
+
+                    if (_displayedFrameList.Count > 0)
+                    {
+                        int nextIndex = Math.Min(restoreIndex, _displayedFrameList.Count - 1);
+                        SelectFrame(nextIndex);
+
+                        if (nextIndex < lstFrameData.Items.Count)
+                            lstFrameData.TopIndex = nextIndex;
+                    }
+
+                    MessageBox.Show("복원이 완료되었습니다!");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"복원 실패: {ex.Message}");
+                }
+            }
         }
     }
 }
