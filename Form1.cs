@@ -835,5 +835,10 @@ namespace DateManager
             DisplayFrame(lstFrameData.Items.Count - 1);
 
         }
+
+        private void btnRestoreData_Click_1(object sender, EventArgs e)
+        {
+
+        }
     }
 }
