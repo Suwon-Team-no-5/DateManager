@@ -1,4 +1,4 @@
-﻿namespace DateManager
+namespace DateManager
 {
     partial class Form1
     {

@@ -131,26 +131,9 @@ namespace DateManager
                                     frame.IsNewData = false;
                                     frame.DataTypeSummary = "기존 데이터(정상)";
                                     // 기본 경로 조합
-                                    string candidate = Path.Combine(imagesFolderPath, frame.ImagePath);
-                                    if (File.Exists(candidate))
-                                    {
-                                        frame.FullImagePath = candidate;
-                                    }
-                                    else
-                                    {
-                                        // 파일이 바로 없으면 이미지 파일명으로 images 폴더 내 검색 시도
-                                        string fname = Path.GetFileName(frame.ImagePath);
-                                        try
-                                        {
-                                            var found = Directory.EnumerateFiles(imagesFolderPath, fname, SearchOption.AllDirectories).FirstOrDefault();
-                                            frame.FullImagePath = found ?? "";
-                                        }
-                                        catch
-                                        {
-                                            frame.FullImagePath = "";
-                                        }
-                                    }
+                                    frame.FullImagePath = ResolveImagePath(folderPath, frame.ImagePath);
                                 }
+                        
 
                                 allFramesBag.Add(frame);
                             }
@@ -194,7 +177,41 @@ namespace DateManager
             return allFrames;
         }
 
+        private string ResolveImagePath(string tubFolderPath, string imagePath)
+        {
+            if (string.IsNullOrWhiteSpace(imagePath))
+                return "";
 
+            string imagesFolderPath = Path.Combine(tubFolderPath, "images");
+
+            string candidate;
+
+            if (Path.IsPathRooted(imagePath))
+            {
+                candidate = imagePath;
+                if (File.Exists(candidate)) return candidate;
+            }
+
+            candidate = Path.Combine(tubFolderPath, imagePath);
+            if (File.Exists(candidate)) return candidate;
+
+            candidate = Path.Combine(imagesFolderPath, imagePath);
+            if (File.Exists(candidate)) return candidate;
+
+            string fileName = Path.GetFileName(imagePath);
+            if (string.IsNullOrWhiteSpace(fileName) || !Directory.Exists(imagesFolderPath))
+                return "";
+
+            try
+            {
+                return Directory.EnumerateFiles(imagesFolderPath, fileName, SearchOption.AllDirectories)
+                    .FirstOrDefault() ?? "";
+            }
+            catch
+            {
+                return "";
+            }
+        }
 
         // 이전에는 파일 전체를 한꺼번에 읽어들이는 방식이었으나
         // 이제 File.ReadLines 기반 스트리밍으로 처리하므로 이 헬퍼는 더이상 사용되지 않습니다.
@@ -240,5 +257,6 @@ namespace DateManager
 
             return result;
         }
+
     }
 }

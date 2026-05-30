@@ -25,12 +25,21 @@ namespace DateManager
         private List<DonkeyFrame> _displayedFrameList;
 
         private FileRemover _fileRemover;
+        // 카탈로그 경로를 저장할 변수
+        private string _currentCatalogPath = "";
+        private BackupManager _backupManager = new BackupManager();
 
         private Picture _pictureHandler;
         private readonly System.Windows.Forms.Timer _playbackTimer;
         private readonly double[] _playbackSpeeds = { 0.5, 1.0, 2.0, 4.0, 8.0 };
         private int _playbackSpeedIndex = 1;
         private const int BasePlaybackIntervalMs = 400;// 기본 재생 간격 (1배속일 때 400ms)
+        private int _lastSelectedIndex = -1; // 마지막으로 클릭한 인덱스 저장
+
+        private SelectionMode _normalListSelectionMode = SelectionMode.MultiExtended;
+        private bool _isPlaybackSelecting = false;
+        private bool _playbackSelectionModeSaved = false;
+        private int _playIndex = -1;
 
         private int _currentFrameIndex = 0; // 🌟 [변경] 미래의 데이터를 꺼내오기 위해 현재 인덱스를 저장
 
@@ -139,6 +148,8 @@ namespace DateManager
                 fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
+                    _currentCatalogPath = fbd.SelectedPath; //(경로 저장)
+                    _backupManager.CurrentCatalogPath = _currentCatalogPath;
                     string selectedPath = fbd.SelectedPath;
 
                     // 로딩 중임을 사용자에게 알림 (UI가 멈추지 않음)
@@ -222,12 +233,6 @@ namespace DateManager
                 return;
             }
 
-            if (!HasDisplayedFrames(false))
-            {
-                MessageBox.Show("삭제할 데이터가 없습니다!", "알림");
-                return;
-            }
-
             int firstSelectedIndex = lstFrameData.SelectedIndices.Cast<int>().Min();
             List<DonkeyFrame> selectedFrames = lstFrameData.SelectedIndices
                 .Cast<int>()
@@ -235,56 +240,49 @@ namespace DateManager
                 .Select(index => _displayedFrameList[index])
                 .ToList();
 
-            if (selectedFrames.Count == 0)
-            {
-                MessageBox.Show("삭제할 프레임을 찾을 수 없습니다.", "알림");
-                return;
-            }
+            if (selectedFrames.Count == 0) return;
 
-            string previewText = selectedFrames.Count == 1
-                ? $"Frame {selectedFrames[0].FrameIndex}번 데이터를 catalog 파일에서 삭제할까요?"
-                : $"선택된 {selectedFrames.Count}개 데이터를 catalog 파일에서 삭제할까요?";
-
-            DialogResult confirmResult = MessageBox.Show(
-                $"{previewText}\n삭제 전 원본 catalog 파일은 backup 폴더에 저장됩니다.",
-                "삭제 확인",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
-
-            if (confirmResult != DialogResult.Yes) return;
+            if (MessageBox.Show("선택된 데이터를 삭제할까요?", "삭제 확인", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
 
             try
             {
-                // 삭제 전 이미지 픽처박스 비우기 (파일 잠금 해제)
                 pbMainCam.Image?.Dispose();
                 pbMainCam.Image = null;
 
                 DeleteResult deleteResult = _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, selectedFrames);
-
                 _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
+
+                // 1. 리스트 갱신
                 RefreshFrameList(_displayedFrameList);
+
+                // 2. 삭제 후 선택 위치 조정 (범위 초과 방지)
                 if (_displayedFrameList.Count > 0)
                 {
-                    SelectFrame(Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1));
+                    int nextIndex = Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1);
+                    SelectFrame(nextIndex); // 💡 여기서 인덱스 설정 및 DisplayFrame 호출 발생
                 }
 
-                MessageBox.Show(
-                    $"{deleteResult.DeletedCount}개 데이터 삭제가 완료되었습니다.\n백업 파일 {deleteResult.BackupFiles.Count}개가 backup 폴더에 저장되었습니다.",
-                    "정제 완료");
+                MessageBox.Show($"{deleteResult.DeletedCount}개 삭제 완료.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"삭제 중 오류 발생: {ex.Message}", "에러");
+                MessageBox.Show($"삭제 오류: {ex.Message}");
             }
+
         }
 
         private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
         {
-            int index = lstFrameData.SelectedIndex;
-            if (index >= 0 && index < _displayedFrameList.Count)
-            {
-                DisplayFrame(index);
-            }
+            if (lstFrameData.SelectedIndex == -1) return;
+
+            // 재생 코드가 선택을 바꾸는 중이면 start/end를 건드리지 않음
+            if (_isPlaybackSelecting)
+                return;
+
+            start = lstFrameData.SelectedIndex;
+            end = lstFrameData.SelectedIndex;
+
+            DisplayFrame(lstFrameData.SelectedIndex);
         }
 
         private void trkFrameSlider_Scroll(object sender, EventArgs e)
@@ -326,6 +324,10 @@ namespace DateManager
                 return;
             }
 
+            // 재생중일 때 다중선택 잠시 끄기
+            _playIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : 0;
+            SelectFrame(_playIndex);
+
             _playbackTimer.Start();
             btnPlay.Text = "⏸ 일시정지";
         }
@@ -335,6 +337,7 @@ namespace DateManager
             StopPlayback();
             if (HasDisplayedFrames(false))
             {
+                _playIndex = 0;
                 SelectFrame(0);
             }
         }
@@ -427,14 +430,15 @@ namespace DateManager
                 return;
             }
 
-            int currentIndex = lstFrameData.SelectedIndex < 0 ? 0 : lstFrameData.SelectedIndex; // 현재 선택된 프레임의 인덱스 가져오기 (선택된 항목이 없으면 0으로 간주)
-            if (currentIndex >= _displayedFrameList.Count - 1)
+            _playIndex++;
+
+            if (_playIndex >= _displayedFrameList.Count)
             {
                 StopPlayback();
                 return;
             }
 
-            SelectFrame(currentIndex + 1);
+            SelectFrame(_playIndex);
         }
 
         private void RefreshFrameList(IEnumerable<DonkeyFrame> frames, string prefix = "")
@@ -503,14 +507,26 @@ namespace DateManager
             if (!HasDisplayedFrames(false)) return;
 
             int safeIndex = Math.Max(0, Math.Min(index, _displayedFrameList.Count - 1));
-            if (lstFrameData.SelectedIndex != safeIndex)
+
+            _isPlaybackSelecting = true;
+
+            try
             {
+                lstFrameData.ClearSelected();
                 lstFrameData.SelectedIndex = safeIndex;
+
+                int visibleCount = Math.Max(1, lstFrameData.ClientSize.Height / Math.Max(1, lstFrameData.ItemHeight));
+                int topIndex = Math.Max(0, safeIndex - visibleCount / 2);
+
+                if (topIndex < lstFrameData.Items.Count)
+                    lstFrameData.TopIndex = topIndex;
             }
-            else
+            finally
             {
-                DisplayFrame(safeIndex);
+                _isPlaybackSelecting = false;
             }
+
+            DisplayFrame(safeIndex);
         }
 
         private void MoveFrame(int offset)
@@ -523,7 +539,10 @@ namespace DateManager
 
         private void DisplayFrame(int index)
         {
+            if (_displayedFrameList == null || index < 0 || index >= _displayedFrameList.Count) return;
+
             DonkeyFrame selectedFrame = _displayedFrameList[index];
+
             _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
 
             _currentFrameIndex = index;
@@ -531,7 +550,11 @@ namespace DateManager
             lblAngle.Text = $"방향: {selectedFrame.Angle:F3}";
             lblThrottleTop.Text = $"속도: {selectedFrame.Throttle:F3}";
             lblFrameIndex.Text = $"프레임 인덱스: {index + 1}/{_displayedFrameList.Count} (원본 {selectedFrame.FrameIndex})";
-            lblTimestamp.Text = string.IsNullOrWhiteSpace(selectedFrame.SessionId) ? selectedFrame.DataTypeSummary : selectedFrame.SessionId;
+            lblTimestamp.Text = string.IsNullOrWhiteSpace(selectedFrame.SessionId)
+                ? selectedFrame.DataTypeSummary
+                : selectedFrame.SessionId;
+
+            prgThrottle.Value = Math.Max(0, Math.Min(100, (int)Math.Round(selectedFrame.Throttle * 100)));
 
             if (trkFrameSlider.Value != index)
             {
@@ -658,6 +681,44 @@ namespace DateManager
             btnStartTraining.Visible = true;
         }
 
+        private void btnRestoreData_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
+
+            int restoreIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : start;
+            if (restoreIndex < 0) restoreIndex = 0;
+
+            OpenFileDialog ofd = new OpenFileDialog();
+            string backupDir = Path.Combine(_currentCatalogPath, "backup");
+            if (Directory.Exists(backupDir)) ofd.InitialDirectory = backupDir;
+            ofd.Filter = "Catalog Files (*.catalog)|*.catalog";
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    _backupManager.RestoreFromBackup(ofd.FileName, _currentCatalogPath);
+                    _masterFrameList = _dataProcessor.LoadCatalogData(_currentCatalogPath);
+
+                    RefreshFrameList(_masterFrameList);
+
+                    if (_displayedFrameList.Count > 0)
+                    {
+                        int nextIndex = Math.Min(restoreIndex, _displayedFrameList.Count - 1);
+                        SelectFrame(nextIndex);
+
+                        if (nextIndex < lstFrameData.Items.Count)
+                            lstFrameData.TopIndex = nextIndex;
+                    }
+
+                    MessageBox.Show("복원이 완료되었습니다!");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"복원 실패: {ex.Message}");
+                }
+            }
+
         // 🌟🌟🌟 궤적 부드러움 보정 & HUD 우측 하단 배치 버전 🌟🌟🌟
         private void pbMainCam_Paint(object sender, PaintEventArgs e)
         {
@@ -773,6 +834,7 @@ namespace DateManager
 
             // 마지막으로 화면에 반영
             DisplayFrame(lstFrameData.Items.Count - 1);
+
         }
     }
 }
