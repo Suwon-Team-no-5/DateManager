@@ -52,6 +52,13 @@ namespace DateManager
         private readonly SolidBrush _barBlueBrush = new SolidBrush(Color.DeepSkyBlue);
         private readonly SolidBrush _barOrangeBrush = new SolidBrush(Color.Orange);
 
+        private List<DonkeyFrame> _trashFrameList = new List<DonkeyFrame>();
+
+        private bool _isViewingTrash = false;
+
+        private int _lastViewedFrameId = -1;
+        private bool _wasPlaying = false; // 💡 [추가] 휴지통 열기 전 재생 중이었는지 저장할 변수
+
         public Form1()
         {
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
@@ -190,10 +197,17 @@ namespace DateManager
                 return;
             }
 
+            //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
+            if (!chkFilterThr.Checked && !chkFilterLargeThr.Checked && !chkFilterLargeAngle.Checked)
+            {
+                RefreshFrameList(_masterFrameList);
+                //필터 없으면 원본 리스트 불러옴
+            }
+
             // 마스터 리스트를 복사해서 필터링을 시작할 임시 리스트 생성
             List<DonkeyFrame> filteredList = new List<DonkeyFrame>(_masterFrameList);
 
-            // 1. Thr > 0 체크박스가 켜져있을 때
+            // 1. Thr = 0 체크박스가 켜져있을 때
             if (chkFilterThr.Checked)
             {
                 filteredList = filteredList.FindAll(frame => frame.Throttle == 0);
@@ -210,65 +224,60 @@ namespace DateManager
             }
 
             // 3. 필터링된 결과를 우측 리스트박스(lstFrameData)에 다시 업데이트
-            RefreshFrameList(filteredList, "[필터됨] ");
+            RefreshFrameList(filteredList);
 
 
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
-
-            //아래 윤형규가 추가한 코드, 오류 발생 시 우선 주석처리 할 것
-            if (!chkFilterThr.Checked && !chkFilterLargeThr.Checked && !chkFilterLargeAngle.Checked)
-            {
-                RefreshFrameList(_masterFrameList);
-                //필터 없으면 원본 리스트 불러옴
-            }
 
         }
 
         private void btnDeleteData_Click(object sender, EventArgs e)
         {
-            // 1. 선택된 데이터 확인
-            if (lstFrameData.SelectedIndices.Count == 0)
+            // 1. 선택된 항목 인덱스 수집
+            List<int> selectedIndices = new List<int>();
+            for (int i = 0; i < lstFrameData.Items.Count; i++)
             {
-                MessageBox.Show("삭제할 프레임을 리스트에서 선택해주세요!", "선택 필요");
-                return;
+                if (lstFrameData.GetSelected(i)) selectedIndices.Add(i);
             }
 
-            int firstSelectedIndex = lstFrameData.SelectedIndices.Cast<int>().Min();
-            List<DonkeyFrame> selectedFrames = lstFrameData.SelectedIndices
-                .Cast<int>()
-                .Where(index => index >= 0 && index < _displayedFrameList.Count)
+            if (selectedIndices.Count == 0) return;
+
+            // 💡 [변경점 1] 삭제 전 확인 메시지 박스
+            DialogResult result = MessageBox.Show($"{selectedIndices.Count}개의 파일을 휴지통으로 이동하시겠습니까?",
+                                                 "데이터 삭제 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (result != DialogResult.Yes) return; // '아니오'를 누르면 여기서 종료
+
+            // 💡 [변경점 2] 삭제 후 선택할 인덱스 계산을 위해 마지막 인덱스 기억
+            // (지운 항목들이 사라지면 뒤에 있던 항목들이 앞으로 당겨오므로, 
+            // 지우기 전 마지막 인덱스를 타겟으로 하면 자연스럽게 다음 파일이 선택됩니다.)
+            int lastSelectedIndex = selectedIndices.Max();
+
+            // 2. 선택된 프레임 추출
+            List<DonkeyFrame> selectedFrames = selectedIndices
                 .Select(index => _displayedFrameList[index])
                 .ToList();
 
-            if (selectedFrames.Count == 0) return;
+            // 3. 메모리 리스트에서 제거
+            _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
+            _masterFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
 
-            if (MessageBox.Show("선택된 데이터를 삭제할까요?", "삭제 확인", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+            // 4. 휴지통 리스트로 이동
+            _trashFrameList.AddRange(selectedFrames);
 
-            try
+            // 5. UI 갱신 (기존 함수 호출)
+            RefreshFrameList(_displayedFrameList);
+            UpdateTrashListUI();
+
+            // 💡 [변경점 3] 삭제 후 다음 항목 선택 로직
+            if (lstFrameData.Items.Count > 0)
             {
-                pbMainCam.Image?.Dispose();
-                pbMainCam.Image = null;
+                // 1. lastSelectedIndex가 현재 리스트 크기보다 크면 맨 끝으로 보정
+                int targetIndex = Math.Min(lastSelectedIndex, lstFrameData.Items.Count - 1);
 
-                DeleteResult deleteResult = _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, selectedFrames);
-                _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
-
-                // 1. 리스트 갱신
-                RefreshFrameList(_displayedFrameList);
-
-                // 2. 삭제 후 선택 위치 조정 (범위 초과 방지)
-                if (_displayedFrameList.Count > 0)
-                {
-                    int nextIndex = Math.Min(firstSelectedIndex, _displayedFrameList.Count - 1);
-                    SelectFrame(nextIndex); // 💡 여기서 인덱스 설정 및 DisplayFrame 호출 발생
-                }
-
-                MessageBox.Show($"{deleteResult.DeletedCount}개 삭제 완료.");
+                // 2. 해당 인덱스 선택
+                lstFrameData.SelectedIndex = targetIndex;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"삭제 오류: {ex.Message}");
-            }
-
         }
 
         private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
@@ -276,8 +285,13 @@ namespace DateManager
             if (lstFrameData.SelectedIndex == -1) return;
 
             // 재생 코드가 선택을 바꾸는 중이면 start/end를 건드리지 않음
-            if (_isPlaybackSelecting)
-                return;
+            if (_isPlaybackSelecting) return;
+
+            _isViewingTrash = false;
+            lstTrashItems.ClearSelected();
+
+            // 💡 [핵심] 정상 화면으로 돌아왔으니 재생 버튼 잠금 해제
+            btnPlay.Enabled = true;
 
             start = lstFrameData.SelectedIndex;
             end = lstFrameData.SelectedIndex;
@@ -318,6 +332,9 @@ namespace DateManager
         {
             if (!HasDisplayedFrames()) return;
 
+            // 💡 [안전장치] 휴지통을 보고 있을 때는 재생 버튼 로직 실행 무시
+            if (_isViewingTrash) return;
+
             if (_playbackTimer.Enabled)
             {
                 StopPlayback();
@@ -354,7 +371,11 @@ namespace DateManager
             // 스페이스: 재생/일시정지 토글
             if (e.KeyCode == Keys.Space)
             {
-                btnPlay.PerformClick();
+                // 💡 [안전장치] 휴지통 뷰가 아닐 때만 스페이스바로 재생 가능
+                if (!_isViewingTrash)
+                {
+                    btnPlay.PerformClick();
+                }
                 e.Handled = true;
             }
 
@@ -424,7 +445,8 @@ namespace DateManager
 
         private void PlaybackTimer_Tick(object? sender, EventArgs e) // 타이머가 틱할 때마다 다음 프레임으로 이동하는 이벤트 핸들러
         {
-            if (!HasDisplayedFrames(false))
+            // 💡 [안전장치] 타이머가 돌고 있어도 휴지통 뷰라면 즉시 정지
+            if (_isViewingTrash || !HasDisplayedFrames(false))
             {
                 StopPlayback();
                 return;
@@ -449,9 +471,13 @@ namespace DateManager
             lstFrameData.BeginUpdate();
             try
             {
+                lstFrameData.Items.Clear();
+
+                // 다시 변하지 않는 고유 번호인 FrameIndex를 사용합니다.
                 string[] items = _displayedFrameList
-            .Select(f => $"{prefix}Frame {f.FrameIndex}") // 여기를 수정했습니다.
-            .ToArray();
+                    .Select(f => $"{prefix}Frame {f.FrameIndex}")
+                    .ToArray();
+
                 lstFrameData.Items.AddRange(items);
             }
             finally
@@ -541,6 +567,9 @@ namespace DateManager
         {
             if (_displayedFrameList == null || index < 0 || index >= _displayedFrameList.Count) return;
 
+            // 🌟 휴지통에서 넘어왔을 때 잠긴 트랙바를 다시 풀어줍니다.
+            trkFrameSlider.Enabled = true;
+
             DonkeyFrame selectedFrame = _displayedFrameList[index];
 
             _pictureHandler.LoadImageToPictureBox(pbMainCam, selectedFrame.FullImagePath);
@@ -615,6 +644,23 @@ namespace DateManager
 
         private async void btnStart_Click(object sender, EventArgs e)
         {
+            // 1. [핵심] 휴지통에 있는 파일들을 여기서 실제 삭제
+            if (_trashFrameList.Count > 0)
+            {
+                if (MessageBox.Show($"휴지통에 있는 {_trashFrameList.Count}개의 파일을 영구 삭제하고 학습을 시작할까요?",
+                                    "최종 확인", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+                    _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, _trashFrameList);
+                    _trashFrameList.Clear();
+                    UpdateTrashListUI();
+                }
+                else
+                {
+                    return; // 사용자가 취소하면 학습 시작 안 함
+                }
+            }
+
+            // 기존 학습 시작 로직...
             btnStartTraining.Visible = false;
             btnStopTraining.Visible = true;
             rtbTrainLog.Clear();
@@ -681,57 +727,105 @@ namespace DateManager
 
         private void btnRestoreData_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
-
-            int restoreIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : start;
-            if (restoreIndex < 0) restoreIndex = 0;
-
-            OpenFileDialog ofd = new OpenFileDialog();
-            string backupDir = Path.Combine(_currentCatalogPath, "backup");
-            if (Directory.Exists(backupDir)) ofd.InitialDirectory = backupDir;
-            ofd.Filter = "Catalog Files (*.catalog)|*.catalog";
-
-            if (ofd.ShowDialog() == DialogResult.OK)
+            List<int> selectedIndices = new List<int>();
+            for (int i = 0; i < lstTrashItems.Items.Count; i++)
             {
-                try
-                {
-                    _backupManager.RestoreFromBackup(ofd.FileName, _currentCatalogPath);
-                    _masterFrameList = _dataProcessor.LoadCatalogData(_currentCatalogPath);
-
-                    RefreshFrameList(_masterFrameList);
-
-                    if (_displayedFrameList.Count > 0)
-                    {
-                        int nextIndex = Math.Min(restoreIndex, _displayedFrameList.Count - 1);
-                        SelectFrame(nextIndex);
-
-                        if (nextIndex < lstFrameData.Items.Count)
-                            lstFrameData.TopIndex = nextIndex;
-                    }
-
-                    MessageBox.Show("복원이 완료되었습니다!");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"복원 실패: {ex.Message}");
-                }
+                if (lstTrashItems.GetSelected(i)) selectedIndices.Add(i);
             }
+
+            if (selectedIndices.Count == 0) return;
+
+            List<DonkeyFrame> framesToRestore = selectedIndices
+                .Select(index => _trashFrameList[index])
+                .ToList();
+
+            // 1. 데이터 복원 및 리스트 갱신
+            _trashFrameList.RemoveAll(f => framesToRestore.Contains(f));
+            _masterFrameList.AddRange(framesToRestore);
+            _masterFrameList = _masterFrameList.OrderBy(f => f.FrameIndex).ToList();
+            _displayedFrameList = _masterFrameList;
+
+            RefreshFrameList(_displayedFrameList);
+            UpdateTrashListUI();
+
+            // 2. [핵심] 복원한 파일 중 하나(첫 번째)를 '마지막으로 본 파일'로 지정
+            _lastViewedFrameId = framesToRestore[0].FrameIndex;
+
+            // 3. 복원 후 즉시 휴지통을 닫는 로직 (btnCloseTrash_Click 내용을 여기서 처리)
+            pnlTrash.Visible = false;
+            _isViewingTrash = false;
+
+            // 4. 위치 복구 및 재생 상태 복구
+            int newIndex = _displayedFrameList.FindIndex(f => f.FrameIndex == _lastViewedFrameId);
+            if (newIndex >= 0)
+            {
+                lstFrameData.SelectedIndex = newIndex;
+                DisplayFrame(newIndex);
+            }
+
+            if (_wasPlaying) btnPlay.PerformClick();
+            else btnPlay.Enabled = true;
+
+            pbMainCam.Invalidate();
         }
 
-        // 🌟🌟🌟 궤적 부드러움 보정 & HUD 우측 하단 배치 버전 🌟🌟🌟
+        // 휴지통 리스트박스 갱신용 함수 (추가하세요)
+        private void UpdateTrashListUI()
+        {
+            lstTrashItems.BeginUpdate();
+            lstTrashItems.Items.Clear();
+            foreach (var frame in _trashFrameList)
+            {
+                lstTrashItems.Items.Add($"Frame {frame.FrameIndex}");
+            }
+            lstTrashItems.EndUpdate();
+        }
+
+        // 🌟🌟🌟 궤적 부드러움 보정 & HUD (휴지통 시각 효과 포함) 🌟🌟🌟
         private void pbMainCam_Paint(object sender, PaintEventArgs e)
         {
-            if (_displayedFrameList == null || _displayedFrameList.Count == 0 || pbMainCam.Image == null) return;
+            if (pbMainCam.Image == null) return;
 
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
             float width = pbMainCam.Width;
             float height = pbMainCam.Height;
 
             // =========================================================
-            // 1. 테슬라 스타일 AR 궤적 (10개 세그먼트 고정)
+            // 💡 [핵심] 휴지통 이미지를 볼 때는 HUD 궤적을 끄고 경고 문구만 크게 띄움
             // =========================================================
+            if (_isViewingTrash)
+            {
+                string warningText = "삭제 대기 중인 항목입니다";
+
+                // 그리기 작업 안에서만 사용할 중간 크기(14pt) 폰트 생성 (자동 리소스 해제)
+                using (Font mediumFont = new Font("Segoe UI", 14, FontStyle.Bold))
+                {
+                    SizeF wSize = g.MeasureString(warningText, mediumFont);
+
+                    // 우측 상단 배치를 위한 좌표 계산 (우측 여백 10px, 상단 여백 10px)
+                    float x = width - wSize.Width - 10;
+                    float y = 10;
+
+                    // 글씨 가독성을 위해 글씨 크기에 딱 맞는 작은 반투명 검은색 배경 박스 그리기
+                    RectangleF bgRect = new RectangleF(x - 5, y - 3, wSize.Width + 10, wSize.Height + 6);
+                    using (SolidBrush bgBoxBrush = new SolidBrush(Color.FromArgb(160, 0, 0, 0)))
+                    {
+                        g.FillRectangle(bgBoxBrush, bgRect);
+                    }
+
+                    // 토마토(붉은색 계열) 색상으로 우측 상단에 글씨 그리기
+                    g.DrawString(warningText, mediumFont, Brushes.Tomato, x, y);
+                }
+
+                return; // 💥 여기서 return하여 아래의 테슬라 궤적과 속도계를 그리지 않음!
+            }
+
+            // =========================================================
+            // 아래는 일반 화면일 때만 그려지는 테슬라 궤적 및 속도계 로직
+            // =========================================================
+            if (_displayedFrameList == null || _displayedFrameList.Count == 0) return;
+
             int segments = 10;
             int lookAheadStep = 2;
             float pathHeight = height * 0.6f;
@@ -777,9 +871,6 @@ namespace DateManager
                 }
             }
 
-            // =========================================================
-            // 2. HUD를 오른쪽 아래로 이동 (Segoe UI 사용)
-            // =========================================================
             float throttle = (float)_displayedFrameList[_currentFrameIndex].Throttle;
             int displaySpeed = (int)Math.Round(Math.Abs(throttle) * 100);
             float hudRight = width - 50;
@@ -790,12 +881,10 @@ namespace DateManager
             float textX = hudRight - size.Width;
             float textY = hudBottom - size.Height - 15;
 
-            // 멤버 변수 브러시 사용
             g.DrawString(speedText, _bigFont, _shadowBrush, new PointF(textX + 2, textY + 2));
             g.DrawString(speedText, _bigFont, Brushes.White, new PointF(textX, textY));
             g.DrawString("Km/h", _smallFont, Brushes.LightGray, new PointF(textX + size.Width - 10, textY + 15));
 
-            // 게이지 바
             int barWidth = 100;
             int barHeight = 6;
             int fillWidth = (int)(barWidth * Math.Min(Math.Abs(throttle), 1.0f));
@@ -836,43 +925,103 @@ namespace DateManager
 
         }
 
-        private void btnRestoreData_Click_1(object sender, EventArgs e)
+        // 메인 화면 버튼 클릭 시
+        private void btnOpenTrash_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
+            // 1. 상태 저장 및 재생 정지
+            _wasPlaying = _playbackTimer.Enabled;
+            if (_wasPlaying) StopPlayback();
 
-            int restoreIndex = lstFrameData.SelectedIndex >= 0 ? lstFrameData.SelectedIndex : start;
-            if (restoreIndex < 0) restoreIndex = 0;
-
-            OpenFileDialog ofd = new OpenFileDialog();
-            string backupDir = Path.Combine(_currentCatalogPath, "backup");
-            if (Directory.Exists(backupDir)) ofd.InitialDirectory = backupDir;
-            ofd.Filter = "Catalog Files (*.catalog)|*.catalog";
-
-            if (ofd.ShowDialog() == DialogResult.OK)
+            // 2. [변경] 인덱스가 아니라 고유 ID를 저장
+            if (lstFrameData.SelectedIndex >= 0 && lstFrameData.SelectedIndex < _displayedFrameList.Count)
             {
-                try
+                _lastViewedFrameId = _displayedFrameList[lstFrameData.SelectedIndex].FrameIndex;
+            }
+
+            // 3. 휴지통 패널 표시
+            pnlTrash.Visible = true;
+            pnlTrash.BringToFront();
+
+            if (lstTrashItems.Items.Count > 0)
+            {
+                lstTrashItems.SelectedIndex = 0;
+                // 선택 이벤트 강제 호출 (이미 잘 작성하셨습니다)
+                lstTrashItems_SelectedIndexChanged(null, null);
+            }
+            else
+            {
+                ClearFramePreview();
+            }
+        }
+
+        // 휴지통 내부 닫기 버튼 클릭 시
+        private void btnCloseTrash_Click(object sender, EventArgs e)
+        {
+            // 1. 휴지통 패널 숨기기
+            pnlTrash.Visible = false;
+            _isViewingTrash = false;
+
+            // 2. [변경] 저장된 ID로 현재 리스트에서 위치를 다시 찾기
+            if (_lastViewedFrameId != -1)
+            {
+                int foundIndex = _displayedFrameList.FindIndex(f => f.FrameIndex == _lastViewedFrameId);
+
+                if (foundIndex >= 0)
                 {
-                    _backupManager.RestoreFromBackup(ofd.FileName, _currentCatalogPath);
-                    _masterFrameList = _dataProcessor.LoadCatalogData(_currentCatalogPath);
-
-                    RefreshFrameList(_masterFrameList);
-
-                    if (_displayedFrameList.Count > 0)
-                    {
-                        int nextIndex = Math.Min(restoreIndex, _displayedFrameList.Count - 1);
-                        SelectFrame(nextIndex);
-
-                        if (nextIndex < lstFrameData.Items.Count)
-                            lstFrameData.TopIndex = nextIndex;
-                    }
-
-                    MessageBox.Show("복원이 완료되었습니다!");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"복원 실패: {ex.Message}");
+                    lstFrameData.SelectedIndex = foundIndex;
+                    DisplayFrame(foundIndex); // 화면 다시 그리기
                 }
             }
+
+            // 3. 재생 상태 복구
+            if (_wasPlaying)
+            {
+                btnPlay.PerformClick();
+            }
+            else
+            {
+                btnPlay.Enabled = true;
+            }
+
+            pbMainCam.Invalidate();
+        }
+
+        // 🌟 [새로 추가] 휴지통 리스트박스 클릭 이벤트
+        private void lstTrashItems_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lstTrashItems.SelectedIndex == -1) return;
+
+            // 휴지통 뷰 모드로 전환하고 메인 리스트 선택 해제
+            _isViewingTrash = true;
+            lstFrameData.ClearSelected();
+
+            // 💡 [핵심] 재생 중이었다면 멈추고, 재생 버튼 클릭 불가능하게 잠금
+            if (_playbackTimer.Enabled) StopPlayback();
+            btnPlay.Enabled = false;
+
+            DisplayTrashFrame(lstTrashItems.SelectedIndex);
+        }
+
+        // 🌟 [새로 추가] 휴지통 전용 이미지 표시 함수
+        private void DisplayTrashFrame(int index)
+        {
+            if (_trashFrameList == null || index < 0 || index >= _trashFrameList.Count) return;
+
+            DonkeyFrame trashFrame = _trashFrameList[index];
+
+            // 사진 로드
+            _pictureHandler.LoadImageToPictureBox(pbMainCam, trashFrame.FullImagePath);
+
+            // 라벨들도 붉은색 느낌이나 [휴지통] 이라는 텍스트를 추가하여 명확히 구별
+            lblAngle.Text = $"방향: {trashFrame.Angle:F3}";
+            lblThrottleTop.Text = $"속도: {trashFrame.Throttle:F3}";
+            lblFrameIndex.Text = $"[삭제 대기] 프레임 인덱스: {index + 1}/{_trashFrameList.Count} (원본 {trashFrame.FrameIndex})";
+            lblTimestamp.Text = "휴지통 항목";
+
+            // 트랙바 조작 방지를 위해 잠시 비활성화 하거나 값 0 처리 (선택사항)
+            trkFrameSlider.Enabled = false;
+
+            pbMainCam.Invalidate(); // Paint 이벤트 호출
         }
     }
 }
