@@ -59,6 +59,9 @@ namespace DateManager
         private int _lastViewedFrameId = -1;
         private bool _wasPlaying = false; // 💡 [추가] 휴지통 열기 전 재생 중이었는지 저장할 변수
 
+        private bool _isTrainingComplete = false; // 학습 완료 플래그
+        private string _modelWinPath = @"\\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\models\mypilot.h5";
+
         public Form1()
         {
             // UI 컴포넌트를 초기화합니다. (디자인 창의 요소를 불러옴)
@@ -130,8 +133,17 @@ namespace DateManager
             _focusOrder.Add(btnStop);          // 정지
             _focusOrder.Add(btnSpeed);         // 배속
 
+            // 초기 상태는 비활성화 느낌의 어두운 회색으로 설정
+            btnRunSimulator.BackColor = Color.FromArgb(62, 62, 66);
+            btnRunSimulator.ForeColor = Color.White; // 글자색 반전으로 가독성 확보
+
+            // Trainer의 학습 완료 이벤트 연결 (이미 되어 있다면 중복 작성 X)
+            donkeyTrainer.TrainingFinished += DonkeyTrainer_TrainingFinished;
+
             // 포커스 가능한 컨트롤들에 TabStop 활성화
             foreach (var c in _focusOrder) c.TabStop = true;
+
+            RefreshSimulatorButtonState();
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -663,6 +675,15 @@ namespace DateManager
             // 기존 학습 시작 로직...
             btnStartTraining.Visible = false;
             btnStopTraining.Visible = true;
+
+            // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
+            pnlCamView.Visible = false;
+            pnlTrainingLog.Visible = true;
+
+            // 버튼 색상 변경
+            btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
+
             rtbTrainLog.Clear();
             rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
@@ -671,58 +692,82 @@ namespace DateManager
             btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/jinchul04/mycar";
+            string mycarDir = "/home/jaeseo03/mycar";
 
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
 
         private void btnViewMonitor_Click(object sender, EventArgs e)
         {
-            // 주행 모니터 패널은 켜고, 학습 로그 패널은 끕니다.
+            pnlManual.Visible = false;
             pnlCamView.Visible = true;
             pnlTrainingLog.Visible = false;
 
             // 버튼 색상 변경
+            btnOpenManual.BackColor = Color.FromArgb(62, 62, 66);
             btnViewMonitor.BackColor = Color.FromArgb(0, 122, 204);
             btnViewLog.BackColor = Color.FromArgb(62, 62, 66);
         }
 
         private void btnViewLog_Click(object sender, EventArgs e)
         {
-            // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
+            pnlManual.Visible = false;
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = true;
 
             // 버튼 색상 변경
-            btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
+            btnOpenManual.BackColor = Color.FromArgb(62, 62, 66);
             btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
+            btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
         }
 
         private void btnStopTraining_Click(object sender, EventArgs e)
         {
-            btnStopTraining.Visible = false;
-            btnRestartTraining.Visible = true;
-            rtbTrainLog.AppendText("\r\n🛑 사용자의 요청으로 AI 학습을 강제 중단합니다...\r\n");
-
-            // 버튼 중복 클릭 방지 차단
-            btnStopTraining.Enabled = false;
-
-            // Trainer.cs에 만들어 둔 리눅스 좀비 프로세스 중지 함수 호출
+            // 1. 실제 학습 프로세스 강제 종료
             donkeyTrainer.KillProcess();
 
+            // 2. UI 버튼 상태 변경
+            btnStopTraining.Visible = false;
+            btnStopTraining.Enabled = false; // 혹시 모를 중복 클릭 방지
+
+            btnRestartTraining.Visible = true;
+            btnEndTraining.Visible = true;   // (종료 버튼이 폼에 있다면 보이게 설정)
+
+            // 3. 로그 출력
+            rtbTrainLog.AppendText("\r\n🛑 사용자의 요청으로 AI 학습을 일시 중단했습니다...\r\n");
         }
 
-        private void btnRestartTraining_Click(object sender, EventArgs e)
+        private async void btnRestartTraining_Click(object sender, EventArgs e)
         {
+            // 1. UI 버튼 상태 변경
             btnRestartTraining.Visible = false;
             btnStopTraining.Visible = true;
+            btnStopTraining.Enabled = true; // 중단 버튼 다시 깨우기
+
+            // 2. 로그 출력
+            rtbTrainLog.AppendText("\r\n▶️ AI 학습을 이어서 재시작합니다...\r\n");
+
+            // 3. 학습 프로세스 다시 실행 (btnStart_Click과 동일한 로직)
+            string pythonPath = "wsl.exe";
+            string mycarDir = "/home/jaeseo03/mycar";
+
+            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
 
         private void btnEndTraining_Click(object sender, EventArgs e)
         {
+            // 1. 혹시라도 프로세스가 켜져 있다면 확실하게 사살 (안전장치)
+            donkeyTrainer.KillProcess();
+
+            // 2. UI 버튼 초기 상태로 복구 (처음 화면처럼)
             btnRestartTraining.Visible = false;
             btnStopTraining.Visible = false;
+
             btnStartTraining.Visible = true;
+            btnStartTraining.Enabled = true; // 시작 버튼 다시 깨우기
+
+            // 3. 로그 출력
+            rtbTrainLog.AppendText("\r\n⏹️ AI 학습 연동이 완전히 종료되었습니다. 새로운 학습을 준비합니다.\r\n");
         }
 
         private void btnRestoreData_Click(object sender, EventArgs e)
@@ -1022,6 +1067,159 @@ namespace DateManager
             trkFrameSlider.Enabled = false;
 
             pbMainCam.Invalidate(); // Paint 이벤트 호출
+        }
+
+        private void DonkeyTrainer_TrainingFinished()
+        {
+            // 백그라운드 스레드에서 UI를 건드리면 터지므로 Invoke 사용
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(DonkeyTrainer_TrainingFinished));
+                return;
+            }
+
+            // 학습이 완료되면 아주 잠깐의 파일 저장 시간을 고려해 새로고침 호출
+            RefreshSimulatorButtonState();
+
+            rtbTrainLog.AppendText("💡 자율주행 모니터 버튼이 활성화되었습니다! 버튼을 눌러 바로 확인해보세요.\r\n");
+
+
+        }
+
+        private void btnRunSimulator_Click(object sender, EventArgs e)
+        {
+            // 1. 모델 파일이 저장되는 WSL 우분투 경로 지정
+            string wslModelsRoot = @"\\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\models\";
+
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Title = "자율주행에 사용할 모델 파일(.h5)을 선택하세요";
+                ofd.Filter = "DonkeyCar Model (*.h5)|*.h5";
+
+                // 기존에 학습된 폴더가 실제로 존재한다면 탐색기 기본 위치로 지정
+                // (학습 전이라 폴더가 비어있어도 창은 정상적으로 열립니다.)
+                if (System.IO.Directory.Exists(wslModelsRoot))
+                {
+                    ofd.InitialDirectory = wslModelsRoot;
+                }
+
+                // 사용자가 파일 선택을 완료하고 '열기'를 눌렀을 때만 구동 프로세스 진입
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    // 경로를 제외한 순수 파일명만 추출 (예: mypilot.h5, model_202604.h5 등)
+                    string selectedFileName = System.IO.Path.GetFileName(ofd.FileName);
+
+                    try
+                    {
+                        rtbTrainLog.AppendText($"\r\n🚗 자율주행 모니터링 시스템을 구동합니다... (선택된 모델: {selectedFileName})\r\n");
+
+                        // -------------------------------------------------------------
+                        // [신규 로직] 0. 좀비 프로세스 자동 청소 (포트 8887 초기화)
+                        // -------------------------------------------------------------
+                        rtbTrainLog.AppendText("0. 이전 주행 서버 포트(8887)를 초기화합니다...\r\n");
+                        System.Diagnostics.ProcessStartInfo killInfo = new System.Diagnostics.ProcessStartInfo();
+                        killInfo.FileName = "wsl.exe";
+                        killInfo.Arguments = "-d Ubuntu-22.04 -e bash -c \"fuser -k 8887/tcp || true\"";
+                        killInfo.CreateNoWindow = true; // 검은 창 숨기기
+                        killInfo.UseShellExecute = false;
+
+                        using (var killProc = System.Diagnostics.Process.Start(killInfo))
+                        {
+                            // 포트가 완전히 닫히고 다음 서버가 켜질 수 있도록 넉넉히 1.5초(1500ms) 대기합니다.
+                            killProc.WaitForExit(1500);
+                        }
+
+                        // -------------------------------------------------------------
+                        // ① 우분투(WSL2) 자율주행 drive 서버 실행 (터미널 창 표시)
+                        // -------------------------------------------------------------
+                        System.Diagnostics.ProcessStartInfo wslInfo = new System.Diagnostics.ProcessStartInfo();
+                        wslInfo.FileName = "wsl.exe";
+
+                        // 💡 하드코딩된 mypilot.h5 대신 사용자가 선택한 {selectedFileName}을 동적으로 매핑합니다.
+                        wslInfo.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive --model=./models/{selectedFileName} --type=linear\"";
+                        wslInfo.CreateNoWindow = false;
+                        wslInfo.UseShellExecute = true;
+
+                        System.Diagnostics.Process.Start(wslInfo);
+                        rtbTrainLog.AppendText($"1. WSL2 자율주행 주행 서버 구동 시작 ({selectedFileName}).\r\n");
+
+                        // -------------------------------------------------------------
+                        // ② 웹사이트(크롬/엣지 등 기본 브라우저) 자동 팝업
+                        // -------------------------------------------------------------
+                        System.Diagnostics.ProcessStartInfo browserInfo = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = "http://localhost:8887",
+                            UseShellExecute = true
+                        };
+                        System.Diagnostics.Process.Start(browserInfo);
+                        rtbTrainLog.AppendText("2. 웹 컨트롤러 브라우저 화면 팝업 완료.\r\n");
+
+                        rtbTrainLog.AppendText("🎉 모든 모니터링 장치가 준비되었습니다! 시뮬레이터에서 'Full Auto'로 변경하세요.\r\n");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"구동 중 치명적 오류 발생: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.None);
+                    }
+                }
+            }
+        }
+
+        private void RefreshSimulatorButtonState()
+        {
+            // 백그라운드 스레드에서 호출될 경우를 대비한 Invoke 처리
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(RefreshSimulatorButtonState));
+                return;
+            }
+
+            // 윈도우 경로 기준으로 리눅스 안에 실제 파일이 존재하는지 검사
+            if (System.IO.File.Exists(_modelWinPath))
+            {
+                _isTrainingComplete = true;
+                btnRunSimulator.BackColor = Color.FromArgb(0, 122, 204); // 활성화: 파란색
+            }
+            else
+            {
+                _isTrainingComplete = false;
+                btnRunSimulator.BackColor = Color.FromArgb(62, 62, 66);   // 비활성화: 회색
+            }
+        }
+
+        private void btnOpenManual_Click(object sender, EventArgs e)
+        {
+            pnlManual.Visible = true;
+            pnlCamView.Visible = false;
+            pnlTrainingLog.Visible = false;
+
+            // 버튼 색상 변경
+            btnOpenManual.BackColor = Color.FromArgb(0, 122, 204);
+            btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
+            btnViewLog.BackColor = Color.FromArgb(62, 62, 66);
+        }
+
+        private void btnGoHome_Click(object sender, EventArgs e)
+        {
+            // 현재 메모리에 켜져 있는 런처 폼을 검색합니다.
+            Form launcherForm = Application.OpenForms["LauncherForm"];
+
+            if (launcherForm != null)
+            {
+                // 💡 홈으로 돌아갈 때도 창의 위치를 동기화하여 자연스러운 전환 유도
+                launcherForm.Location = this.Location;
+                launcherForm.Show();
+            }
+            else
+            {
+                // 혹시나 런처가 메모리에서 해제되었다면 새로 생성해서 현재 위치에 띄움
+                LauncherForm newLauncher = new LauncherForm();
+                newLauncher.StartPosition = FormStartPosition.Manual;
+                newLauncher.Location = this.Location;
+                newLauncher.Show();
+            }
+
+            // 현재 메인 관리 시스템 창(Form1)은 닫습니다.
+            this.Close();
         }
     }
 }
