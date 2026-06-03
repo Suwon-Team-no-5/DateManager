@@ -591,7 +591,7 @@ namespace DateManager
             chkFilterThr.ForeColor = Color.White;
             chkFilterThr.Location = new Point(5, 30);
             chkFilterThr.Name = "chkFilterThr";
-            chkFilterThr.Size = new Size(80, 24);
+            chkFilterThr.Size = new Size(91, 24);
             chkFilterThr.TabIndex = 0;
             chkFilterThr.Text = "속도=0";
             chkFilterThr.UseVisualStyleBackColor = true;

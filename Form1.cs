@@ -218,7 +218,6 @@ namespace DateManager
 
             // 마스터 리스트를 복사해서 필터링을 시작할 임시 리스트 생성
             List<DonkeyFrame> filteredList = new List<DonkeyFrame>(_masterFrameList);
-
             // 1. Thr = 0 체크박스가 켜져있을 때
             if (chkFilterThr.Checked)
             {
@@ -240,7 +239,6 @@ namespace DateManager
 
 
             MessageBox.Show($"필터링 완료! {filteredList.Count}개의 데이터가 조건에 맞습니다.", "필터 결과");
-
         }
 
         private void btnDeleteData_Click(object sender, EventArgs e)
@@ -692,11 +690,11 @@ namespace DateManager
             btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
-            string mycarDir = "/home/jaeseo03/mycar";
+            string mycarDir = " mycar";
 
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
-
+        
         private void btnViewMonitor_Click(object sender, EventArgs e)
         {
             pnlManual.Visible = false;
