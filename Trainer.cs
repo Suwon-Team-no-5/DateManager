@@ -8,6 +8,8 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
     public class Trainer
     {
         private Process pythonProcess;
+        private string condaPath = "/home/jaeseo03/miniconda3/bin/conda"; // WSL2 conda 경로
+        private string condaEnvName = "e2e_env"; // conda 환경 이름
 
         public event Action<string> LogReceived;
         public event Action TrainingFinished;
@@ -29,9 +31,16 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                 {
                     psi.FileName = pythonPath; // wsl.exe
 
-                    // WSL 비인터랙티브 셸에서 conda를 사용하려면 shell hook 또는 bashrc를 명시적으로 불러와야 함
+                    // WSL2에서 conda 환경을 확실하게 활성화하는 방법
+                    // 특정 배포판 지정 (-d Ubuntu-22.04)
                     string safeWorkingDir = workingDir?.Replace("\"", "\\\"") ?? string.Empty;
-                    psi.Arguments = $"-e bash -lic \"export PYTHONUNBUFFERED=1; source ~/.bashrc 2>/dev/null || true; eval \\\"$(conda shell.bash hook)\\\" 2>/dev/null || true; conda activate e2e_env && cd '{safeWorkingDir}' && python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+                    //psi.Arguments = $"-d Ubuntu-22.04 -e bash -lic \"export PYTHONUNBUFFERED=1; " +
+                    //    $"cd '{safeWorkingDir}' && {condaPath} run -n {condaEnvName} python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+
+                    // ✅ 해결 코드: 가상환경의 python 절대 경로를 직접 실행 (-lic 대신 -c 사용)
+                    string envPythonPath = "/home/jaeseo03/miniconda3/envs/e2e_env/bin/python";
+
+                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '{safeWorkingDir}' && export PYTHONUNBUFFERED=1 && {envPythonPath} train.py --tub=./data/ --model=./models/mypilot.h5\"";
 
                     // 로그로 실행 명령 확인(디버깅용)
                     LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments}\r\n");
@@ -60,10 +69,80 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                 pythonProcess.EnableRaisingEvents = true;
 
                 pythonProcess.OutputDataReceived += (s, args) => {
-                    if (!string.IsNullOrEmpty(args.Data)) LogReceived?.Invoke(args.Data + "\r\n");
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        string data = args.Data;
+
+                        // 1. 특수 제어 문자(백스페이스 등)가 포함되어 있다면 청소
+                        if (data.Contains("\b") || data.Contains("\r"))
+                        {
+                            data = data.Replace("\b", "").Replace("\r", "");
+                        }
+
+                        // 2. 텐서플로우 특유의 지저분한 로딩바(>>>>, ====>)가 포함된 줄은 화면 낭비를 막기 위해 패스!
+                        if (data.Contains("==========") || data.Contains(">....") || data.Contains("64/64"))
+                        {
+                            // 단, 실시간 수치가 포함되어 있다면 로딩바 분수(5/64 등)만 깔끔하게 정돈
+                            if (data.Contains("loss:"))
+                            {
+                                // 로딩바 기호(====>....) 부분을 공백으로 변환해서 수치만 남김
+                                data = System.Text.RegularExpressions.Regex.Replace(data, @"[=>\s\.]{5,}", " ");
+                            }
+                            else
+                            {
+                                return; // 완전히 지저분한 줄은 출력하지 않고 무시
+                            }
+                        }
+
+                        // 3. 최종 정돈된 예쁜 데이터만 UI로 전송!
+                        LogReceived?.Invoke(data.Trim() + "\r\n");
+                    }
                 };
+
                 pythonProcess.ErrorDataReceived += (s, args) => {
-                    if (!string.IsNullOrEmpty(args.Data)) LogReceived?.Invoke("[ERROR] " + args.Data + "\r\n");
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        string data = args.Data;
+
+                        // 1. 에러 스트림으로 들어오지만 '단순 안내/경고'인 패턴 정의
+                        bool isNormalInfo = data.Contains("INFO:") ||
+                                            data.Contains("WARNING:") ||
+                                            data.Contains("Warning:") ||
+                                            data.Contains("Epoch ") ||
+                                            data.Contains("saving model to") ||
+                                            data.Contains("Summary on the non-converted ops") ||
+                                            data.Contains("occurrences") ||
+                                            data.Contains("Non-Converted Ops");
+
+                        // 2. 텐서플로우 전용 로그 필터 (시간 뒤에 : I = Info, : W = Warning)
+                        // 예: 2026-06-03 16:07:09.491678: W tensorflow...
+                        bool isTensorFlowLog = data.Contains(": I ") || data.Contains(": W ");
+
+                        // 3. 진짜 치명적인 에러 패턴 정의 (: E = Error, Traceback = 파이썬 에러 추적)
+                        bool isRealError = data.Contains(": E ") ||
+                                           data.Contains("ERROR:") ||
+                                           data.Contains("CRITICAL:") ||
+                                           data.Contains("Traceback") ||
+                                           data.Contains("Exception") ||
+                                           data.Contains("Error:");
+
+                        // [최종 분류 프로세스]
+                        if (isNormalInfo || isTensorFlowLog)
+                        {
+                            // 일반 안내 문구는 헤더 없이 깔끔하게 텍스트만 출력
+                            LogReceived?.Invoke($"{data}\r\n");
+                        }
+                        else if (isRealError)
+                        {
+                            // 검증된 진짜 에러 발생 시에만 빨간맛 [ERROR] 표시
+                            LogReceived?.Invoke($"[ERROR] {data}\r\n");
+                        }
+                        else
+                        {
+                            // 그 외에 분류되지 않은 일반 출력들도 사용자 안심을 위해 그냥 출력
+                            LogReceived?.Invoke($"{data}\r\n");
+                        }
+                    }
                 };
 
                 pythonProcess.Exited += (s, args) => {

@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
@@ -6,24 +7,28 @@ namespace DateManager
 {
     public class Picture
     {
-        // 픽처박스에 이미지를 띄워주는 전용 기능
         public void LoadImageToPictureBox(PictureBox pb, string imagePath)
         {
-            // 1. 기존 이미지 해제 (필수!)
-            if (pb.Image != null)
-            {
-                pb.Image.Dispose();
-                pb.Image = null;
-            }
+            Image? oldImage = pb.Image;
+            pb.Image = null;
+            oldImage?.Dispose();
 
-            if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+            pb.SizeMode = PictureBoxSizeMode.Zoom;
+
+            if (string.IsNullOrWhiteSpace(imagePath) || !File.Exists(imagePath))
+                return;
+
+            try
             {
-                // 2. 파일 스트림을 사용하여 파일 잠금 방지
-                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                using (var fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var temp = Image.FromStream(fs))
                 {
-                    pb.SizeMode = PictureBoxSizeMode.Zoom;
-                    pb.Image = Image.FromStream(fs);
+                    pb.Image = new Bitmap(temp);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("이미지 로드 오류: " + ex.Message);
             }
         }
     }
