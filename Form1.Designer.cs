@@ -593,7 +593,7 @@
             // 
             // chartRealTime
             // 
-            chartRealTime.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            chartRealTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             chartRealTime.BackColor = Color.FromArgb(30, 30, 30);
             chartRealTime.Location = new Point(14, 325);
             chartRealTime.Name = "chartRealTime";
@@ -840,7 +840,7 @@
             rtbManual.Location = new Point(11, 45);
             rtbManual.Name = "rtbManual";
             rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(817, 463);
+            rtbManual.Size = new Size(817, 449);
             rtbManual.TabIndex = 1;
             rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
