@@ -127,6 +127,7 @@ namespace DateManager
             this.FormClosing += (s, e) => donkeyTrainer.KillProcess();
 
             this.pbMainCam.Paint += pbMainCam_Paint;
+            InitializeFrameDataContextMenu();
 
         }
 
@@ -140,6 +141,8 @@ namespace DateManager
         /// </summary>
         private void Form1_Load(object sender, EventArgs e)
         {
+            //lstTrashItems.MouseDown += lstTrashItems_MouseDown;
+
             // 필요한 경우 여기에 초기화 코드를 넣습니다.
             // 요청된 탭 순서: 설정 파일 로드 -> 학습 데이터 로드 -> AI 학습 시작 -> 시작지점 -> 종료지점 -> 필터 적용 -> 삭제 -> 재생 -> 정지 -> 배속
             _focusOrder.Clear();
@@ -325,6 +328,108 @@ namespace DateManager
             end = lstFrameData.SelectedIndex;
 
             DisplayFrame(lstFrameData.SelectedIndex);
+        }
+
+        private void InitializeFrameDataContextMenu()
+        {
+            var menu = new ContextMenuStrip();
+
+            var showFirstItem = new ToolStripMenuItem("선택 첫 프레임 보기", null, (s, e) => ShowSelectedFrame(first: true));
+            var showLastItem = new ToolStripMenuItem("선택 마지막 프레임 보기", null, (s, e) => ShowSelectedFrame(first: false));
+            //var setRangeItem = new ToolStripMenuItem("선택 범위를 시작/종료 지점으로 설정", null, (s, e) => SetSelectedRangeAsStartEnd());
+            //var copyInfoItem = new ToolStripMenuItem("선택 정보 복사", null, (s, e) => CopySelectedFrameInfo());
+            var deleteItem = new ToolStripMenuItem("선택 프레임 휴지통으로 이동", null, (s, e) => btnDeleteData_Click(this, EventArgs.Empty));
+            var clearSelectionItem = new ToolStripMenuItem("선택 해제", null, (s, e) => lstFrameData.ClearSelected());
+
+            menu.Items.AddRange(new ToolStripItem[]
+            {
+                showFirstItem,
+                showLastItem,
+                new ToolStripSeparator(),
+                //setRangeItem,
+                //copyInfoItem,
+                new ToolStripSeparator(),
+                deleteItem,
+                clearSelectionItem
+            });
+
+            menu.Opening += (s, e) =>
+            {
+                int selectedCount = lstFrameData.SelectedIndices.Count;
+                bool hasSelection = selectedCount > 0;
+
+                e.Cancel = !hasSelection;
+                showFirstItem.Enabled = hasSelection;
+                showLastItem.Enabled = selectedCount > 1;
+                //setRangeItem.Enabled = hasSelection;
+                //copyInfoItem.Enabled = hasSelection;
+                deleteItem.Enabled = hasSelection;
+                deleteItem.Text = selectedCount > 1
+                    ? $"선택 프레임 {selectedCount}개 휴지통으로 이동"
+                    : "선택 프레임 휴지통으로 이동";
+                clearSelectionItem.Enabled = hasSelection;
+            };
+
+            lstFrameData.ContextMenuStrip = menu;
+            lstFrameData.MouseDown += lstFrameData_MouseDown;
+        }
+
+        private void lstFrameData_MouseDown(object? sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right) return;
+
+            int index = lstFrameData.IndexFromPoint(e.Location);
+            if (index < 0 || index >= lstFrameData.Items.Count) return;
+
+            if (!lstFrameData.GetSelected(index))
+            {
+                lstFrameData.ClearSelected();
+                lstFrameData.SelectedIndex = index;
+            }
+
+            lstFrameData.Focus();
+        }
+
+        private List<int> GetSelectedFrameIndices()
+        {
+            return lstFrameData.SelectedIndices
+                .Cast<int>()
+                .Where(index => index >= 0 && index < _displayedFrameList.Count)
+                .OrderBy(index => index)
+                .ToList();
+        }
+
+        private void ShowSelectedFrame(bool first)
+        {
+            List<int> selectedIndices = GetSelectedFrameIndices();
+            if (selectedIndices.Count == 0) return;
+
+            int index = first ? selectedIndices.First() : selectedIndices.Last();
+            DisplayFrame(index);
+        }
+
+        private void SetSelectedRangeAsStartEnd()
+        {
+            List<int> selectedIndices = GetSelectedFrameIndices();
+            if (selectedIndices.Count == 0) return;
+
+            start = selectedIndices.First();
+            end = selectedIndices.Last();
+            DisplayFrame(start);
+        }
+
+        private void CopySelectedFrameInfo()
+        {
+            List<int> selectedIndices = GetSelectedFrameIndices();
+            if (selectedIndices.Count == 0) return;
+
+            string text = string.Join(Environment.NewLine, selectedIndices.Select(index =>
+            {
+                DonkeyFrame frame = _displayedFrameList[index];
+                return $"Frame {frame.FrameIndex}\tAngle {frame.Angle:F3}\tThrottle {frame.Throttle:F3}\t{frame.FullImagePath}";
+            }));
+
+            Clipboard.SetText(text);
         }
 
         private void trkFrameSlider_Scroll(object sender, EventArgs e)
@@ -1086,6 +1191,54 @@ namespace DateManager
                 _lastViewedFrameId = _displayedFrameList[lstFrameData.SelectedIndex].FrameIndex;
             }
 
+            if (lstTrashItems.ContextMenuStrip == null)
+            {
+                ContextMenuStrip ctxTrashMenu = new ContextMenuStrip();
+                ToolStripMenuItem menuRestore = new ToolStripMenuItem("선택한 항목 복원");
+
+                menuRestore.Click += (s, ev) =>
+                {
+                    // 화면 우하단에 있는 '선택 복원' 버튼을 원격 클릭
+                    if (btnRestoreData.Enabled)
+                    {
+                        btnRestoreData.PerformClick();
+                    }
+                };
+
+                ctxTrashMenu.Items.Add(menuRestore);
+                lstTrashItems.ContextMenuStrip = ctxTrashMenu;
+
+                // 마우스 우클릭 시 빈 공간을 누르더라도 무조건 메뉴가 뜨도록 마우스 다운 이벤트 추가
+                lstTrashItems.MouseDown += (snd, me) =>
+                {
+                    if (me.Button == MouseButtons.Right)
+                    {
+                        int index = lstTrashItems.IndexFromPoint(me.Location);
+                        if (index != ListBox.NoMatches)
+                        {
+                            // 실제 아이템(Frame)을 우클릭한 경우 해당 아이템 선택
+                            if (!lstTrashItems.GetSelected(index))
+                            {
+                                lstTrashItems.ClearSelected();
+                                lstTrashItems.SetSelected(index, true);
+                            }
+                        }
+                        else
+                        {
+                            // 아래쪽 빈 공간을 우클릭한 경우 맨 마지막 아이템이라도 자동 선택
+                            if (lstTrashItems.Items.Count > 0)
+                            {
+                                lstTrashItems.ClearSelected();
+                                lstTrashItems.SelectedIndex = lstTrashItems.Items.Count - 1;
+                            }
+                        }
+
+                        // 시스템에 맡기지 않고 마우스 위치에 메뉴 강제 팝업!
+                        ctxTrashMenu.Show(lstTrashItems, me.Location);
+                    }
+                };
+            }
+
             // 3. 휴지통 패널 표시
             pnlTrash.Visible = true;
             pnlTrash.BringToFront();
@@ -1323,6 +1476,24 @@ namespace DateManager
 
             // 현재 메인 관리 시스템 창(Form1)은 닫습니다.
             this.Close();
+
+        }
+
+        private void lstTrashItems_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right) // 우클릭 시
+            {
+                int index = lstTrashItems.IndexFromPoint(e.Location);
+                if (index != ListBox.NoMatches)
+                {
+                    // 우클릭한 항목이 이미 선택된 상태가 아니라면 새로 선택
+                    if (!lstTrashItems.GetSelected(index))
+                    {
+                        lstTrashItems.ClearSelected();
+                        lstTrashItems.SetSelected(index, true);
+                    }
+                }
+            }
         }
     }
 }
