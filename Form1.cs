@@ -136,7 +136,7 @@ namespace DateManager
 
         }
 
-        
+
         // 탭 순서 제어를 위한 컨트롤 리스트
         private List<Control> _focusOrder;
 
@@ -476,6 +476,8 @@ namespace DateManager
             if (_playbackTimer.Enabled)
             {
                 StopPlayback();
+
+                lstFrameData.Focus();
                 return;
             }
 
@@ -1505,6 +1507,20 @@ namespace DateManager
 
                 // 🔥 [추가] 선택이 완전히 끝났으므로 보호막 해제!
                 _isRangeSelecting = false;
+            }
+        }
+
+        private void lstFrameData_KeyDown(object sender, KeyEventArgs e)
+        {
+            // 🔥 리스트박스에 포커스가 있을 때 스페이스바를 누르면
+            if (e.KeyCode == Keys.Space)
+            {
+                // 리스트박스 자체의 기본 동작(선택 토글 및 타이머 방해)을 완전히 차단합니다.
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                // 폼 전체 단축키 핸들러(Form1_KeyDown)를 강제로 호출하여 구간 선택 로직만 실행되게 만듭니다.
+                Form1_KeyDown(this, e);
             }
         }
     }

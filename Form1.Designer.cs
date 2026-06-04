@@ -105,7 +105,7 @@
             pbMainCam.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pbMainCam.BackColor = Color.FromArgb(30, 30, 30);
             pbMainCam.Location = new Point(22, 128);
-            pbMainCam.Margin = new Padding(6, 6, 6, 6);
+            pbMainCam.Margin = new Padding(6);
             pbMainCam.Name = "pbMainCam";
             pbMainCam.Size = new Size(1266, 691);
             pbMainCam.TabIndex = 0;
@@ -170,7 +170,7 @@
             pnlCamView.Controls.Add(lblThrottleTop);
             pnlCamView.Controls.Add(lblAngle);
             pnlCamView.Location = new Point(48, 114);
-            pnlCamView.Margin = new Padding(5, 5, 5, 5);
+            pnlCamView.Margin = new Padding(5);
             pnlCamView.Name = "pnlCamView";
             pnlCamView.Size = new Size(1314, 846);
             pnlCamView.TabIndex = 6;
@@ -196,7 +196,7 @@
             btnViewLog.Font = new Font("Segoe UI Semibold", 9F);
             btnViewLog.ForeColor = Color.White;
             btnViewLog.Location = new Point(1188, 53);
-            btnViewLog.Margin = new Padding(5, 5, 5, 5);
+            btnViewLog.Margin = new Padding(5);
             btnViewLog.Name = "btnViewLog";
             btnViewLog.Size = new Size(174, 51);
             btnViewLog.TabIndex = 8;
@@ -213,7 +213,7 @@
             btnViewMonitor.Font = new Font("Segoe UI Semibold", 9F);
             btnViewMonitor.ForeColor = Color.White;
             btnViewMonitor.Location = new Point(1014, 53);
-            btnViewMonitor.Margin = new Padding(5, 5, 5, 5);
+            btnViewMonitor.Margin = new Padding(5);
             btnViewMonitor.Name = "btnViewMonitor";
             btnViewMonitor.Size = new Size(165, 51);
             btnViewMonitor.TabIndex = 7;
@@ -235,7 +235,7 @@
             pnlNavigation.Controls.Add(btnNext);
             pnlNavigation.Controls.Add(trkFrameSlider);
             pnlNavigation.Location = new Point(48, 984);
-            pnlNavigation.Margin = new Padding(5, 5, 5, 5);
+            pnlNavigation.Margin = new Padding(5);
             pnlNavigation.Name = "pnlNavigation";
             pnlNavigation.Size = new Size(1314, 256);
             pnlNavigation.TabIndex = 7;
@@ -261,7 +261,7 @@
             btnSpeed.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnSpeed.ForeColor = Color.White;
             btnSpeed.Location = new Point(22, 168);
-            btnSpeed.Margin = new Padding(5, 5, 5, 5);
+            btnSpeed.Margin = new Padding(5);
             btnSpeed.Name = "btnSpeed";
             btnSpeed.Size = new Size(187, 67);
             btnSpeed.TabIndex = 7;
@@ -278,7 +278,7 @@
             btnPrev.Font = new Font("Segoe UI Emoji", 12F);
             btnPrev.ForeColor = Color.White;
             btnPrev.Location = new Point(218, 168);
-            btnPrev.Margin = new Padding(5, 5, 5, 5);
+            btnPrev.Margin = new Padding(5);
             btnPrev.Name = "btnPrev";
             btnPrev.Size = new Size(156, 67);
             btnPrev.TabIndex = 3;
@@ -295,7 +295,7 @@
             btnFastRewind.Font = new Font("Segoe UI Emoji", 12F);
             btnFastRewind.ForeColor = Color.White;
             btnFastRewind.Location = new Point(383, 168);
-            btnFastRewind.Margin = new Padding(5, 5, 5, 5);
+            btnFastRewind.Margin = new Padding(5);
             btnFastRewind.Name = "btnFastRewind";
             btnFastRewind.Size = new Size(156, 67);
             btnFastRewind.TabIndex = 5;
@@ -312,7 +312,7 @@
             btnPlay.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             btnPlay.ForeColor = Color.White;
             btnPlay.Location = new Point(548, 168);
-            btnPlay.Margin = new Padding(5, 5, 5, 5);
+            btnPlay.Margin = new Padding(5);
             btnPlay.Name = "btnPlay";
             btnPlay.Size = new Size(174, 67);
             btnPlay.TabIndex = 2;
@@ -330,7 +330,7 @@
             btnStop.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             btnStop.ForeColor = Color.White;
             btnStop.Location = new Point(740, 168);
-            btnStop.Margin = new Padding(5, 5, 5, 5);
+            btnStop.Margin = new Padding(5);
             btnStop.Name = "btnStop";
             btnStop.Size = new Size(174, 67);
             btnStop.TabIndex = 0;
@@ -347,7 +347,7 @@
             btnFastForward.Font = new Font("Segoe UI Emoji", 12F);
             btnFastForward.ForeColor = Color.White;
             btnFastForward.Location = new Point(924, 168);
-            btnFastForward.Margin = new Padding(5, 5, 5, 5);
+            btnFastForward.Margin = new Padding(5);
             btnFastForward.Name = "btnFastForward";
             btnFastForward.Size = new Size(156, 67);
             btnFastForward.TabIndex = 6;
@@ -364,7 +364,7 @@
             btnNext.Font = new Font("Segoe UI Emoji", 12F);
             btnNext.ForeColor = Color.White;
             btnNext.Location = new Point(1089, 168);
-            btnNext.Margin = new Padding(5, 5, 5, 5);
+            btnNext.Margin = new Padding(5);
             btnNext.Name = "btnNext";
             btnNext.Size = new Size(156, 67);
             btnNext.TabIndex = 4;
@@ -376,7 +376,7 @@
             // 
             trkFrameSlider.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             trkFrameSlider.Location = new Point(22, 77);
-            trkFrameSlider.Margin = new Padding(5, 5, 5, 5);
+            trkFrameSlider.Margin = new Padding(5);
             trkFrameSlider.Name = "trkFrameSlider";
             trkFrameSlider.Size = new Size(1266, 90);
             trkFrameSlider.TabIndex = 1;
@@ -389,7 +389,7 @@
             pnlFrameList.Controls.Add(lblFrameListTitle);
             pnlFrameList.Controls.Add(lstFrameData);
             pnlFrameList.Location = new Point(1389, 114);
-            pnlFrameList.Margin = new Padding(5, 5, 5, 5);
+            pnlFrameList.Margin = new Padding(5);
             pnlFrameList.Name = "pnlFrameList";
             pnlFrameList.Size = new Size(294, 504);
             pnlFrameList.TabIndex = 8;
@@ -414,12 +414,13 @@
             lstFrameData.ForeColor = Color.White;
             lstFrameData.FormattingEnabled = true;
             lstFrameData.Location = new Point(22, 72);
-            lstFrameData.Margin = new Padding(5, 5, 5, 5);
+            lstFrameData.Margin = new Padding(5);
             lstFrameData.Name = "lstFrameData";
             lstFrameData.SelectionMode = SelectionMode.MultiExtended;
             lstFrameData.Size = new Size(250, 384);
             lstFrameData.TabIndex = 0;
             lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
+            lstFrameData.KeyDown += lstFrameData_KeyDown;
             // 
             // pnlSystemOps
             // 
@@ -430,7 +431,7 @@
             pnlSystemOps.Controls.Add(btnStartTraining);
             pnlSystemOps.Controls.Add(btnLoadTub);
             pnlSystemOps.Location = new Point(1705, 114);
-            pnlSystemOps.Margin = new Padding(5, 5, 5, 5);
+            pnlSystemOps.Margin = new Padding(5);
             pnlSystemOps.Name = "pnlSystemOps";
             pnlSystemOps.Size = new Size(272, 504);
             pnlSystemOps.TabIndex = 9;
@@ -443,7 +444,7 @@
             btnEndTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnEndTraining.ForeColor = Color.White;
             btnEndTraining.Location = new Point(22, 373);
-            btnEndTraining.Margin = new Padding(5, 5, 5, 5);
+            btnEndTraining.Margin = new Padding(5);
             btnEndTraining.Name = "btnEndTraining";
             btnEndTraining.Size = new Size(229, 99);
             btnEndTraining.TabIndex = 9;
@@ -471,7 +472,7 @@
             btnStartTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnStartTraining.ForeColor = Color.White;
             btnStartTraining.Location = new Point(22, 170);
-            btnStartTraining.Margin = new Padding(5, 5, 5, 5);
+            btnStartTraining.Margin = new Padding(5);
             btnStartTraining.Name = "btnStartTraining";
             btnStartTraining.Size = new Size(229, 194);
             btnStartTraining.TabIndex = 2;
@@ -487,7 +488,7 @@
             btnLoadTub.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnLoadTub.ForeColor = Color.White;
             btnLoadTub.Location = new Point(22, 61);
-            btnLoadTub.Margin = new Padding(5, 5, 5, 5);
+            btnLoadTub.Margin = new Padding(5);
             btnLoadTub.Name = "btnLoadTub";
             btnLoadTub.Size = new Size(229, 99);
             btnLoadTub.TabIndex = 1;
@@ -503,7 +504,7 @@
             pnlDataManagement.Controls.Add(btnApplyFilter);
             pnlDataManagement.Controls.Add(pnlFilterOptions);
             pnlDataManagement.Location = new Point(1389, 638);
-            pnlDataManagement.Margin = new Padding(5, 5, 5, 5);
+            pnlDataManagement.Margin = new Padding(5);
             pnlDataManagement.Name = "pnlDataManagement";
             pnlDataManagement.Size = new Size(588, 322);
             pnlDataManagement.TabIndex = 10;
@@ -528,7 +529,7 @@
             btnApplyFilter.Font = new Font("Segoe UI", 9.5F);
             btnApplyFilter.ForeColor = Color.White;
             btnApplyFilter.Location = new Point(22, 227);
-            btnApplyFilter.Margin = new Padding(5, 5, 5, 5);
+            btnApplyFilter.Margin = new Padding(5);
             btnApplyFilter.Name = "btnApplyFilter";
             btnApplyFilter.Size = new Size(544, 67);
             btnApplyFilter.TabIndex = 3;
@@ -544,7 +545,7 @@
             pnlFilterOptions.Controls.Add(chkFilterLargeThr);
             pnlFilterOptions.Controls.Add(chkFilterThr);
             pnlFilterOptions.Location = new Point(22, 72);
-            pnlFilterOptions.Margin = new Padding(5, 5, 5, 5);
+            pnlFilterOptions.Margin = new Padding(5);
             pnlFilterOptions.Name = "pnlFilterOptions";
             pnlFilterOptions.Size = new Size(544, 139);
             pnlFilterOptions.TabIndex = 0;
@@ -566,7 +567,7 @@
             chkFilterLargeAngle.AutoSize = true;
             chkFilterLargeAngle.ForeColor = Color.White;
             chkFilterLargeAngle.Location = new Point(8, 98);
-            chkFilterLargeAngle.Margin = new Padding(5, 5, 5, 5);
+            chkFilterLargeAngle.Margin = new Padding(5);
             chkFilterLargeAngle.Name = "chkFilterLargeAngle";
             chkFilterLargeAngle.Size = new Size(198, 36);
             chkFilterLargeAngle.TabIndex = 2;
@@ -578,7 +579,7 @@
             chkFilterLargeThr.AutoSize = true;
             chkFilterLargeThr.ForeColor = Color.White;
             chkFilterLargeThr.Location = new Point(213, 48);
-            chkFilterLargeThr.Margin = new Padding(5, 5, 5, 5);
+            chkFilterLargeThr.Margin = new Padding(5);
             chkFilterLargeThr.Name = "chkFilterLargeThr";
             chkFilterLargeThr.Size = new Size(317, 36);
             chkFilterLargeThr.TabIndex = 1;
@@ -590,7 +591,7 @@
             chkFilterThr.AutoSize = true;
             chkFilterThr.ForeColor = Color.White;
             chkFilterThr.Location = new Point(8, 48);
-            chkFilterThr.Margin = new Padding(5, 5, 5, 5);
+            chkFilterThr.Margin = new Padding(5);
             chkFilterThr.Name = "chkFilterThr";
             chkFilterThr.Size = new Size(124, 36);
             chkFilterThr.TabIndex = 0;
@@ -605,7 +606,7 @@
             btnDeleteData.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             btnDeleteData.ForeColor = Color.White;
             btnDeleteData.Location = new Point(23, 171);
-            btnDeleteData.Margin = new Padding(5, 5, 5, 5);
+            btnDeleteData.Margin = new Padding(5);
             btnDeleteData.Name = "btnDeleteData";
             btnDeleteData.Size = new Size(249, 67);
             btnDeleteData.TabIndex = 6;
@@ -622,7 +623,7 @@
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
             pnlTrainingLog.Location = new Point(48, 114);
-            pnlTrainingLog.Margin = new Padding(5, 5, 5, 5);
+            pnlTrainingLog.Margin = new Padding(5);
             pnlTrainingLog.Name = "pnlTrainingLog";
             pnlTrainingLog.Size = new Size(1314, 846);
             pnlTrainingLog.TabIndex = 11;
@@ -633,7 +634,7 @@
             pbChart.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pbChart.BackColor = Color.FromArgb(30, 30, 30);
             pbChart.Location = new Point(22, 514);
-            pbChart.Margin = new Padding(5, 5, 5, 5);
+            pbChart.Margin = new Padding(5);
             pbChart.Name = "pbChart";
             pbChart.Size = new Size(1269, 237);
             pbChart.TabIndex = 14;
@@ -648,7 +649,7 @@
             btnRunSimulator.Font = new Font("Segoe UI Semibold", 9F);
             btnRunSimulator.ForeColor = Color.White;
             btnRunSimulator.Location = new Point(1126, 760);
-            btnRunSimulator.Margin = new Padding(5, 5, 5, 5);
+            btnRunSimulator.Margin = new Padding(5);
             btnRunSimulator.Name = "btnRunSimulator";
             btnRunSimulator.Size = new Size(165, 80);
             btnRunSimulator.TabIndex = 13;
@@ -675,7 +676,7 @@
             rtbTrainLog.BorderStyle = BorderStyle.None;
             rtbTrainLog.ForeColor = Color.LightGreen;
             rtbTrainLog.Location = new Point(22, 72);
-            rtbTrainLog.Margin = new Padding(5, 5, 5, 5);
+            rtbTrainLog.Margin = new Padding(5);
             rtbTrainLog.Name = "rtbTrainLog";
             rtbTrainLog.ReadOnly = true;
             rtbTrainLog.Size = new Size(1269, 432);
@@ -703,7 +704,7 @@
             pnlDelete.Controls.Add(lblDelete);
             pnlDelete.Controls.Add(btnDeleteData);
             pnlDelete.Location = new Point(1389, 984);
-            pnlDelete.Margin = new Padding(5, 5, 5, 5);
+            pnlDelete.Margin = new Padding(5);
             pnlDelete.Name = "pnlDelete";
             pnlDelete.Size = new Size(588, 256);
             pnlDelete.TabIndex = 11;
@@ -716,7 +717,7 @@
             btnSelectAll.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             btnSelectAll.ForeColor = Color.White;
             btnSelectAll.Location = new Point(316, 171);
-            btnSelectAll.Margin = new Padding(5, 5, 5, 5);
+            btnSelectAll.Margin = new Padding(5);
             btnSelectAll.Name = "btnSelectAll";
             btnSelectAll.Size = new Size(249, 67);
             btnSelectAll.TabIndex = 11;
@@ -732,7 +733,7 @@
             btnOpenTrash.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             btnOpenTrash.ForeColor = Color.White;
             btnOpenTrash.Location = new Point(23, 77);
-            btnOpenTrash.Margin = new Padding(5, 5, 5, 5);
+            btnOpenTrash.Margin = new Padding(5);
             btnOpenTrash.Name = "btnOpenTrash";
             btnOpenTrash.Size = new Size(249, 67);
             btnOpenTrash.TabIndex = 10;
@@ -761,7 +762,7 @@
             pnlTrash.Controls.Add(lblTrash);
             pnlTrash.Controls.Add(lstTrashItems);
             pnlTrash.Location = new Point(1389, 114);
-            pnlTrash.Margin = new Padding(5, 5, 5, 5);
+            pnlTrash.Margin = new Padding(5);
             pnlTrash.Name = "pnlTrash";
             pnlTrash.Size = new Size(588, 846);
             pnlTrash.TabIndex = 9;
@@ -776,7 +777,7 @@
             btnCloseTrash.Font = new Font("Segoe UI Semibold", 9F);
             btnCloseTrash.ForeColor = Color.White;
             btnCloseTrash.Location = new Point(535, 0);
-            btnCloseTrash.Margin = new Padding(5, 5, 5, 5);
+            btnCloseTrash.Margin = new Padding(5);
             btnCloseTrash.Name = "btnCloseTrash";
             btnCloseTrash.Size = new Size(53, 51);
             btnCloseTrash.TabIndex = 13;
@@ -793,7 +794,7 @@
             btnRestoreData.Font = new Font("Segoe UI Semibold", 9F);
             btnRestoreData.ForeColor = Color.White;
             btnRestoreData.Location = new Point(401, 762);
-            btnRestoreData.Margin = new Padding(5, 5, 5, 5);
+            btnRestoreData.Margin = new Padding(5);
             btnRestoreData.Name = "btnRestoreData";
             btnRestoreData.Size = new Size(165, 51);
             btnRestoreData.TabIndex = 13;
@@ -821,7 +822,7 @@
             lstTrashItems.ForeColor = Color.White;
             lstTrashItems.FormattingEnabled = true;
             lstTrashItems.Location = new Point(22, 72);
-            lstTrashItems.Margin = new Padding(5, 5, 5, 5);
+            lstTrashItems.Margin = new Padding(5);
             lstTrashItems.Name = "lstTrashItems";
             lstTrashItems.SelectionMode = SelectionMode.MultiExtended;
             lstTrashItems.Size = new Size(544, 640);
@@ -837,7 +838,7 @@
             btnOpenManual.Font = new Font("Segoe UI Semibold", 9F);
             btnOpenManual.ForeColor = Color.White;
             btnOpenManual.Location = new Point(831, 53);
-            btnOpenManual.Margin = new Padding(5, 5, 5, 5);
+            btnOpenManual.Margin = new Padding(5);
             btnOpenManual.Name = "btnOpenManual";
             btnOpenManual.Size = new Size(174, 51);
             btnOpenManual.TabIndex = 13;
@@ -853,7 +854,7 @@
             btnGoHome.Font = new Font("Segoe UI Semibold", 9F);
             btnGoHome.ForeColor = Color.White;
             btnGoHome.Location = new Point(48, 53);
-            btnGoHome.Margin = new Padding(5, 5, 5, 5);
+            btnGoHome.Margin = new Padding(5);
             btnGoHome.Name = "btnGoHome";
             btnGoHome.Size = new Size(53, 51);
             btnGoHome.TabIndex = 14;
@@ -868,7 +869,7 @@
             pnlManual.Controls.Add(lblManual);
             pnlManual.Controls.Add(rtbManual);
             pnlManual.Location = new Point(48, 114);
-            pnlManual.Margin = new Padding(5, 5, 5, 5);
+            pnlManual.Margin = new Padding(5);
             pnlManual.Name = "pnlManual";
             pnlManual.Size = new Size(1314, 846);
             pnlManual.TabIndex = 14;
@@ -893,7 +894,7 @@
             rtbManual.BorderStyle = BorderStyle.None;
             rtbManual.ForeColor = Color.LightGreen;
             rtbManual.Location = new Point(17, 72);
-            rtbManual.Margin = new Padding(5, 5, 5, 5);
+            rtbManual.Margin = new Padding(5);
             rtbManual.Name = "rtbManual";
             rtbManual.ReadOnly = true;
             rtbManual.Size = new Size(1271, 741);
@@ -920,7 +921,7 @@
             Controls.Add(pnlSystemOps);
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
-            Margin = new Padding(6, 6, 6, 6);
+            Margin = new Padding(6);
             MinimumSize = new Size(2023, 1305);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
