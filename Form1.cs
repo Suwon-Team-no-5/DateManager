@@ -127,6 +127,7 @@ namespace DateManager
             this.FormClosing += (s, e) => donkeyTrainer.KillProcess();
 
             this.pbMainCam.Paint += pbMainCam_Paint;
+            InitializeFrameDataContextMenu();
 
         }
 
@@ -325,6 +326,108 @@ namespace DateManager
             end = lstFrameData.SelectedIndex;
 
             DisplayFrame(lstFrameData.SelectedIndex);
+        }
+
+        private void InitializeFrameDataContextMenu()
+        {
+            var menu = new ContextMenuStrip();
+
+            var showFirstItem = new ToolStripMenuItem("선택 첫 프레임 보기", null, (s, e) => ShowSelectedFrame(first: true));
+            var showLastItem = new ToolStripMenuItem("선택 마지막 프레임 보기", null, (s, e) => ShowSelectedFrame(first: false));
+            var setRangeItem = new ToolStripMenuItem("선택 범위를 시작/종료 지점으로 설정", null, (s, e) => SetSelectedRangeAsStartEnd());
+            var copyInfoItem = new ToolStripMenuItem("선택 정보 복사", null, (s, e) => CopySelectedFrameInfo());
+            var deleteItem = new ToolStripMenuItem("선택 프레임 휴지통으로 이동", null, (s, e) => btnDeleteData_Click(this, EventArgs.Empty));
+            var clearSelectionItem = new ToolStripMenuItem("선택 해제", null, (s, e) => lstFrameData.ClearSelected());
+
+            menu.Items.AddRange(new ToolStripItem[]
+            {
+                showFirstItem,
+                showLastItem,
+                new ToolStripSeparator(),
+                setRangeItem,
+                copyInfoItem,
+                new ToolStripSeparator(),
+                deleteItem,
+                clearSelectionItem
+            });
+
+            menu.Opening += (s, e) =>
+            {
+                int selectedCount = lstFrameData.SelectedIndices.Count;
+                bool hasSelection = selectedCount > 0;
+
+                e.Cancel = !hasSelection;
+                showFirstItem.Enabled = hasSelection;
+                showLastItem.Enabled = selectedCount > 1;
+                setRangeItem.Enabled = hasSelection;
+                copyInfoItem.Enabled = hasSelection;
+                deleteItem.Enabled = hasSelection;
+                deleteItem.Text = selectedCount > 1
+                    ? $"선택 프레임 {selectedCount}개 휴지통으로 이동"
+                    : "선택 프레임 휴지통으로 이동";
+                clearSelectionItem.Enabled = hasSelection;
+            };
+
+            lstFrameData.ContextMenuStrip = menu;
+            lstFrameData.MouseDown += lstFrameData_MouseDown;
+        }
+
+        private void lstFrameData_MouseDown(object? sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right) return;
+
+            int index = lstFrameData.IndexFromPoint(e.Location);
+            if (index < 0 || index >= lstFrameData.Items.Count) return;
+
+            if (!lstFrameData.GetSelected(index))
+            {
+                lstFrameData.ClearSelected();
+                lstFrameData.SelectedIndex = index;
+            }
+
+            lstFrameData.Focus();
+        }
+
+        private List<int> GetSelectedFrameIndices()
+        {
+            return lstFrameData.SelectedIndices
+                .Cast<int>()
+                .Where(index => index >= 0 && index < _displayedFrameList.Count)
+                .OrderBy(index => index)
+                .ToList();
+        }
+
+        private void ShowSelectedFrame(bool first)
+        {
+            List<int> selectedIndices = GetSelectedFrameIndices();
+            if (selectedIndices.Count == 0) return;
+
+            int index = first ? selectedIndices.First() : selectedIndices.Last();
+            DisplayFrame(index);
+        }
+
+        private void SetSelectedRangeAsStartEnd()
+        {
+            List<int> selectedIndices = GetSelectedFrameIndices();
+            if (selectedIndices.Count == 0) return;
+
+            start = selectedIndices.First();
+            end = selectedIndices.Last();
+            DisplayFrame(start);
+        }
+
+        private void CopySelectedFrameInfo()
+        {
+            List<int> selectedIndices = GetSelectedFrameIndices();
+            if (selectedIndices.Count == 0) return;
+
+            string text = string.Join(Environment.NewLine, selectedIndices.Select(index =>
+            {
+                DonkeyFrame frame = _displayedFrameList[index];
+                return $"Frame {frame.FrameIndex}\tAngle {frame.Angle:F3}\tThrottle {frame.Throttle:F3}\t{frame.FullImagePath}";
+            }));
+
+            Clipboard.SetText(text);
         }
 
         private void trkFrameSlider_Scroll(object sender, EventArgs e)
