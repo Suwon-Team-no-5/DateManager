@@ -117,4 +117,26 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="rtbManual.Text" xml:space="preserve">
+    <value>📘 5팀 Donkey UI 사용자 가이드
+
+🚗 1. 수동 주행 (데이터 수집)
+   ▪ 주행 조종 데이터와 메인 카메라 영상을 실시간으로 동기화하여 저장합니다.
+   ▪ 수집된 데이터는 AI 모델 학습을 위한 핵심 기초 자료(Tub 데이터)가 됩니다.
+
+📂 2. 데이터 로드
+   ▪ '데이터 로드' 버튼을 눌러 로컬/WSL2 환경에 수집된 주행 데이터셋을 시스템으로 가져옵니다.
+
+🔍 3. 필터링 및 데이터 정제
+   ▪ 수집된 데이터 중 정지 화면, 역주행, 탈선 등 학습에 불필요한 노이즈 자료를 선별합니다.
+   ▪ 선별된 무효 데이터를 삭제(쓰레기통 이동)하여 AI 학습의 정확도를 극대화합니다.
+
+🧠 4. AI 모델 학습 (Training)
+   ▪ 정제가 완료된 양질의 데이터를 기반으로 정방향 학습을 진행합니다.
+   ▪ 학습이 완료되면 자율주행 주행의 핵심인 가중치 파일(.h5)이 자동으로 생성됩니다.
+
+🚀 5. 자율주행 테스트 (Drive)
+   ▪ '자율주행' 버튼을 눌러 원하는 학습 완료 파일(.h5)을 선택합니다.
+   ▪ 시스템이 내부 포트(8887)를 자동 최적화한 후, 시뮬레이터 환경에서 자율주행 성능을 즉시 검증합니다.</value>
+  </data>
 </root>

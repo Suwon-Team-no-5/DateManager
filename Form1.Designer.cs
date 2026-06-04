@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             pbMainCam = new PictureBox();
             lblFrameIndex = new Label();
             lblAngle = new Label();
@@ -82,6 +83,7 @@
             btnOpenManual = new Button();
             btnGoHome = new Button();
             pnlManual = new Panel();
+            rtbManual = new RichTextBox();
             lblManual = new Label();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
@@ -103,7 +105,7 @@
             pbMainCam.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pbMainCam.BackColor = Color.FromArgb(30, 30, 30);
             pbMainCam.Location = new Point(14, 80);
-            pbMainCam.Margin = new Padding(4, 4, 4, 4);
+            pbMainCam.Margin = new Padding(4);
             pbMainCam.Name = "pbMainCam";
             pbMainCam.Size = new Size(814, 432);
             pbMainCam.TabIndex = 0;
@@ -810,13 +812,26 @@
             // 
             pnlManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlManual.BackColor = Color.FromArgb(45, 45, 48);
-            pnlManual.Controls.Add(richTextBox1);
+            pnlManual.Controls.Add(rtbManual);
             pnlManual.Controls.Add(lblManual);
             pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
             pnlManual.Size = new Size(845, 529);
             pnlManual.TabIndex = 14;
             pnlManual.Visible = false;
+            // 
+            // rtbManual
+            // 
+            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
+            rtbManual.BorderStyle = BorderStyle.None;
+            rtbManual.ForeColor = Color.LightGreen;
+            rtbManual.Location = new Point(14, 38);
+            rtbManual.Name = "rtbManual";
+            rtbManual.ReadOnly = true;
+            rtbManual.Size = new Size(817, 474);
+            rtbManual.TabIndex = 11;
+            rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
             // lblManual
             // 
@@ -849,7 +864,7 @@
             Controls.Add(pnlSystemOps);
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
-            Margin = new Padding(4, 4, 4, 4);
+            Margin = new Padding(4);
             MinimumSize = new Size(1310, 826);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
@@ -941,5 +956,6 @@
         private Label lblManual;
         private PictureBox pbChart;
         private RichTextBox richTextBox1;
+        private RichTextBox rtbManual;
     }
 }
