@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -316,7 +317,7 @@ namespace DateManager
             }
         }
 
-        private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
+        private void lstFrameData_SelectedIndexChanged(object? sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
         {
             if (lstFrameData.SelectedIndex == -1) return;
 
@@ -508,40 +509,12 @@ namespace DateManager
         // 폼 전체에 대한 키보드 단축키 핸들러
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
         {
-            // 로그창 같은 텍스트 박스에 포커스가 있을 때는 단축키 오작동 방지
-            if (rtbTrainLog != null && rtbTrainLog.Focused) return;
-
-            if (e.KeyCode == Keys.Space)
+            if (e.KeyCode == Keys.Delete)
             {
+                btnDeleteData.PerformClick();
                 e.Handled = true;
-                e.SuppressKeyPress = true; // 버튼 씹기
-
-                if (!_isViewingTrash)
-                {
-                    int currentIndex = lstFrameData.SelectedIndex;
-                    if (currentIndex >= 0)
-                    {
-                        if (_deleteStartIndex == -1)
-                        {
-                            _deleteStartIndex = currentIndex;
-                            rtbTrainLog?.AppendText($"\r\n[구간 지정] 삭제 시작 프레임: {currentIndex}");
-                        }
-                        else
-                        {
-                            _deleteEndIndex = currentIndex;
-                            rtbTrainLog?.AppendText($" -> 끝 프레임: {currentIndex}\r\n");
-
-                            // 여기서 위에 수정한 SelectFrameRange가 돌면서 튕김 없이 깔끔하게 선택됨!
-                            SelectFrameRange(_deleteStartIndex, _deleteEndIndex);
-
-                            _deleteStartIndex = -1;
-                            _deleteEndIndex = -1;
-                        }
-                    }
-                }
             }
-
-            // ─── 3. 기존 Space 키: 순수하게 재생 / 일시정지 토글로 원상복구 ───
+            // 스페이스: 재생/일시정지 토글
             if (e.KeyCode == Keys.Space)
             {
                 if (!_isViewingTrash)
@@ -814,9 +787,9 @@ namespace DateManager
             end = lstFrameData.SelectedIndex;
         }
 
-        private async void btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object? sender, EventArgs e)
         {
-            // 1. [핵심] 휴지통에 있는 파일들을 여기서 실제 삭제
+            // 1. [기존 기능 유지] 휴지통 파일 처리
             if (_trashFrameList.Count > 0)
             {
                 if (MessageBox.Show($"휴지통에 있는 {_trashFrameList.Count}개의 파일을 영구 삭제하고 학습을 시작할까요?",
@@ -826,35 +799,40 @@ namespace DateManager
                     _trashFrameList.Clear();
                     UpdateTrashListUI();
                 }
-                else
-                {
-                    return; // 사용자가 취소하면 학습 시작 안 함
-                }
+                else { return; } // 사용자가 취소하면 학습 시작 안 함
             }
+
+            // 2. [필수 확인] 데이터가 로드되어 있는지 확인
+            if (string.IsNullOrEmpty(_currentCatalogPath))
+            {
+                MessageBox.Show("데이터가 로드되지 않았습니다. 폴더를 먼저 선택해주세요!");
+                return;
+            }
+
+            // 3. [기존 기능 유지] UI 상태 초기화
             lossPoints.Clear();
             if (pbChart != null) pbChart.Image = null;
-            // 기존 학습 시작 로직...
+
             btnStartTraining.Enabled = false;
             btnEndTraining.Enabled = true;
-
-            // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = true;
-
             btnStartTraining.BackColor = Color.FromArgb(62, 62, 66);
             btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
-
-            // 버튼 색상 변경
             btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
             btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
 
             rtbTrainLog.Clear();
             rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
-            string pythonPath = "wsl.exe";
-            string mycarDir = " mycar";
+            // 4. [수정된 부분] Windows 경로 -> Linux 경로 변환
+            string linuxTubPath = ConvertToLinuxPath(_currentCatalogPath);
 
-            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+            string pythonPath = "wsl.exe";
+            string mycarDir = "/home/jaeseo03/mycar"; // 경로를 정확한 절대경로로 지정하는 것이 안전합니다.
+
+            // 5. [수정된 부분] 변환된 경로(linuxTubPath)를 Trainer에 전달
+            await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, linuxTubPath));
         }
         private void DrawRealTimeChart()
         {
@@ -936,8 +914,9 @@ namespace DateManager
             // 3. 학습 프로세스 다시 실행 (btnStart_Click과 동일한 로직)
             string pythonPath = "wsl.exe";
             string mycarDir = "/home/jaeseo03/mycar";
+            string tubPath = _currentCatalogPath ?? "./data";
 
-            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, tubPath));
         }
 
         private void btnEndTraining_Click(object sender, EventArgs e)
@@ -1013,7 +992,7 @@ namespace DateManager
         }
 
         // 🌟🌟🌟 궤적 부드러움 보정 & HUD (휴지통 시각 효과 포함) 🌟🌟🌟
-        private void pbMainCam_Paint(object sender, PaintEventArgs e)
+        private void pbMainCam_Paint(object? sender, PaintEventArgs e)
         {
             if (pbMainCam.Image == null) return;
 
@@ -1474,54 +1453,20 @@ namespace DateManager
             }
         }
 
-        private void SelectFrameRange(int start, int end)
+        // 💡 윈도우 경로를 WSL(리눅스) 경로로 바꾸는 변환기
+        private string ConvertToLinuxPath(string windowsPath)
         {
-            // 정방향/역방향 관계없이 최소값과 최대값 정렬
-            int realStart = Math.Min(start, end);
-            int realEnd = Math.Max(start, end);
+            // 예: \\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\data
+            string path = windowsPath.Replace("\\", "/");
 
-            // 🔥 [추가] 이벤트 폭탄 방지 보호막 가동!
-            // 이 값이 true인 동안에는 lstFrameData_SelectedIndexChanged 내부 코드가 씹힙니다.
-            _isRangeSelecting = true;
-
-            // 대량 선택 시 화면 깜빡임 방지 및 성능 최적화
-            lstFrameData.BeginUpdate();
-            try
+            // 리눅스 내부 절대 경로 형식으로 변환 (사용자 환경에 따라 wsl 이름 부분은 달라질 수 있음)
+            // 예: /home/jaeseo03/mycar/data 형태가 되도록 조정
+            int index = path.IndexOf("/home/");
+            if (index != -1)
             {
-                // 기존 선택 초기화
-                lstFrameData.ClearSelected();
-
-                // 시작점부터 끝점까지 루프 돌며 일괄 선택 활성화
-                for (int i = realStart; i <= realEnd; i++)
-                {
-                    if (i >= 0 && i < lstFrameData.Items.Count)
-                    {
-                        lstFrameData.SetSelected(i, true);
-                    }
-                }
+                return path.Substring(index); // /home/... 부터 시작하는 경로만 추출
             }
-            finally
-            {
-                // 화면 갱신 다시 켜기
-                lstFrameData.EndUpdate();
-
-                // 🔥 [추가] 선택이 완전히 끝났으므로 보호막 해제!
-                _isRangeSelecting = false;
-            }
-        }
-
-        private void lstFrameData_KeyDown(object sender, KeyEventArgs e)
-        {
-            // 🔥 리스트박스에 포커스가 있을 때 스페이스바를 누르면
-            if (e.KeyCode == Keys.Space)
-            {
-                // 리스트박스 자체의 기본 동작(선택 토글 및 타이머 방해)을 완전히 차단합니다.
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-
-                // 폼 전체 단축키 핸들러(Form1_KeyDown)를 강제로 호출하여 구간 선택 로직만 실행되게 만듭니다.
-                Form1_KeyDown(this, e);
-            }
+            return path; // 이미 리눅스 경로이거나 변환 실패 시 원본 반환
         }
     }
 }

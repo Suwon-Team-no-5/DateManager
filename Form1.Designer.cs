@@ -83,8 +83,8 @@
             btnOpenManual = new Button();
             btnGoHome = new Button();
             pnlManual = new Panel();
-            lblManual = new Label();
             rtbManual = new RichTextBox();
+            lblManual = new Label();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -309,7 +309,7 @@
             btnPlay.BackColor = Color.FromArgb(0, 122, 204);
             btnPlay.FlatAppearance.BorderSize = 0;
             btnPlay.FlatStyle = FlatStyle.Flat;
-            btnPlay.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnPlay.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnPlay.ForeColor = Color.White;
             btnPlay.Location = new Point(548, 168);
             btnPlay.Margin = new Padding(5);
@@ -327,7 +327,7 @@
             btnStop.BackColor = Color.FromArgb(211, 47, 47);
             btnStop.FlatAppearance.BorderSize = 0;
             btnStop.FlatStyle = FlatStyle.Flat;
-            btnStop.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnStop.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnStop.ForeColor = Color.White;
             btnStop.Location = new Point(740, 168);
             btnStop.Margin = new Padding(5);
@@ -866,14 +866,26 @@
             // 
             pnlManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlManual.BackColor = Color.FromArgb(45, 45, 48);
-            pnlManual.Controls.Add(lblManual);
             pnlManual.Controls.Add(rtbManual);
-            pnlManual.Location = new Point(48, 114);
-            pnlManual.Margin = new Padding(5);
+            pnlManual.Controls.Add(lblManual);
+            pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
             pnlManual.Size = new Size(1314, 846);
             pnlManual.TabIndex = 14;
             pnlManual.Visible = false;
+            // 
+            // rtbManual
+            // 
+            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
+            rtbManual.BorderStyle = BorderStyle.None;
+            rtbManual.ForeColor = Color.LightGreen;
+            rtbManual.Location = new Point(14, 38);
+            rtbManual.Name = "rtbManual";
+            rtbManual.ReadOnly = true;
+            rtbManual.Size = new Size(817, 474);
+            rtbManual.TabIndex = 11;
+            rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
             // lblManual
             // 
@@ -886,20 +898,6 @@
             lblManual.Size = new Size(165, 38);
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
-            // 
-            // rtbManual
-            // 
-            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
-            rtbManual.BorderStyle = BorderStyle.None;
-            rtbManual.ForeColor = Color.LightGreen;
-            rtbManual.Location = new Point(17, 72);
-            rtbManual.Margin = new Padding(5);
-            rtbManual.Name = "rtbManual";
-            rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(1271, 741);
-            rtbManual.TabIndex = 1;
-            rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
             // Form1
             // 
@@ -921,8 +919,8 @@
             Controls.Add(pnlSystemOps);
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
-            Margin = new Padding(6);
-            MinimumSize = new Size(2023, 1305);
+            Margin = new Padding(4);
+            MinimumSize = new Size(1310, 826);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
@@ -1011,7 +1009,8 @@
         private Button btnGoHome;
         private Panel pnlManual;
         private Label lblManual;
-        private RichTextBox rtbManual;
         private PictureBox pbChart;
+        private RichTextBox richTextBox1;
+        private RichTextBox rtbManual;
     }
 }

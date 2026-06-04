@@ -3,73 +3,49 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
+namespace DateManager
 {
     public class Trainer
     {
         private Process pythonProcess;
-        private string condaPath = "/home/jaeseo03/miniconda3/bin/conda"; // WSL2 conda 경로
-        private string condaEnvName = "e2e_env"; // conda 환경 이름
-
         public event Action<string> LogReceived;
         public event Action TrainingFinished;
 
-        /// <summary>
-        /// WSL2 환경의 가상환경을 켜고, 지정된 mycar 폴더로 이동하여 파이썬 학습 스크립트를 백그라운드에서 실행하는 함수입니다.
-        /// </summary>
-        public void StartTraining(string pythonPath, string workingDir)
+        // 필수 인수 3개를 받도록 정확히 선언
+        public void StartTraining(string pythonPath, string workingDir, string tubPath)
         {
             if (pythonProcess != null && !pythonProcess.HasExited) return;
 
             try
             {
                 ProcessStartInfo psi = new ProcessStartInfo();
-                // 파라미터로 들어온 pythonPath가 wsl.exe인지 확인
                 string exeName = Path.GetFileName(pythonPath ?? "").ToLower();
 
                 if (exeName.Contains("wsl"))
                 {
-                    psi.FileName = pythonPath; // wsl.exe
-
-                    // 1. 공백 및 불필요한 기호(따옴표 등) 완벽 제거
+                    psi.FileName = pythonPath;
                     string safeWorkingDir = workingDir?.Trim().Replace("\"", "").Replace("'", "") ?? string.Empty;
 
-                    // 2. 💡 [최종 방어 로직] 사용자가 UI에 어떻게 입력하든 무조건 절대경로로 강제 변환
-                    if (safeWorkingDir.StartsWith("~/"))
-                    {
-                        // '~/mycar' 라고 입력한 경우 -> '/home/jaeseo03/mycar'
-                        safeWorkingDir = safeWorkingDir.Replace("~/", "/home/jaeseo03/");
-                    }
-                    else if (!safeWorkingDir.StartsWith("/"))
-                    {
-                        // 그냥 'mycar' 라고 입력한 경우 -> '/home/jaeseo03/mycar'
-                        safeWorkingDir = "/home/jaeseo03/" + safeWorkingDir;
-                    }
+                    if (safeWorkingDir.StartsWith("~/")) safeWorkingDir = safeWorkingDir.Replace("~/", "/home/jaeseo03/");
+                    else if (!safeWorkingDir.StartsWith("/")) safeWorkingDir = "/home/jaeseo03/" + safeWorkingDir;
 
-                    // 3. 명령어 구성 (작은따옴표로 경로를 감싸서 리눅스에 전달)
                     string envPythonPath = "/home/jaeseo03/miniconda3/envs/e2e_env/bin/python";
-                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '{safeWorkingDir}' && export PYTHONUNBUFFERED=1 && {envPythonPath} train.py --tub=./data/ --model=./models/mypilot.h5\"";
-
-                    // 로그 출력
-                    LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments}\r\n");
+                    // 3개 인수를 사용
+                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '{safeWorkingDir}' && export PYTHONUNBUFFERED=1 && {envPythonPath} train.py --tub={tubPath} --model=./models/mypilot.h5\"";
                 }
                 else
                 {
-                    // 윈도우 로컬 Python 또는 절대 경로로 직접 실행하는 경우
-                    psi.FileName = pythonPath; // ex: "python" 또는 "C:\\Python\\python.exe"
+                    psi.FileName = pythonPath;
                     psi.WorkingDirectory = workingDir;
-                    // train.py 경로를 인수로 전달
                     string scriptPath = Path.Combine(workingDir ?? string.Empty, "train.py");
-                    psi.Arguments = $"\"{scriptPath}\" --tub=./data/ --model=./models/mypilot.h5";
-
-                    LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments} (cwd={psi.WorkingDirectory})\r\n");
+                    psi.Arguments = $"\"{scriptPath}\" --tub={tubPath} --model=./models/mypilot.h5";
                 }
 
                 psi.UseShellExecute = false;
                 psi.CreateNoWindow = true;
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
-                psi.StandardOutputEncoding = Encoding.UTF8; // 한글 로그 깨짐 방지
+                psi.StandardOutputEncoding = Encoding.UTF8;
                 psi.StandardErrorEncoding = Encoding.UTF8;
 
                 pythonProcess = new Process();
@@ -79,112 +55,45 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                 pythonProcess.OutputDataReceived += (s, args) => {
                     if (!string.IsNullOrEmpty(args.Data))
                     {
-                        string data = args.Data;
-
-                        // 1. 특수 제어 문자(백스페이스 등)가 포함되어 있다면 청소
-                        if (data.Contains("\b") || data.Contains("\r"))
-                        {
-                            data = data.Replace("\b", "").Replace("\r", "");
-                        }
-
-                        // 2. 텐서플로우 특유의 지저분한 로딩바(>>>>, ====>)가 포함된 줄은 화면 낭비를 막기 위해 패스!
-                        if (data.Contains("==========") || data.Contains(">....") || data.Contains("64/64"))
-                        {
-                            // 단, 실시간 수치가 포함되어 있다면 로딩바 분수(5/64 등)만 깔끔하게 정돈
-                            if (data.Contains("loss:"))
-                            {
-                                // 로딩바 기호(====>....) 부분을 공백으로 변환해서 수치만 남김
-                                data = System.Text.RegularExpressions.Regex.Replace(data, @"[=>\s\.]{5,}", " ");
-                            }
-                            else
-                            {
-                                return; // 완전히 지저분한 줄은 출력하지 않고 무시
-                            }
-                        }
-
-                        // 3. 최종 정돈된 예쁜 데이터만 UI로 전송!
-                        LogReceived?.Invoke(data.Trim() + "\r\n");
+                        // 백스페이스 문자('\b')와 캐리지 리턴('\r')을 제거합니다.
+                        string cleanData = args.Data.Replace("\b", "").Replace("\r", "");
+                        if (!string.IsNullOrWhiteSpace(cleanData))
+                            LogReceived?.Invoke(cleanData + "\r\n");
                     }
                 };
-
                 pythonProcess.ErrorDataReceived += (s, args) => {
                     if (!string.IsNullOrEmpty(args.Data))
                     {
                         string data = args.Data;
 
-                        // 1. 에러 스트림으로 들어오지만 '단순 안내/경고'인 패턴 정의
-                        bool isNormalInfo = data.Contains("INFO:") ||
-                                            data.Contains("WARNING:") ||
-                                            data.Contains("Warning:") ||
-                                            data.Contains("Epoch ") ||
-                                            data.Contains("saving model to") ||
-                                            data.Contains("Summary on the non-converted ops") ||
-                                            data.Contains("occurrences") ||
-                                            data.Contains("Non-Converted Ops");
-
-                        // 2. 텐서플로우 전용 로그 필터 (시간 뒤에 : I = Info, : W = Warning)
-                        // 예: 2026-06-03 16:07:09.491678: W tensorflow...
-                        bool isTensorFlowLog = data.Contains(": I ") || data.Contains(": W ");
-
-                        // 3. 진짜 치명적인 에러 패턴 정의 (: E = Error, Traceback = 파이썬 에러 추적)
-                        bool isRealError = data.Contains(": E ") ||
-                                           data.Contains("ERROR:") ||
-                                           data.Contains("CRITICAL:") ||
-                                           data.Contains("Traceback") ||
-                                           data.Contains("Exception") ||
-                                           data.Contains("Error:");
-
-                        // [최종 분류 프로세스]
-                        if (isNormalInfo || isTensorFlowLog)
+                        // 텐서플로우의 단순 알림(CUDA 없음, 라이브러리 로딩 등)은 에러로 치지 않음
+                        if (data.Contains("Could not find") || data.Contains("WARNING") || data.Contains("tensorflow"))
                         {
-                            // 일반 안내 문구는 헤더 없이 깔끔하게 텍스트만 출력
-                            LogReceived?.Invoke($"{data}\r\n");
-                        }
-                        else if (isRealError)
-                        {
-                            // 검증된 진짜 에러 발생 시에만 빨간맛 [ERROR] 표시
-                            LogReceived?.Invoke($"[ERROR] {data}\r\n");
+                            LogReceived?.Invoke(data + "\r\n"); // [ERROR] 딱지 없이 그냥 출력
                         }
                         else
                         {
-                            // 그 외에 분류되지 않은 일반 출력들도 사용자 안심을 위해 그냥 출력
-                            LogReceived?.Invoke($"{data}\r\n");
+                            LogReceived?.Invoke($"[ERROR] {data}\r\n"); // 진짜 에러만 딱지 붙임
                         }
                     }
                 };
-
-                pythonProcess.Exited += (s, args) => {
-                    LogReceived?.Invoke("✅ 동키카 AI 학습 완료!\r\n");
-                    TrainingFinished?.Invoke();
-                    pythonProcess.Dispose();
-                    pythonProcess = null;
-                };
+                pythonProcess.Exited += (s, args) => { LogReceived?.Invoke("✅ 동키카 AI 학습 완료!\r\n"); TrainingFinished?.Invoke(); pythonProcess?.Dispose(); pythonProcess = null; };
 
                 pythonProcess.Start();
                 pythonProcess.BeginOutputReadLine();
                 pythonProcess.BeginErrorReadLine();
             }
-            catch (Exception ex)
+            catch (Exception) // ex 변수를 사용하지 않으면 그냥 Exception으로 써도 됩니다.
             {
-                LogReceived?.Invoke($"❌ 실행 오류: {ex.Message}\r\n");
-                TrainingFinished?.Invoke();
+                LogReceived?.Invoke($"❌ 실행 오류 발생\r\n");
             }
         }
 
-        /// <summary>
-        /// 프로그램 종료 또는 정지 요청 시 백그라운드에 남아있는 파이썬 프로세스를 안전하게 강제 종료하는 안전장치 
-        /// </summary>
         public void KillProcess()
         {
             if (pythonProcess != null && !pythonProcess.HasExited)
             {
-                try
-                {
-                    pythonProcess.Kill();
-                    pythonProcess.Dispose();
-                    pythonProcess = null;
-                }
-                catch { }
+                try { pythonProcess.Kill(); pythonProcess.Dispose(); pythonProcess = null; } catch { }
             }
         }
     }
