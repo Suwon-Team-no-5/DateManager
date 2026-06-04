@@ -1178,9 +1178,12 @@ namespace DateManager
 
         private void btnOpenManual_Click(object sender, EventArgs e)
         {
+            CreateManualCards();
             pnlManual.Visible = true;
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = false;
+            flpManual.Visible = true;
+            flpManual.BringToFront();
 
             // 버튼 색상 변경
             btnOpenManual.BackColor = Color.FromArgb(0, 122, 204);
@@ -1210,6 +1213,58 @@ namespace DateManager
 
             // 현재 메인 관리 시스템 창(Form1)은 닫습니다.
             this.Close();
+        }
+
+        private void CreateManualCards()
+        {
+            // 기존에 있던 내용을 깨끗하게 비움
+            flpManual.Controls.Clear();
+            flpManual.Padding = new Padding(10, 10, 10, 30); // 전체 여백 설정
+
+            // 설명서 데이터 구성 (이모티콘, 제목, 내용)
+            var manualSteps = new[]
+            {
+        new { Title = "🚗 1. 수동 주행 (데이터 수집)", Desc = "▪ 주행 조종 데이터와 메인 카메라 영상을 실시간으로 동기화하여 저장합니다.\n▪ 수집된 데이터는 AI 모델 학습을 위한 핵심 기초 자료(Tub 데이터)가 됩니다." },
+        new { Title = "📂 2. 데이터 로드", Desc = "▪ '데이터 로드' 버튼을 눌러 로컬/WSL2 환경에 수집된 주행 데이터셋을 시스템으로 가져옵니다." },
+        new { Title = "🔍 3. 필터링 및 데이터 정제", Desc = "▪ 수집된 데이터 중 정지 화면, 역주행, 탈선 등 학습에 불필요한 노이즈 자료를 선별합니다.\n▪ 선별된 무효 데이터를 삭제(쓰레기통 이동)하여 AI 학습의 정확도를 극대화합니다." },
+        new { Title = "🧠 4. AI 모델 학습 (Training)", Desc = "▪ 정제가 완료된 양질의 데이터를 기반으로 정방향 학습을 진행합니다.\n▪ 학습이 완료되면 자율주행 주행의 핵심인 가중치 파일(.h5)이 자동으로 생성됩니다." },
+        new { Title = "🚀 5. 자율주행 테스트 (Drive)", Desc = "▪ '자율주행' 버튼을 눌러 원하는 학습 완료 파일(.h5)을 선택합니다.\n▪ 시스템이 내부 포트(8887)를 자동 최적화한 후, 시뮬레이터 환경에서 자율주행 성능을 즉시 검증합니다." }
+    };
+
+            // 각 단계별로 예쁜 카드(Panel)를 생성하여 추가
+            foreach (var step in manualSteps)
+            {
+                // 1. 카드 패널(배경) 생성
+                Panel card = new Panel();
+                card.Width = flpManual.Width - 40; // 스크롤바를 고려해 너비 조절
+                card.BackColor = Color.FromArgb(45, 45, 48); // 버튼들과 똑같은 고급스러운 다크 그레이
+                card.Margin = new Padding(10, 10, 10, 15);   // 카드 간의 간격
+
+                // 2. 타이틀 라벨 생성
+                Label lblTitle = new Label();
+                lblTitle.Text = step.Title;
+                lblTitle.Font = new Font("맑은 고딕", 14F, FontStyle.Bold);
+                lblTitle.ForeColor = Color.FromArgb(10, 132, 255); // 포인트 네온 블루 색상
+                lblTitle.AutoSize = true;
+                lblTitle.Location = new Point(15, 15); // 패널 내 위치
+
+                // 3. 설명 라벨 생성
+                Label lblDesc = new Label();
+                lblDesc.Text = step.Desc;
+                lblDesc.Font = new Font("맑은 고딕", 11F, FontStyle.Regular);
+                lblDesc.ForeColor = Color.FromArgb(220, 220, 225); // 밝은 회색 (가독성 최적화)
+                lblDesc.AutoSize = true;
+                lblDesc.Location = new Point(15, lblTitle.Bottom + 12); // 타이틀 바로 아래에 배치
+                lblDesc.MaximumSize = new Size(card.Width - 30, 0); // 글씨가 패널을 넘어가면 자동 줄바꿈
+
+                // 4. 카드 높이 자동 맞춤 (내용물 길이에 따라 패널 크기가 유연하게 늘어남)
+                card.Height = lblDesc.Bottom + 20;
+
+                // 5. 카드에 글씨들을 담고, 최종적으로 도화지(FlowLayoutPanel)에 카드를 부착
+                card.Controls.Add(lblTitle);
+                card.Controls.Add(lblDesc);
+                flpManual.Controls.Add(card);
+            }
         }
     }
 }

@@ -28,7 +28,6 @@ namespace DateManager
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             pbMainCam = new PictureBox();
             lblFrameIndex = new Label();
             lblAngle = new Label();
@@ -84,7 +83,7 @@ namespace DateManager
             btnGoHome = new Button();
             pnlManual = new Panel();
             lblManual = new Label();
-            rtbManual = new RichTextBox();
+            richTextBox1 = new RichTextBox();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -105,7 +104,7 @@ namespace DateManager
             pbMainCam.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pbMainCam.BackColor = Color.FromArgb(30, 30, 30);
             pbMainCam.Location = new Point(14, 80);
-            pbMainCam.Margin = new Padding(4);
+            pbMainCam.Margin = new Padding(4, 4, 4, 4);
             pbMainCam.Name = "pbMainCam";
             pbMainCam.Size = new Size(814, 432);
             pbMainCam.TabIndex = 0;
@@ -811,8 +810,8 @@ namespace DateManager
             // 
             pnlManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlManual.BackColor = Color.FromArgb(45, 45, 48);
+            pnlManual.Controls.Add(richTextBox1);
             pnlManual.Controls.Add(lblManual);
-            pnlManual.Controls.Add(rtbManual);
             pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
             pnlManual.Size = new Size(845, 529);
@@ -830,18 +829,18 @@ namespace DateManager
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
             // 
-            // rtbManual
+            // richTextBox1
             // 
-            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
-            rtbManual.BorderStyle = BorderStyle.None;
-            rtbManual.ForeColor = Color.LightGreen;
-            rtbManual.Location = new Point(11, 45);
-            rtbManual.Name = "rtbManual";
-            rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(817, 463);
-            rtbManual.TabIndex = 1;
-            rtbManual.Text = resources.GetString("rtbManual.Text");
+            richTextBox1.BackColor = Color.FromArgb(30, 30, 30);
+            richTextBox1.BorderStyle = BorderStyle.None;
+            richTextBox1.Font = new Font("맑은 고딕", 12F, FontStyle.Regular, GraphicsUnit.Point, 129);
+            richTextBox1.ForeColor = Color.FromArgb(220, 220, 225);
+            richTextBox1.Location = new Point(14, 38);
+            richTextBox1.Name = "richTextBox1";
+            richTextBox1.ReadOnly = true;
+            richTextBox1.Size = new Size(816, 474);
+            richTextBox1.TabIndex = 11;
+            richTextBox1.Text = "";
             // 
             // Form1
             // 
@@ -863,8 +862,8 @@ namespace DateManager
             Controls.Add(pnlSystemOps);
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
-            Margin = new Padding(4);
-            MinimumSize = new Size(1310, 842);
+            Margin = new Padding(4, 4, 4, 4);
+            MinimumSize = new Size(1310, 826);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
@@ -953,7 +952,7 @@ namespace DateManager
         private Button btnGoHome;
         private Panel pnlManual;
         private Label lblManual;
-        private RichTextBox rtbManual;
         private PictureBox pbChart;
+        private RichTextBox richTextBox1;
     }
 }
