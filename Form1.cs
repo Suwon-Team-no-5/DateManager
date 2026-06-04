@@ -501,6 +501,11 @@ namespace DateManager
         // 폼 전체에 대한 키보드 단축키 핸들러
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.Delete)
+            {
+                btnDeleteData.PerformClick();
+                e.Handled = true;
+            }
             // 스페이스: 재생/일시정지 토글
             if (e.KeyCode == Keys.Space)
             {
