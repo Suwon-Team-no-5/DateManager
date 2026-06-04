@@ -53,6 +53,7 @@ namespace DateManager
         private readonly SolidBrush _barOrangeBrush = new SolidBrush(Color.Orange);
 
         private List<DonkeyFrame> _trashFrameList = new List<DonkeyFrame>();
+        private List<float> lossPoints = new List<float>();
 
         private bool _isViewingTrash = false;
 
@@ -93,6 +94,23 @@ namespace DateManager
                     rtbTrainLog.AppendText(logText);
                     rtbTrainLog.SelectionStart = rtbTrainLog.TextLength;
                     rtbTrainLog.ScrollToCaret();
+
+                    if (logText.Contains("loss:"))
+                    {
+                        try
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(logText, @"loss:\s*([0-9\.]+)");
+                            if (match.Success)
+                            {
+                                float currentLoss = float.Parse(match.Groups[1].Value);
+
+                                // 리스트에 수치를 채우고, 하단의 전용 커스텀 드로잉 함수를 호출합니다!
+                                lossPoints.Add(currentLoss);
+                                DrawRealTimeChart();
+                            }
+                        }
+                        catch { }
+                    }
                 });
             };
 
@@ -112,6 +130,7 @@ namespace DateManager
 
         }
 
+        
         // 탭 순서 제어를 위한 컨트롤 리스트
         private List<Control> _focusOrder;
 
@@ -668,7 +687,8 @@ namespace DateManager
                     return; // 사용자가 취소하면 학습 시작 안 함
                 }
             }
-
+            lossPoints.Clear();
+            if (pbChart != null) pbChart.Image = null;
             // 기존 학습 시작 로직...
             btnStartTraining.Enabled = false;
             btnEndTraining.Enabled = true;
@@ -695,7 +715,42 @@ namespace DateManager
 
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
         }
-        
+        private void DrawRealTimeChart()
+        {
+            // Nullable 잔소리를 완벽하게 회피하기 위해 컴파일러 안심 장치 마련 후 진행
+            if (pbChart == null || lossPoints.Count == 0) return;
+
+            Bitmap bmp = new Bitmap(pbChart.Width, pbChart.Height);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                float maxLoss = 1.0f;
+                foreach (var loss in lossPoints)
+                {
+                    if (loss > maxLoss) maxLoss = loss;
+                }
+
+                float xInterval = (float)pbChart.Width / (lossPoints.Count <= 1 ? 1 : lossPoints.Count - 1);
+
+                using (Pen pen = new Pen(Color.Crimson, 3f))
+                {
+                    for (int i = 0; i < lossPoints.Count - 1; i++)
+                    {
+                        float x1 = i * xInterval;
+                        float y1 = pbChart.Height - (lossPoints[i] / maxLoss * (pbChart.Height - 20)) - 10;
+
+                        float x2 = (i + 1) * xInterval;
+                        float y2 = pbChart.Height - (lossPoints[i + 1] / maxLoss * (pbChart.Height - 20)) - 10;
+
+                        g.DrawLine(pen, x1, y1, x2, y2);
+                    }
+                }
+            }
+
+            if (pbChart.Image != null) pbChart.Image.Dispose();
+            pbChart.Image = bmp;
+        }
         private void btnViewMonitor_Click(object sender, EventArgs e)
         {
             pnlManual.Visible = false;
