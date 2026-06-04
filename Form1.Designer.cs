@@ -593,6 +593,7 @@
             // 
             // chartRealTime
             // 
+            chartRealTime.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             chartRealTime.BackColor = Color.FromArgb(30, 30, 30);
             chartRealTime.Location = new Point(14, 325);
             chartRealTime.Name = "chartRealTime";

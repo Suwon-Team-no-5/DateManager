@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 using System.Runtime.InteropServices; // 이 줄을 코드 맨 위에 추가하세요.
+using System.Windows.Forms;
 
 namespace DateManager
 {
@@ -833,73 +833,73 @@ namespace DateManager
             }
 
             // -----------------------------------------------------------------
-            // 1️⃣ [디자인 전면 리팩토링] 테슬라/AI 다크모드 대시보드 세팅
+            // 1️⃣ 디자인 및 [왼쪽 스택형 가로 정렬] 세팅 구역 (Y축 범위는 자동 최적화)
             // -----------------------------------------------------------------
             if (chartRealTime.Series.Count == 0 || chartRealTime.Series[0].ChartType != System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line)
             {
                 chartRealTime.Series.Clear();
                 chartRealTime.ChartAreas.Clear();
                 chartRealTime.Legends.Clear();
+                chartRealTime.Titles.Clear(); // 상단 오차율 숫자 타이틀 초기화
 
-                // 🖤 차트 전체 바깥 배경을 모던한 다크 그레이로 변경
+                // 테슬라 다크모드 배경 색상
                 chartRealTime.BackColor = Color.FromArgb(28, 28, 30);
                 chartRealTime.BorderlineDashStyle = System.Windows.Forms.DataVisualization.Charting.ChartDashStyle.Solid;
-                chartRealTime.BorderlineColor = Color.FromArgb(63, 63, 66); // 세련된 외곽 테두리선
-                chartRealTime.BorderlineWidth = 1;
+                chartRealTime.BorderlineColor = Color.FromArgb(63, 63, 66);
 
                 var chartArea = new System.Windows.Forms.DataVisualization.Charting.ChartArea("LossArea");
-
-                // 🖤 그래프가 실제로 그려지는 안쪽 캔버스를 딥 블랙으로 지정 (빨간 선이 가장 돋보이는 색상)
                 chartArea.BackColor = Color.FromArgb(16, 16, 18);
 
-                // Y축 줌인 기능 활성화 (상승/하강폭 크게 보이게 제어)
+                // 📊 [오차율 하강폭 극대화] Y축 범위를 고정하지 않고 자동 최적화(NaN)로 내버려 둡니다!
                 chartArea.AxisY.IsStartedFromZero = false;
+                chartArea.AxisY.Minimum = double.NaN;
+                chartArea.AxisY.Maximum = double.NaN;
 
-                // 🩶 눈금 격자선을 아주 은은하고 투명도 있는 다크 회색으로 튜닝 (그래프 선을 방해하지 않음)
+                // 은은한 그리드 격자선
                 chartArea.AxisX.MajorGrid.LineColor = Color.FromArgb(45, 45, 48);
                 chartArea.AxisY.MajorGrid.LineColor = Color.FromArgb(45, 45, 48);
 
-                // 🤍 축 숫자 및 글자 스타일을 세련된 흰색 네온 느낌으로 변경
                 Font axisFont = new Font("Segoe UI", 9, FontStyle.Bold);
                 chartArea.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, 220, 224);
                 chartArea.AxisY.LabelStyle.ForeColor = Color.FromArgb(220, 220, 224);
                 chartArea.AxisX.LabelStyle.Font = axisFont;
                 chartArea.AxisY.LabelStyle.Font = axisFont;
 
-                // 축 타이틀 텍스트 디자인 (흰색)
                 Font titleFont = new Font("Segoe UI", 10, FontStyle.Bold);
                 chartArea.AxisX.Title = "Epoch (학습 횟수)";
-                chartArea.AxisY.Title = "오차율 (Loss)";
                 chartArea.AxisX.TitleForeColor = Color.White;
-                chartArea.AxisY.TitleForeColor = Color.White;
                 chartArea.AxisX.TitleFont = titleFont;
-                chartArea.AxisY.TitleFont = titleFont;
 
+                // 📊 [기주님 요청] 왼쪽 '오차율' 단어가 절대 잘리지 않게 스택형으로 쌓고 가로로 정렬!
+                chartArea.AxisY.Title = "오\n차\n율";
+                chartArea.AxisY.TitleForeColor = Color.White;
+                chartArea.AxisY.TitleFont = titleFont;
+                chartArea.AxisY.TitleAlignment = StringAlignment.Center;
+                chartArea.AxisY.TextOrientation = System.Windows.Forms.DataVisualization.Charting.TextOrientation.Horizontal;
                 chartRealTime.ChartAreas.Add(chartArea);
 
-                // 🔴 꺾은선(Series) 디자인 튜닝
+                // 네온 레드 꺾은선 시리즈 디자인
                 var series = new System.Windows.Forms.DataVisualization.Charting.Series("LossSeries");
                 series.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-
-                // 인공지능 신경망 느낌을 주는 Crimson(진홍색) 네온 레드 컬러 장착
                 series.Color = Color.FromArgb(255, 45, 85);
-                series.BorderWidth = 4; // 선 두께를 기존보다 더 굵고 직관적으로 업그레이드
+                series.BorderWidth = 4;
 
-                // ⚪ 꺾이는 점(Marker) 스타일 커스텀 설정
                 series.MarkerStyle = System.Windows.Forms.DataVisualization.Charting.MarkerStyle.Circle;
-                series.MarkerSize = 9;                         // 마우스 올리기 아주 편하게 최적화된 크기
-                series.MarkerColor = Color.White;              // 내부 점은 새하얗게 채우고
-                series.MarkerBorderColor = Color.FromArgb(255, 45, 85); // 테두리는 빨간색으로 둘러서 고급스럽게 강조
+                series.MarkerSize = 9;
+                series.MarkerColor = Color.White;
+                series.MarkerBorderColor = Color.FromArgb(255, 45, 85);
                 series.MarkerBorderWidth = 2;
 
                 chartRealTime.Series.Add(series);
             }
 
             // -----------------------------------------------------------------
-            // 2️⃣ 데이터 실시간 주입 및 툴팁 설정 구역 (기존과 동일하게 유지)
+            // 2️⃣ 데이터 실시간 주입 및 [상단 실시간 오차율 숫자 띄우기]
             // -----------------------------------------------------------------
             var lossSeries = chartRealTime.Series["LossSeries"];
             lossSeries.Points.Clear();
+
+            float latestLoss = 0f; // 최신 오차율 값을 담아낼 변수
 
             for (int i = 0; i < lossPoints.Count; i++)
             {
@@ -907,10 +907,19 @@ namespace DateManager
                 int epochX = i + 1;
 
                 int pointIndex = lossSeries.Points.AddXY(epochX, currentLoss);
-
-                // 마우스 올리면 뜨는 미려한 말풍선 툴팁 세팅
                 lossSeries.Points[pointIndex].ToolTip = $"[AI Training 상태]\n▶ Epoch : {epochX} 회차\n▶ Loss : {currentLoss:F4}";
+
+                latestLoss = currentLoss; // 가장 마지막 루프에서 최신 오차율이 저장됨
             }
+
+            // 🎯 [기주님 요청] 차트 스택형 텍스트 바로 위(상단 정중앙)에 현재 실시간 오차율 수치 표시!
+            chartRealTime.Titles.Clear(); // 잔상 제거
+            var topTitle = new System.Windows.Forms.DataVisualization.Charting.Title();
+            topTitle.Text = $"오차율 : {latestLoss:F4}"; // 소수점 4자리까지 정밀 수치 표기
+            topTitle.Font = new Font("Segoe UI", 14, FontStyle.Bold); // 교수님 눈에 확 꽂히는 14pt 볼드체
+            topTitle.ForeColor = Color.FromArgb(255, 45, 85); // 꺾은선과 패밀리룩을 이루는 네온 레드 칼라
+            topTitle.Alignment = ContentAlignment.TopCenter; // 차트 상단 정중앙에 배치
+            chartRealTime.Titles.Add(topTitle);
 
             chartRealTime.ResetAutoValues();
         }
