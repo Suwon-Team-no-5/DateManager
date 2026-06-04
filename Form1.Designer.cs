@@ -83,7 +83,6 @@
             btnGoHome = new Button();
             pnlManual = new Panel();
             lblManual = new Label();
-            rtbManual = new RichTextBox();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -829,19 +828,6 @@
             lblManual.Size = new Size(100, 23);
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
-            // 
-            // richTextBox1
-            // 
-            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
-            rtbManual.BorderStyle = BorderStyle.None;
-            rtbManual.ForeColor = Color.LightGreen;
-            rtbManual.Location = new Point(11, 45);
-            rtbManual.Name = "rtbManual";
-            rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(817, 463);
-            rtbManual.TabIndex = 1;
-            rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
             // Form1
             // 

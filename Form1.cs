@@ -1395,12 +1395,9 @@ namespace DateManager
 
         private void btnOpenManual_Click(object sender, EventArgs e)
         {
-            CreateManualCards();
             pnlManual.Visible = true;
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = false;
-            flpManual.Visible = true;
-            flpManual.BringToFront();
 
             // 버튼 색상 변경
             btnOpenManual.BackColor = Color.FromArgb(0, 122, 204);
