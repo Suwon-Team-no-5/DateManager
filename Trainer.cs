@@ -31,18 +31,26 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                 {
                     psi.FileName = pythonPath; // wsl.exe
 
-                    // WSL2에서 conda 환경을 확실하게 활성화하는 방법
-                    // 특정 배포판 지정 (-d Ubuntu-22.04)
-                    string safeWorkingDir = workingDir?.Replace("\"", "\\\"") ?? string.Empty;
-                    //psi.Arguments = $"-d Ubuntu-22.04 -e bash -lic \"export PYTHONUNBUFFERED=1; " +
-                    //    $"cd '{safeWorkingDir}' && {condaPath} run -n {condaEnvName} python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+                    // 1. 공백 및 불필요한 기호(따옴표 등) 완벽 제거
+                    string safeWorkingDir = workingDir?.Trim().Replace("\"", "").Replace("'", "") ?? string.Empty;
 
-                    // ✅ 해결 코드: 가상환경의 python 절대 경로를 직접 실행 (-lic 대신 -c 사용)
+                    // 2. 💡 [최종 방어 로직] 사용자가 UI에 어떻게 입력하든 무조건 절대경로로 강제 변환
+                    if (safeWorkingDir.StartsWith("~/"))
+                    {
+                        // '~/mycar' 라고 입력한 경우 -> '/home/jaeseo03/mycar'
+                        safeWorkingDir = safeWorkingDir.Replace("~/", "/home/jaeseo03/");
+                    }
+                    else if (!safeWorkingDir.StartsWith("/"))
+                    {
+                        // 그냥 'mycar' 라고 입력한 경우 -> '/home/jaeseo03/mycar'
+                        safeWorkingDir = "/home/jaeseo03/" + safeWorkingDir;
+                    }
+
+                    // 3. 명령어 구성 (작은따옴표로 경로를 감싸서 리눅스에 전달)
                     string envPythonPath = "/home/jaeseo03/miniconda3/envs/e2e_env/bin/python";
-
                     psi.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '{safeWorkingDir}' && export PYTHONUNBUFFERED=1 && {envPythonPath} train.py --tub=./data/ --model=./models/mypilot.h5\"";
 
-                    // 로그로 실행 명령 확인(디버깅용)
+                    // 로그 출력
                     LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments}\r\n");
                 }
                 else
