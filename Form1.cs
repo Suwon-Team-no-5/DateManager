@@ -707,9 +707,6 @@ namespace DateManager
             rtbTrainLog.Clear();
             rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
-            // 버튼 제어
-            btnStartTraining.Enabled = false; // 시작 버튼 잠그기
-
             string pythonPath = "wsl.exe";
             string mycarDir = " mycar";
 
