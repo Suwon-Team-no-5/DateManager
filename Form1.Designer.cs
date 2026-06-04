@@ -28,6 +28,7 @@ namespace DateManager
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             pbMainCam = new PictureBox();
             lblFrameIndex = new Label();
             lblAngle = new Label();
@@ -51,8 +52,6 @@ namespace DateManager
             lblFrameListTitle = new Label();
             lstFrameData = new ListBox();
             pnlSystemOps = new Panel();
-            btnRestartTraining = new Button();
-            btnStopTraining = new Button();
             btnEndTraining = new Button();
             lblSystemOpsTitle = new Label();
             btnStartTraining = new Button();
@@ -67,18 +66,25 @@ namespace DateManager
             chkFilterThr = new CheckBox();
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
+            btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
             lblTitle = new Label();
-            panel1 = new Panel();
+            pnlDelete = new Panel();
             btnSelectAll = new Button();
             btnOpenTrash = new Button();
-            label1 = new Label();
+            lblDelete = new Label();
             pnlTrash = new Panel();
             btnCloseTrash = new Button();
             btnRestoreData = new Button();
-            label2 = new Label();
+            lblTrash = new Label();
             lstTrashItems = new ListBox();
+            btnOpenManual = new Button();
+            btnGoHome = new Button();
+            pnlManual = new Panel();
+            lblManual = new Label();
+            rtbManual = new RichTextBox();
+            pbChart = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -88,8 +94,10 @@ namespace DateManager
             pnlDataManagement.SuspendLayout();
             pnlFilterOptions.SuspendLayout();
             pnlTrainingLog.SuspendLayout();
-            panel1.SuspendLayout();
+            pnlDelete.SuspendLayout();
             pnlTrash.SuspendLayout();
+            pnlManual.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbChart).BeginInit();
             SuspendLayout();
             // 
             // pbMainCam
@@ -274,7 +282,7 @@ namespace DateManager
             btnFastRewind.FlatStyle = FlatStyle.Flat;
             btnFastRewind.Font = new Font("Segoe UI Emoji", 12F);
             btnFastRewind.ForeColor = Color.White;
-            btnFastRewind.Location = new Point(252, 105);
+            btnFastRewind.Location = new Point(246, 105);
             btnFastRewind.Name = "btnFastRewind";
             btnFastRewind.Size = new Size(100, 42);
             btnFastRewind.TabIndex = 5;
@@ -290,9 +298,9 @@ namespace DateManager
             btnPlay.FlatStyle = FlatStyle.Flat;
             btnPlay.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             btnPlay.ForeColor = Color.White;
-            btnPlay.Location = new Point(364, 105);
+            btnPlay.Location = new Point(352, 105);
             btnPlay.Name = "btnPlay";
-            btnPlay.Size = new Size(100, 42);
+            btnPlay.Size = new Size(112, 42);
             btnPlay.TabIndex = 2;
             btnPlay.Text = "▶ 재생";
             btnPlay.UseVisualStyleBackColor = false;
@@ -308,7 +316,7 @@ namespace DateManager
             btnStop.ForeColor = Color.White;
             btnStop.Location = new Point(476, 105);
             btnStop.Name = "btnStop";
-            btnStop.Size = new Size(100, 42);
+            btnStop.Size = new Size(112, 42);
             btnStop.TabIndex = 0;
             btnStop.Text = "⏹ 초기화";
             btnStop.UseVisualStyleBackColor = false;
@@ -322,7 +330,7 @@ namespace DateManager
             btnFastForward.FlatStyle = FlatStyle.Flat;
             btnFastForward.Font = new Font("Segoe UI Emoji", 12F);
             btnFastForward.ForeColor = Color.White;
-            btnFastForward.Location = new Point(588, 105);
+            btnFastForward.Location = new Point(594, 105);
             btnFastForward.Name = "btnFastForward";
             btnFastForward.Size = new Size(100, 42);
             btnFastForward.TabIndex = 6;
@@ -395,8 +403,6 @@ namespace DateManager
             // 
             pnlSystemOps.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             pnlSystemOps.BackColor = Color.FromArgb(45, 45, 48);
-            pnlSystemOps.Controls.Add(btnRestartTraining);
-            pnlSystemOps.Controls.Add(btnStopTraining);
             pnlSystemOps.Controls.Add(btnEndTraining);
             pnlSystemOps.Controls.Add(lblSystemOpsTitle);
             pnlSystemOps.Controls.Add(btnStartTraining);
@@ -406,41 +412,9 @@ namespace DateManager
             pnlSystemOps.Size = new Size(175, 315);
             pnlSystemOps.TabIndex = 9;
             // 
-            // btnRestartTraining
-            // 
-            btnRestartTraining.BackColor = Color.FromArgb(0, 122, 204);
-            btnRestartTraining.FlatAppearance.BorderSize = 0;
-            btnRestartTraining.FlatStyle = FlatStyle.Flat;
-            btnRestartTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnRestartTraining.ForeColor = Color.White;
-            btnRestartTraining.Location = new Point(14, 106);
-            btnRestartTraining.Name = "btnRestartTraining";
-            btnRestartTraining.Size = new Size(147, 121);
-            btnRestartTraining.TabIndex = 11;
-            btnRestartTraining.Text = "AI 학습\r\n 재시작";
-            btnRestartTraining.UseVisualStyleBackColor = false;
-            btnRestartTraining.Visible = false;
-            btnRestartTraining.Click += btnRestartTraining_Click;
-            // 
-            // btnStopTraining
-            // 
-            btnStopTraining.BackColor = Color.FromArgb(255, 160, 0);
-            btnStopTraining.FlatAppearance.BorderSize = 0;
-            btnStopTraining.FlatStyle = FlatStyle.Flat;
-            btnStopTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnStopTraining.ForeColor = Color.White;
-            btnStopTraining.Location = new Point(14, 106);
-            btnStopTraining.Name = "btnStopTraining";
-            btnStopTraining.Size = new Size(147, 121);
-            btnStopTraining.TabIndex = 10;
-            btnStopTraining.Text = "AI 학습\r\n 정지";
-            btnStopTraining.UseVisualStyleBackColor = false;
-            btnStopTraining.Visible = false;
-            btnStopTraining.Click += btnStopTraining_Click;
-            // 
             // btnEndTraining
             // 
-            btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
+            btnEndTraining.BackColor = Color.FromArgb(62, 62, 66);
             btnEndTraining.FlatAppearance.BorderSize = 0;
             btnEndTraining.FlatStyle = FlatStyle.Flat;
             btnEndTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -466,7 +440,7 @@ namespace DateManager
             // 
             // btnStartTraining
             // 
-            btnStartTraining.BackColor = Color.FromArgb(0, 150, 136);
+            btnStartTraining.BackColor = Color.FromArgb(0, 122, 204);
             btnStartTraining.FlatAppearance.BorderSize = 0;
             btnStartTraining.FlatStyle = FlatStyle.Flat;
             btnStartTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -583,7 +557,7 @@ namespace DateManager
             chkFilterThr.ForeColor = Color.White;
             chkFilterThr.Location = new Point(5, 30);
             chkFilterThr.Name = "chkFilterThr";
-            chkFilterThr.Size = new Size(80, 24);
+            chkFilterThr.Size = new Size(91, 24);
             chkFilterThr.TabIndex = 0;
             chkFilterThr.Text = "속도=0";
             chkFilterThr.UseVisualStyleBackColor = true;
@@ -607,6 +581,8 @@ namespace DateManager
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
+            pnlTrainingLog.Controls.Add(pbChart);
+            pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
             pnlTrainingLog.Location = new Point(31, 71);
@@ -614,6 +590,22 @@ namespace DateManager
             pnlTrainingLog.Size = new Size(845, 529);
             pnlTrainingLog.TabIndex = 11;
             pnlTrainingLog.Visible = false;
+            // 
+            // btnRunSimulator
+            // 
+            btnRunSimulator.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnRunSimulator.BackColor = Color.FromArgb(0, 122, 204);
+            btnRunSimulator.FlatAppearance.BorderSize = 0;
+            btnRunSimulator.FlatStyle = FlatStyle.Flat;
+            btnRunSimulator.Font = new Font("Segoe UI Semibold", 9F);
+            btnRunSimulator.ForeColor = Color.White;
+            btnRunSimulator.Location = new Point(724, 475);
+            btnRunSimulator.Name = "btnRunSimulator";
+            btnRunSimulator.Size = new Size(106, 50);
+            btnRunSimulator.TabIndex = 13;
+            btnRunSimulator.Text = "자율주행 \r\n구동";
+            btnRunSimulator.UseVisualStyleBackColor = false;
+            btnRunSimulator.Click += btnRunSimulator_Click;
             // 
             // lblLogTitle
             // 
@@ -635,7 +627,7 @@ namespace DateManager
             rtbTrainLog.Location = new Point(14, 45);
             rtbTrainLog.Name = "rtbTrainLog";
             rtbTrainLog.ReadOnly = true;
-            rtbTrainLog.Size = new Size(816, 467);
+            rtbTrainLog.Size = new Size(816, 270);
             rtbTrainLog.TabIndex = 1;
             rtbTrainLog.Text = "";
             // 
@@ -644,24 +636,24 @@ namespace DateManager
             lblTitle.AutoSize = true;
             lblTitle.Font = new Font("Segoe UI", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblTitle.ForeColor = Color.White;
-            lblTitle.Location = new Point(31, 9);
+            lblTitle.Location = new Point(71, 22);
             lblTitle.Name = "lblTitle";
             lblTitle.Size = new Size(203, 41);
             lblTitle.TabIndex = 12;
             lblTitle.Text = "5팀 동키카 UI";
             // 
-            // panel1
+            // pnlDelete
             // 
-            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            panel1.BackColor = Color.FromArgb(45, 45, 48);
-            panel1.Controls.Add(btnSelectAll);
-            panel1.Controls.Add(btnOpenTrash);
-            panel1.Controls.Add(label1);
-            panel1.Controls.Add(btnDeleteData);
-            panel1.Location = new Point(893, 615);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(378, 160);
-            panel1.TabIndex = 11;
+            pnlDelete.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            pnlDelete.BackColor = Color.FromArgb(45, 45, 48);
+            pnlDelete.Controls.Add(btnSelectAll);
+            pnlDelete.Controls.Add(btnOpenTrash);
+            pnlDelete.Controls.Add(lblDelete);
+            pnlDelete.Controls.Add(btnDeleteData);
+            pnlDelete.Location = new Point(893, 615);
+            pnlDelete.Name = "pnlDelete";
+            pnlDelete.Size = new Size(378, 160);
+            pnlDelete.TabIndex = 11;
             // 
             // btnSelectAll
             // 
@@ -670,7 +662,7 @@ namespace DateManager
             btnSelectAll.FlatStyle = FlatStyle.Flat;
             btnSelectAll.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             btnSelectAll.ForeColor = Color.White;
-            btnSelectAll.Location = new Point(15, 48);
+            btnSelectAll.Location = new Point(203, 107);
             btnSelectAll.Name = "btnSelectAll";
             btnSelectAll.Size = new Size(160, 42);
             btnSelectAll.TabIndex = 11;
@@ -685,7 +677,7 @@ namespace DateManager
             btnOpenTrash.FlatStyle = FlatStyle.Flat;
             btnOpenTrash.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             btnOpenTrash.ForeColor = Color.White;
-            btnOpenTrash.Location = new Point(203, 107);
+            btnOpenTrash.Location = new Point(15, 48);
             btnOpenTrash.Name = "btnOpenTrash";
             btnOpenTrash.Size = new Size(160, 42);
             btnOpenTrash.TabIndex = 10;
@@ -693,16 +685,16 @@ namespace DateManager
             btnOpenTrash.UseVisualStyleBackColor = false;
             btnOpenTrash.Click += btnOpenTrash_Click;
             // 
-            // label1
+            // lblDelete
             // 
-            label1.AutoSize = true;
-            label1.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
-            label1.ForeColor = Color.DeepSkyBlue;
-            label1.Location = new Point(11, 10);
-            label1.Name = "label1";
-            label1.Size = new Size(100, 23);
-            label1.TabIndex = 9;
-            label1.Text = "데이터 삭제";
+            lblDelete.AutoSize = true;
+            lblDelete.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            lblDelete.ForeColor = Color.DeepSkyBlue;
+            lblDelete.Location = new Point(11, 10);
+            lblDelete.Name = "lblDelete";
+            lblDelete.Size = new Size(100, 23);
+            lblDelete.TabIndex = 9;
+            lblDelete.Text = "데이터 삭제";
             // 
             // pnlTrash
             // 
@@ -710,7 +702,7 @@ namespace DateManager
             pnlTrash.BackColor = Color.FromArgb(45, 45, 48);
             pnlTrash.Controls.Add(btnCloseTrash);
             pnlTrash.Controls.Add(btnRestoreData);
-            pnlTrash.Controls.Add(label2);
+            pnlTrash.Controls.Add(lblTrash);
             pnlTrash.Controls.Add(lstTrashItems);
             pnlTrash.Location = new Point(893, 71);
             pnlTrash.Name = "pnlTrash";
@@ -750,16 +742,16 @@ namespace DateManager
             btnRestoreData.UseVisualStyleBackColor = false;
             btnRestoreData.Click += btnRestoreData_Click;
             // 
-            // label2
+            // lblTrash
             // 
-            label2.AutoSize = true;
-            label2.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
-            label2.ForeColor = Color.DeepSkyBlue;
-            label2.Location = new Point(11, 12);
-            label2.Name = "label2";
-            label2.Size = new Size(61, 23);
-            label2.TabIndex = 7;
-            label2.Text = "휴지통";
+            lblTrash.AutoSize = true;
+            lblTrash.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            lblTrash.ForeColor = Color.DeepSkyBlue;
+            lblTrash.Location = new Point(11, 12);
+            lblTrash.Name = "lblTrash";
+            lblTrash.Size = new Size(61, 23);
+            lblTrash.TabIndex = 7;
+            lblTrash.Text = "휴지통";
             // 
             // lstTrashItems
             // 
@@ -771,9 +763,84 @@ namespace DateManager
             lstTrashItems.Location = new Point(14, 45);
             lstTrashItems.Name = "lstTrashItems";
             lstTrashItems.SelectionMode = SelectionMode.MultiExtended;
-            lstTrashItems.Size = new Size(350, 420);
+            lstTrashItems.Size = new Size(350, 400);
             lstTrashItems.TabIndex = 0;
             lstTrashItems.Click += lstTrashItems_SelectedIndexChanged;
+            // 
+            // btnOpenManual
+            // 
+            btnOpenManual.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnOpenManual.BackColor = Color.FromArgb(62, 62, 66);
+            btnOpenManual.FlatAppearance.BorderSize = 0;
+            btnOpenManual.FlatStyle = FlatStyle.Flat;
+            btnOpenManual.Font = new Font("Segoe UI Semibold", 9F);
+            btnOpenManual.ForeColor = Color.White;
+            btnOpenManual.Location = new Point(534, 33);
+            btnOpenManual.Name = "btnOpenManual";
+            btnOpenManual.Size = new Size(112, 32);
+            btnOpenManual.TabIndex = 13;
+            btnOpenManual.Text = "📘설명서";
+            btnOpenManual.UseVisualStyleBackColor = false;
+            btnOpenManual.Click += btnOpenManual_Click;
+            // 
+            // btnGoHome
+            // 
+            btnGoHome.BackColor = Color.Red;
+            btnGoHome.FlatAppearance.BorderSize = 0;
+            btnGoHome.FlatStyle = FlatStyle.Flat;
+            btnGoHome.Font = new Font("Segoe UI Semibold", 9F);
+            btnGoHome.ForeColor = Color.White;
+            btnGoHome.Location = new Point(31, 33);
+            btnGoHome.Name = "btnGoHome";
+            btnGoHome.Size = new Size(34, 32);
+            btnGoHome.TabIndex = 14;
+            btnGoHome.Text = "<";
+            btnGoHome.UseVisualStyleBackColor = false;
+            btnGoHome.Click += btnGoHome_Click;
+            // 
+            // pnlManual
+            // 
+            pnlManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            pnlManual.BackColor = Color.FromArgb(45, 45, 48);
+            pnlManual.Controls.Add(lblManual);
+            pnlManual.Controls.Add(rtbManual);
+            pnlManual.Location = new Point(31, 71);
+            pnlManual.Name = "pnlManual";
+            pnlManual.Size = new Size(845, 529);
+            pnlManual.TabIndex = 14;
+            pnlManual.Visible = false;
+            // 
+            // lblManual
+            // 
+            lblManual.AutoSize = true;
+            lblManual.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            lblManual.ForeColor = Color.DeepSkyBlue;
+            lblManual.Location = new Point(11, 12);
+            lblManual.Name = "lblManual";
+            lblManual.Size = new Size(100, 23);
+            lblManual.TabIndex = 10;
+            lblManual.Text = "사용 설명서";
+            // 
+            // rtbManual
+            // 
+            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
+            rtbManual.BorderStyle = BorderStyle.None;
+            rtbManual.ForeColor = Color.LightGreen;
+            rtbManual.Location = new Point(11, 45);
+            rtbManual.Name = "rtbManual";
+            rtbManual.ReadOnly = true;
+            rtbManual.Size = new Size(817, 463);
+            rtbManual.TabIndex = 1;
+            rtbManual.Text = resources.GetString("rtbManual.Text");
+            // 
+            // pbChart
+            // 
+            pbChart.Location = new Point(14, 321);
+            pbChart.Name = "pbChart";
+            pbChart.Size = new Size(816, 148);
+            pbChart.TabIndex = 14;
+            pbChart.TabStop = false;
             // 
             // Form1
             // 
@@ -781,8 +848,11 @@ namespace DateManager
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(30, 30, 30);
             ClientSize = new Size(1295, 805);
+            Controls.Add(pnlManual);
+            Controls.Add(btnGoHome);
+            Controls.Add(btnOpenManual);
             Controls.Add(pnlTrash);
-            Controls.Add(panel1);
+            Controls.Add(pnlDelete);
             Controls.Add(btnViewLog);
             Controls.Add(lblTitle);
             Controls.Add(pnlCamView);
@@ -812,10 +882,13 @@ namespace DateManager
             pnlFilterOptions.PerformLayout();
             pnlTrainingLog.ResumeLayout(false);
             pnlTrainingLog.PerformLayout();
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
+            pnlDelete.ResumeLayout(false);
+            pnlDelete.PerformLayout();
             pnlTrash.ResumeLayout(false);
             pnlTrash.PerformLayout();
+            pnlManual.ResumeLayout(false);
+            pnlManual.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbChart).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -865,16 +938,21 @@ namespace DateManager
         private Button btnViewLog;
         private Button btnViewMonitor;
         private Button btnEndTraining;
-        private Panel panel1;
-        private Label label1;
-        private Button btnStopTraining;
+        private Panel pnlDelete;
+        private Label lblDelete;
         private Button btnOpenTrash;
-        private Button btnRestartTraining;
         private Button btnSelectAll;
         private Panel pnlTrash;
         private Button btnCloseTrash;
         private Button btnRestoreData;
-        private Label label2;
+        private Label lblTrash;
         private ListBox lstTrashItems;
+        private Button btnRunSimulator;
+        private Button btnOpenManual;
+        private Button btnGoHome;
+        private Panel pnlManual;
+        private Label lblManual;
+        private RichTextBox rtbManual;
+        private PictureBox pbChart;
     }
 }
