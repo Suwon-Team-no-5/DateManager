@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             pbMainCam = new PictureBox();
             lblFrameIndex = new Label();
             lblAngle = new Label();
@@ -105,7 +104,7 @@
             pbMainCam.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pbMainCam.BackColor = Color.FromArgb(30, 30, 30);
             pbMainCam.Location = new Point(14, 80);
-            pbMainCam.Margin = new Padding(4);
+            pbMainCam.Margin = new Padding(4, 4, 4, 4);
             pbMainCam.Name = "pbMainCam";
             pbMainCam.Size = new Size(814, 432);
             pbMainCam.TabIndex = 0;
@@ -296,7 +295,7 @@
             btnPlay.BackColor = Color.FromArgb(0, 122, 204);
             btnPlay.FlatAppearance.BorderSize = 0;
             btnPlay.FlatStyle = FlatStyle.Flat;
-            btnPlay.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnPlay.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnPlay.ForeColor = Color.White;
             btnPlay.Location = new Point(352, 105);
             btnPlay.Name = "btnPlay";
@@ -312,7 +311,7 @@
             btnStop.BackColor = Color.FromArgb(211, 47, 47);
             btnStop.FlatAppearance.BorderSize = 0;
             btnStop.FlatStyle = FlatStyle.Flat;
-            btnStop.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnStop.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnStop.ForeColor = Color.White;
             btnStop.Location = new Point(476, 105);
             btnStop.Name = "btnStop";
@@ -812,8 +811,8 @@
             // 
             pnlManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlManual.BackColor = Color.FromArgb(45, 45, 48);
+            pnlManual.Controls.Add(richTextBox1);
             pnlManual.Controls.Add(lblManual);
-            pnlManual.Controls.Add(rtbManual);
             pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
             pnlManual.Size = new Size(845, 529);
@@ -831,7 +830,7 @@
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
             // 
-            // rtbManual
+            // richTextBox1
             // 
             rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             rtbManual.BackColor = Color.FromArgb(30, 30, 30);
@@ -864,8 +863,8 @@
             Controls.Add(pnlSystemOps);
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
-            Margin = new Padding(4);
-            MinimumSize = new Size(1310, 842);
+            Margin = new Padding(4, 4, 4, 4);
+            MinimumSize = new Size(1310, 826);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
@@ -954,7 +953,7 @@
         private Button btnGoHome;
         private Panel pnlManual;
         private Label lblManual;
-        private RichTextBox rtbManual;
         private PictureBox pbChart;
+        private RichTextBox richTextBox1;
     }
 }
