@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -311,7 +312,7 @@ namespace DateManager
             }
         }
 
-        private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
+        private void lstFrameData_SelectedIndexChanged(object? sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
         {
             if (lstFrameData.SelectedIndex == -1) return;
 
@@ -780,9 +781,9 @@ namespace DateManager
             end = lstFrameData.SelectedIndex;
         }
 
-        private async void btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object? sender, EventArgs e)
         {
-            // 1. [핵심] 휴지통에 있는 파일들을 여기서 실제 삭제
+            // 1. [기존 기능 유지] 휴지통 파일 처리
             if (_trashFrameList.Count > 0)
             {
                 if (MessageBox.Show($"휴지통에 있는 {_trashFrameList.Count}개의 파일을 영구 삭제하고 학습을 시작할까요?",
@@ -792,35 +793,40 @@ namespace DateManager
                     _trashFrameList.Clear();
                     UpdateTrashListUI();
                 }
-                else
-                {
-                    return; // 사용자가 취소하면 학습 시작 안 함
-                }
+                else { return; } // 사용자가 취소하면 학습 시작 안 함
             }
+
+            // 2. [필수 확인] 데이터가 로드되어 있는지 확인
+            if (string.IsNullOrEmpty(_currentCatalogPath))
+            {
+                MessageBox.Show("데이터가 로드되지 않았습니다. 폴더를 먼저 선택해주세요!");
+                return;
+            }
+
+            // 3. [기존 기능 유지] UI 상태 초기화
             lossPoints.Clear();
             if (pbChart != null) pbChart.Image = null;
-            // 기존 학습 시작 로직...
+
             btnStartTraining.Enabled = false;
             btnEndTraining.Enabled = true;
-
-            // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = true;
-
             btnStartTraining.BackColor = Color.FromArgb(62, 62, 66);
             btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
-
-            // 버튼 색상 변경
             btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
             btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
 
             rtbTrainLog.Clear();
             rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
-            string pythonPath = "wsl.exe";
-            string mycarDir = " mycar";
+            // 4. [수정된 부분] Windows 경로 -> Linux 경로 변환
+            string linuxTubPath = ConvertToLinuxPath(_currentCatalogPath);
 
-            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+            string pythonPath = "wsl.exe";
+            string mycarDir = "/home/jaeseo03/mycar"; // 경로를 정확한 절대경로로 지정하는 것이 안전합니다.
+
+            // 5. [수정된 부분] 변환된 경로(linuxTubPath)를 Trainer에 전달
+            await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, linuxTubPath));
         }
         private void DrawRealTimeChart()
         {
@@ -902,8 +908,9 @@ namespace DateManager
             // 3. 학습 프로세스 다시 실행 (btnStart_Click과 동일한 로직)
             string pythonPath = "wsl.exe";
             string mycarDir = "/home/jaeseo03/mycar";
+            string tubPath = _currentCatalogPath ?? "./data";
 
-            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, tubPath));
         }
 
         private void btnEndTraining_Click(object sender, EventArgs e)
@@ -979,7 +986,7 @@ namespace DateManager
         }
 
         // 🌟🌟🌟 궤적 부드러움 보정 & HUD (휴지통 시각 효과 포함) 🌟🌟🌟
-        private void pbMainCam_Paint(object sender, PaintEventArgs e)
+        private void pbMainCam_Paint(object? sender, PaintEventArgs e)
         {
             if (pbMainCam.Image == null) return;
 
@@ -1388,9 +1395,12 @@ namespace DateManager
 
         private void btnOpenManual_Click(object sender, EventArgs e)
         {
+            CreateManualCards();
             pnlManual.Visible = true;
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = false;
+            flpManual.Visible = true;
+            flpManual.BringToFront();
 
             // 버튼 색상 변경
             btnOpenManual.BackColor = Color.FromArgb(0, 122, 204);
@@ -1438,6 +1448,22 @@ namespace DateManager
                     }
                 }
             }
+        }
+
+        // 💡 윈도우 경로를 WSL(리눅스) 경로로 바꾸는 변환기
+        private string ConvertToLinuxPath(string windowsPath)
+        {
+            // 예: \\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\data
+            string path = windowsPath.Replace("\\", "/");
+
+            // 리눅스 내부 절대 경로 형식으로 변환 (사용자 환경에 따라 wsl 이름 부분은 달라질 수 있음)
+            // 예: /home/jaeseo03/mycar/data 형태가 되도록 조정
+            int index = path.IndexOf("/home/");
+            if (index != -1)
+            {
+                return path.Substring(index); // /home/... 부터 시작하는 경로만 추출
+            }
+            return path; // 이미 리눅스 경로이거나 변환 실패 시 원본 반환
         }
     }
 }
