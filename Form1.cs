@@ -885,10 +885,10 @@ namespace DateManager
                 series.BorderWidth = 4;
 
                 series.MarkerStyle = System.Windows.Forms.DataVisualization.Charting.MarkerStyle.Circle;
-                series.MarkerSize = 9;
+                series.MarkerSize = 6;
                 series.MarkerColor = Color.White;
                 series.MarkerBorderColor = Color.FromArgb(255, 45, 85);
-                series.MarkerBorderWidth = 2;
+                series.MarkerBorderWidth = 1;
 
                 chartRealTime.Series.Add(series);
             }
