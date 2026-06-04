@@ -508,29 +508,40 @@ namespace DateManager
             {
                 btnDeleteData.PerformClick();
                 e.Handled = true;
+                return;
             }
+
+            // 1. [Ctrl + Space] 실시간 구간 캡처
             if (e.Control && e.KeyCode == Keys.Space)
             {
-                int currentIndex = lstFrameData.SelectedIndex;
+                int currentIndex = _currentFrameIndex; // 리스트박스 말고 진짜 화면 인덱스 사용
+
                 if (currentIndex >= 0)
                 {
                     if (_isSelectingStart)
                     {
-                        // 1. 시작지점 입력
+                        // [시작지점] 영상 멈추지 않고 계속 재생
                         txtStartFrame.Text = currentIndex.ToString();
                         txtStartFrame.BackColor = Color.LightBlue;
-                        _isSelectingStart = false; // 끝 지점 받을 준비
+                        _isSelectingStart = false;
                     }
                     else
                     {
-                        // 2. 끝지점 입력
+                        // [끝지점] 
                         txtEndFrame.Text = currentIndex.ToString();
                         txtEndFrame.BackColor = Color.Salmon;
 
-                        // 3. 입력이 끝났으니 여기서 버튼을 실행
-                        //btnSelectRange.PerformClick();
+                        // 🚨 [핵심 1] 끝점을 찍는 순간 영상 재생을 강제로 멈춥니다.
+                        // (타이머가 다중 선택 영역을 지워버리는 것을 막기 위함)
+                        if (_playbackTimer != null && _playbackTimer.Enabled)
+                        {
+                            btnPlay.PerformClick(); // 일시정지 버튼 누름 효과
+                        }
 
-                        // 4. 버튼 실행 완료 후 초기화 (여기가 중요)
+                        // 🚨 [핵심 2] 자동으로 구간 선택 버튼 실행
+                        btnSelectRange.PerformClick();
+
+                        // 입력창 초기화
                         _isSelectingStart = true;
                         txtStartFrame.BackColor = Color.White;
                         txtEndFrame.BackColor = Color.White;
@@ -540,9 +551,9 @@ namespace DateManager
                 return;
             }
 
+            // 2. [Space] 재생 / 일시정지 토글
             if (e.KeyCode == Keys.Space)
             {
-                // 텍스트박스(구간 입력창)에 입력 중일 때는 재생이 안 되게 막아줌
                 if (!(this.ActiveControl is TextBox))
                 {
                     if (!_isViewingTrash)
@@ -551,53 +562,35 @@ namespace DateManager
                     }
                     e.Handled = true;
                 }
-                return; // 💡 여기서 빠져나가야 아래 화살표/홈/엔드 로직과 꼬이지 않음
+                return;
             }
 
-            // 화살표 위/아래: 포커스 이동
-            if (e.KeyCode == Keys.Up)
-            {
-                MoveFocus(-1);
-                e.Handled = true;
-            }
+            // 3. 화살표 위/아래: 포커스 이동
+            if (e.KeyCode == Keys.Up) { MoveFocus(-1); e.Handled = true; }
+            if (e.KeyCode == Keys.Down) { MoveFocus(1); e.Handled = true; }
 
-            if (e.KeyCode == Keys.Down)
-            {
-                MoveFocus(1);
-                e.Handled = true;
-            }
-
-            // Home/End: 첫 프레임 / 마지막 프레임으로 이동
+            // 4. Home/End: 첫 프레임 / 마지막 프레임으로 이동
             if (e.KeyCode == Keys.Home)
             {
-                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
-                {
-                    SelectFrame(0);
-                }
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0) SelectFrame(0);
                 e.Handled = true;
             }
-
             if (e.KeyCode == Keys.End)
             {
-                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
-                {
-                    SelectFrame(_displayedFrameList.Count - 1);
-                }
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0) SelectFrame(_displayedFrameList.Count - 1);
                 e.Handled = true;
             }
 
-            // Enter: 포커스가 올라간 버튼을 클릭 처리
+            // 5. Enter: 버튼 클릭 처리
             if (e.KeyCode == Keys.Enter)
             {
                 try
                 {
                     Control ctrl = this.ActiveControl;
-                    // 컨테이너 내부에 포커스된 자식 컨트롤이 있는 경우 가장 깊은 ActiveControl을 찾음
                     while (ctrl is ContainerControl container && container.ActiveControl != null)
                     {
                         ctrl = container.ActiveControl;
                     }
-
                     if (ctrl is Button btn)
                     {
                         btn.PerformClick();
@@ -762,6 +755,12 @@ namespace DateManager
             if (trkFrameSlider.Value != index)
             {
                 trkFrameSlider.Value = index;
+            }
+
+            // 리스트박스가 현재 재생 중인 프레임을 부드럽게 계속 추적하도록 스크롤해 주는 코드입니다.
+            if (lstFrameData.SelectedIndex != index)
+            {
+                lstFrameData.SelectedIndex = index;
             }
 
             pbMainCam.Invalidate();
@@ -1502,29 +1501,37 @@ namespace DateManager
 
         private void btnSelectRange_Click(object sender, EventArgs e)
         {
+            if (lstFrameData.Items.Count == 0) return;
+
+            if (int.TryParse(txtStartFrame.Text, out int start) && int.TryParse(txtEndFrame.Text, out int end))
             {
-                if (lstFrameData.Items.Count == 0) return;
-
-                if (int.TryParse(txtStartFrame.Text, out int start) && int.TryParse(txtEndFrame.Text, out int end))
+                // 🚨 [핵심 3] 마우스로 수동 클릭했을 때도 재생 중이라면 무조건 일시정지시킵니다.
+                if (_playbackTimer != null && _playbackTimer.Enabled)
                 {
-                    int s = Math.Max(0, Math.Min(start, end));
-                    int eIdx = Math.Min(lstFrameData.Items.Count - 1, Math.Max(start, end));
-
-                    // 💡 윈폼 ListBox에서 여러 개를 선택하려면 SelectionMode가 MultiExtended 여야 합니다.
-                    for (int i = s; i <= eIdx; i++)
-                    {
-                        lstFrameData.SetSelected(i, true);
-                    }
-
-
-                    // 💡 구간 선택이 완료되었으니 텍스트 박스를 비워줍니다.
-                    txtStartFrame.Clear();
-                    txtEndFrame.Clear();
+                    btnPlay.PerformClick();
                 }
-                else
+
+                int s = Math.Max(0, Math.Min(start, end));
+                int eIdx = Math.Min(lstFrameData.Items.Count - 1, Math.Max(start, end));
+
+                // 구간 칠하기
+                for (int i = s; i <= eIdx; i++)
                 {
-                    MessageBox.Show("올바른 프레임 숫자를 입력해주세요!", "입력 오류");
+                    lstFrameData.SetSelected(i, true);
                 }
+
+                // 구간 선택이 완료되었으니 텍스트 박스를 비워줍니다.
+                txtStartFrame.Clear();
+                txtEndFrame.Clear();
+
+                // 상태 초기화
+                _isSelectingStart = true;
+                txtStartFrame.BackColor = Color.White;
+                txtEndFrame.BackColor = Color.White;
+            }
+            else
+            {
+                MessageBox.Show("올바른 프레임 숫자를 입력해주세요!", "입력 오류");
             }
         }
     }
