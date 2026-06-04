@@ -102,7 +102,6 @@ namespace DateManager
                 this.Invoke((MethodInvoker)delegate
                 {
                     btnStartTraining.Enabled = true;   // ⭕ 시작 버튼 다시 켜고
-                    btnStopTraining.Enabled = false;  // ❌ 중단 버튼은 다시 잠그기
                 });
             };
 
@@ -690,7 +689,6 @@ namespace DateManager
 
             // 버튼 제어
             btnStartTraining.Enabled = false; // 시작 버튼 잠그기
-            btnStopTraining.Enabled = true;   // 중단 버튼 깨우기
 
             string pythonPath = "wsl.exe";
             string mycarDir = " mycar";
@@ -726,12 +724,6 @@ namespace DateManager
         {
             // 1. 실제 학습 프로세스 강제 종료
             donkeyTrainer.KillProcess();
-
-            // 2. UI 버튼 상태 변경
-            btnStopTraining.Visible = false;
-            btnStopTraining.Enabled = false; // 혹시 모를 중복 클릭 방지
-
-            btnRestartTraining.Visible = true;
             btnEndTraining.Visible = true;   // (종료 버튼이 폼에 있다면 보이게 설정)
 
             // 3. 로그 출력
@@ -741,9 +733,6 @@ namespace DateManager
         private async void btnRestartTraining_Click(object sender, EventArgs e)
         {
             // 1. UI 버튼 상태 변경
-            btnRestartTraining.Visible = false;
-            btnStopTraining.Visible = true;
-            btnStopTraining.Enabled = true; // 중단 버튼 다시 깨우기
 
             // 2. 로그 출력
             rtbTrainLog.AppendText("\r\n▶️ AI 학습을 이어서 재시작합니다...\r\n");
