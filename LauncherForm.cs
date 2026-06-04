@@ -25,7 +25,8 @@ namespace DateManager
 
                 System.Diagnostics.ProcessStartInfo wslInfo = new System.Diagnostics.ProcessStartInfo();
                 wslInfo.FileName = "wsl.exe";
-                wslInfo.Arguments = "-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive\"";
+                // 마지막에 '&& exec bash'를 추가하면 프로그램이 끝나도 터미널이 유지됩니다.
+                wslInfo.Arguments = "-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive && exec bash\"";
                 wslInfo.CreateNoWindow = false;
                 wslInfo.UseShellExecute = true;
                 System.Diagnostics.Process.Start(wslInfo);
@@ -63,7 +64,8 @@ namespace DateManager
 
                         System.Diagnostics.ProcessStartInfo wslInfo = new System.Diagnostics.ProcessStartInfo();
                         wslInfo.FileName = "wsl.exe";
-                        wslInfo.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive --model=./models/{selectedFileName} --type=linear\"";
+                        // 마지막에 '&& exec bash'를 추가하면 프로그램이 끝나도 터미널이 유지됩니다.
+                        wslInfo.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive --model=./models/{selectedFileName} --type=linear && exec bash\"";
                         wslInfo.CreateNoWindow = false;
                         wslInfo.UseShellExecute = true;
                         System.Diagnostics.Process.Start(wslInfo);
