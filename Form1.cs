@@ -688,7 +688,12 @@ namespace DateManager
                 }
             }
             lossPoints.Clear();
-            if (pbChart != null) pbChart.Image = null;
+            if (chartRealTime != null)
+            {
+                // 차트에 그려져 있던 빨간 선(데이터)과 레이아웃을 완전히 초기화합니다.
+                chartRealTime.Series.Clear();
+                chartRealTime.ChartAreas.Clear();
+            }
             // 기존 학습 시작 로직...
             btnStartTraining.Enabled = false;
             btnEndTraining.Enabled = true;
@@ -714,39 +719,95 @@ namespace DateManager
         }
         private void DrawRealTimeChart()
         {
-            // Nullable 잔소리를 완벽하게 회피하기 위해 컴파일러 안심 장치 마련 후 진행
-            if (pbChart == null || lossPoints.Count == 0) return;
+            if (chartRealTime == null || lossPoints.Count == 0) return;
 
-            Bitmap bmp = new Bitmap(pbChart.Width, pbChart.Height);
-            using (Graphics g = Graphics.FromImage(bmp))
+            if (chartRealTime.InvokeRequired)
             {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                float maxLoss = 1.0f;
-                foreach (var loss in lossPoints)
-                {
-                    if (loss > maxLoss) maxLoss = loss;
-                }
-
-                float xInterval = (float)pbChart.Width / (lossPoints.Count <= 1 ? 1 : lossPoints.Count - 1);
-
-                using (Pen pen = new Pen(Color.Crimson, 3f))
-                {
-                    for (int i = 0; i < lossPoints.Count - 1; i++)
-                    {
-                        float x1 = i * xInterval;
-                        float y1 = pbChart.Height - (lossPoints[i] / maxLoss * (pbChart.Height - 20)) - 10;
-
-                        float x2 = (i + 1) * xInterval;
-                        float y2 = pbChart.Height - (lossPoints[i + 1] / maxLoss * (pbChart.Height - 20)) - 10;
-
-                        g.DrawLine(pen, x1, y1, x2, y2);
-                    }
-                }
+                chartRealTime.Invoke(new MethodInvoker(DrawRealTimeChart));
+                return;
             }
 
-            if (pbChart.Image != null) pbChart.Image.Dispose();
-            pbChart.Image = bmp;
+            // -----------------------------------------------------------------
+            // 1️⃣ [디자인 전면 리팩토링] 테슬라/AI 다크모드 대시보드 세팅
+            // -----------------------------------------------------------------
+            if (chartRealTime.Series.Count == 0 || chartRealTime.Series[0].ChartType != System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line)
+            {
+                chartRealTime.Series.Clear();
+                chartRealTime.ChartAreas.Clear();
+                chartRealTime.Legends.Clear();
+
+                // 🖤 차트 전체 바깥 배경을 모던한 다크 그레이로 변경
+                chartRealTime.BackColor = Color.FromArgb(28, 28, 30);
+                chartRealTime.BorderlineDashStyle = System.Windows.Forms.DataVisualization.Charting.ChartDashStyle.Solid;
+                chartRealTime.BorderlineColor = Color.FromArgb(63, 63, 66); // 세련된 외곽 테두리선
+                chartRealTime.BorderlineWidth = 1;
+
+                var chartArea = new System.Windows.Forms.DataVisualization.Charting.ChartArea("LossArea");
+
+                // 🖤 그래프가 실제로 그려지는 안쪽 캔버스를 딥 블랙으로 지정 (빨간 선이 가장 돋보이는 색상)
+                chartArea.BackColor = Color.FromArgb(16, 16, 18);
+
+                // Y축 줌인 기능 활성화 (상승/하강폭 크게 보이게 제어)
+                chartArea.AxisY.IsStartedFromZero = false;
+
+                // 🩶 눈금 격자선을 아주 은은하고 투명도 있는 다크 회색으로 튜닝 (그래프 선을 방해하지 않음)
+                chartArea.AxisX.MajorGrid.LineColor = Color.FromArgb(45, 45, 48);
+                chartArea.AxisY.MajorGrid.LineColor = Color.FromArgb(45, 45, 48);
+
+                // 🤍 축 숫자 및 글자 스타일을 세련된 흰색 네온 느낌으로 변경
+                Font axisFont = new Font("Segoe UI", 9, FontStyle.Bold);
+                chartArea.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, 220, 224);
+                chartArea.AxisY.LabelStyle.ForeColor = Color.FromArgb(220, 220, 224);
+                chartArea.AxisX.LabelStyle.Font = axisFont;
+                chartArea.AxisY.LabelStyle.Font = axisFont;
+
+                // 축 타이틀 텍스트 디자인 (흰색)
+                Font titleFont = new Font("Segoe UI", 10, FontStyle.Bold);
+                chartArea.AxisX.Title = "Epoch (학습 횟수)";
+                chartArea.AxisY.Title = "오차율 (Loss)";
+                chartArea.AxisX.TitleForeColor = Color.White;
+                chartArea.AxisY.TitleForeColor = Color.White;
+                chartArea.AxisX.TitleFont = titleFont;
+                chartArea.AxisY.TitleFont = titleFont;
+
+                chartRealTime.ChartAreas.Add(chartArea);
+
+                // 🔴 꺾은선(Series) 디자인 튜닝
+                var series = new System.Windows.Forms.DataVisualization.Charting.Series("LossSeries");
+                series.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+
+                // 인공지능 신경망 느낌을 주는 Crimson(진홍색) 네온 레드 컬러 장착
+                series.Color = Color.FromArgb(255, 45, 85);
+                series.BorderWidth = 4; // 선 두께를 기존보다 더 굵고 직관적으로 업그레이드
+
+                // ⚪ 꺾이는 점(Marker) 스타일 커스텀 설정
+                series.MarkerStyle = System.Windows.Forms.DataVisualization.Charting.MarkerStyle.Circle;
+                series.MarkerSize = 9;                         // 마우스 올리기 아주 편하게 최적화된 크기
+                series.MarkerColor = Color.White;              // 내부 점은 새하얗게 채우고
+                series.MarkerBorderColor = Color.FromArgb(255, 45, 85); // 테두리는 빨간색으로 둘러서 고급스럽게 강조
+                series.MarkerBorderWidth = 2;
+
+                chartRealTime.Series.Add(series);
+            }
+
+            // -----------------------------------------------------------------
+            // 2️⃣ 데이터 실시간 주입 및 툴팁 설정 구역 (기존과 동일하게 유지)
+            // -----------------------------------------------------------------
+            var lossSeries = chartRealTime.Series["LossSeries"];
+            lossSeries.Points.Clear();
+
+            for (int i = 0; i < lossPoints.Count; i++)
+            {
+                float currentLoss = lossPoints[i];
+                int epochX = i + 1;
+
+                int pointIndex = lossSeries.Points.AddXY(epochX, currentLoss);
+
+                // 마우스 올리면 뜨는 미려한 말풍선 툴팁 세팅
+                lossSeries.Points[pointIndex].ToolTip = $"[AI Training 상태]\n▶ Epoch : {epochX} 회차\n▶ Loss : {currentLoss:F4}";
+            }
+
+            chartRealTime.ResetAutoValues();
         }
         private void btnViewMonitor_Click(object sender, EventArgs e)
         {
