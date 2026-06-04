@@ -282,10 +282,9 @@ namespace DateManager
 
             if (result != DialogResult.Yes) return; // '아니오'를 누르면 여기서 종료
 
-            // 💡 [변경점 2] 삭제 후 선택할 인덱스 계산을 위해 마지막 인덱스 기억
-            // (지운 항목들이 사라지면 뒤에 있던 항목들이 앞으로 당겨오므로, 
-            // 지우기 전 마지막 인덱스를 타겟으로 하면 자연스럽게 다음 파일이 선택됩니다.)
-            int lastSelectedIndex = selectedIndices.Max();
+            // 💡 [수정] Max()가 아니라 Min()을 써야 지운 구간 바로 다음 장면부터 이어집니다!
+            // (40~45를 지웠을 때 원래 46번이었던 프레임이 새로운 '40번' 자리로 오기 때문)
+            int targetStartIndex = selectedIndices.Min();
 
             // 2. 선택된 프레임 추출
             List<DonkeyFrame> selectedFrames = selectedIndices
@@ -303,14 +302,17 @@ namespace DateManager
             RefreshFrameList(_displayedFrameList);
             UpdateTrashListUI();
 
-            // 💡 [변경점 3] 삭제 후 다음 항목 선택 로직
+            // 💡 [변경점 3] 삭제 후 다음 항목 선택 로직 (0번 튕김 방지)
             if (lstFrameData.Items.Count > 0)
             {
-                // 1. lastSelectedIndex가 현재 리스트 크기보다 크면 맨 끝으로 보정
-                int targetIndex = Math.Min(lastSelectedIndex, lstFrameData.Items.Count - 1);
+                // 1. targetStartIndex가 현재 리스트 크기보다 크면 맨 끝으로 보정
+                int targetIndex = Math.Min(targetStartIndex, lstFrameData.Items.Count - 1);
 
-                // 2. 해당 인덱스 선택
+                // 2. 해당 인덱스 선택 (여기서 0번으로 튕기는 것을 막고 제자리로 복구)
                 lstFrameData.SelectedIndex = targetIndex;
+
+                // 3. 재생 및 키보드 조작이 즉시 먹히도록 포커스 유지
+                lstFrameData.Focus();
             }
         }
 
