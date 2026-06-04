@@ -334,8 +334,8 @@ namespace DateManager
 
             var showFirstItem = new ToolStripMenuItem("선택 첫 프레임 보기", null, (s, e) => ShowSelectedFrame(first: true));
             var showLastItem = new ToolStripMenuItem("선택 마지막 프레임 보기", null, (s, e) => ShowSelectedFrame(first: false));
-            var setRangeItem = new ToolStripMenuItem("선택 범위를 시작/종료 지점으로 설정", null, (s, e) => SetSelectedRangeAsStartEnd());
-            var copyInfoItem = new ToolStripMenuItem("선택 정보 복사", null, (s, e) => CopySelectedFrameInfo());
+            //var setRangeItem = new ToolStripMenuItem("선택 범위를 시작/종료 지점으로 설정", null, (s, e) => SetSelectedRangeAsStartEnd());
+            //var copyInfoItem = new ToolStripMenuItem("선택 정보 복사", null, (s, e) => CopySelectedFrameInfo());
             var deleteItem = new ToolStripMenuItem("선택 프레임 휴지통으로 이동", null, (s, e) => btnDeleteData_Click(this, EventArgs.Empty));
             var clearSelectionItem = new ToolStripMenuItem("선택 해제", null, (s, e) => lstFrameData.ClearSelected());
 
@@ -344,8 +344,8 @@ namespace DateManager
                 showFirstItem,
                 showLastItem,
                 new ToolStripSeparator(),
-                setRangeItem,
-                copyInfoItem,
+                //setRangeItem,
+                //copyInfoItem,
                 new ToolStripSeparator(),
                 deleteItem,
                 clearSelectionItem
@@ -359,8 +359,8 @@ namespace DateManager
                 e.Cancel = !hasSelection;
                 showFirstItem.Enabled = hasSelection;
                 showLastItem.Enabled = selectedCount > 1;
-                setRangeItem.Enabled = hasSelection;
-                copyInfoItem.Enabled = hasSelection;
+                //setRangeItem.Enabled = hasSelection;
+                //copyInfoItem.Enabled = hasSelection;
                 deleteItem.Enabled = hasSelection;
                 deleteItem.Text = selectedCount > 1
                     ? $"선택 프레임 {selectedCount}개 휴지통으로 이동"
