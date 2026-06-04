@@ -66,6 +66,7 @@ namespace DateManager
             chkFilterThr = new CheckBox();
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
+            pbChart = new PictureBox();
             btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
@@ -84,7 +85,6 @@ namespace DateManager
             pnlManual = new Panel();
             lblManual = new Label();
             rtbManual = new RichTextBox();
-            pbChart = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -94,10 +94,10 @@ namespace DateManager
             pnlDataManagement.SuspendLayout();
             pnlFilterOptions.SuspendLayout();
             pnlTrainingLog.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbChart).BeginInit();
             pnlDelete.SuspendLayout();
             pnlTrash.SuspendLayout();
             pnlManual.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pbChart).BeginInit();
             SuspendLayout();
             // 
             // pbMainCam
@@ -296,7 +296,7 @@ namespace DateManager
             btnPlay.BackColor = Color.FromArgb(0, 122, 204);
             btnPlay.FlatAppearance.BorderSize = 0;
             btnPlay.FlatStyle = FlatStyle.Flat;
-            btnPlay.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnPlay.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnPlay.ForeColor = Color.White;
             btnPlay.Location = new Point(352, 105);
             btnPlay.Name = "btnPlay";
@@ -312,7 +312,7 @@ namespace DateManager
             btnStop.BackColor = Color.FromArgb(211, 47, 47);
             btnStop.FlatAppearance.BorderSize = 0;
             btnStop.FlatStyle = FlatStyle.Flat;
-            btnStop.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnStop.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnStop.ForeColor = Color.White;
             btnStop.Location = new Point(476, 105);
             btnStop.Name = "btnStop";
@@ -557,7 +557,7 @@ namespace DateManager
             chkFilterThr.ForeColor = Color.White;
             chkFilterThr.Location = new Point(5, 30);
             chkFilterThr.Name = "chkFilterThr";
-            chkFilterThr.Size = new Size(91, 24);
+            chkFilterThr.Size = new Size(80, 24);
             chkFilterThr.TabIndex = 0;
             chkFilterThr.Text = "속도=0";
             chkFilterThr.UseVisualStyleBackColor = true;
@@ -591,6 +591,15 @@ namespace DateManager
             pnlTrainingLog.TabIndex = 11;
             pnlTrainingLog.Visible = false;
             // 
+            // pbChart
+            // 
+            pbChart.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            pbChart.Location = new Point(14, 321);
+            pbChart.Name = "pbChart";
+            pbChart.Size = new Size(816, 148);
+            pbChart.TabIndex = 14;
+            pbChart.TabStop = false;
+            // 
             // btnRunSimulator
             // 
             btnRunSimulator.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
@@ -620,7 +629,7 @@ namespace DateManager
             // 
             // rtbTrainLog
             // 
-            rtbTrainLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            rtbTrainLog.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             rtbTrainLog.BackColor = Color.FromArgb(30, 30, 30);
             rtbTrainLog.BorderStyle = BorderStyle.None;
             rtbTrainLog.ForeColor = Color.LightGreen;
@@ -834,14 +843,6 @@ namespace DateManager
             rtbManual.TabIndex = 1;
             rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
-            // pbChart
-            // 
-            pbChart.Location = new Point(14, 321);
-            pbChart.Name = "pbChart";
-            pbChart.Size = new Size(816, 148);
-            pbChart.TabIndex = 14;
-            pbChart.TabStop = false;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
@@ -882,13 +883,13 @@ namespace DateManager
             pnlFilterOptions.PerformLayout();
             pnlTrainingLog.ResumeLayout(false);
             pnlTrainingLog.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbChart).EndInit();
             pnlDelete.ResumeLayout(false);
             pnlDelete.PerformLayout();
             pnlTrash.ResumeLayout(false);
             pnlTrash.PerformLayout();
             pnlManual.ResumeLayout(false);
             pnlManual.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)pbChart).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
