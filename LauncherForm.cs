@@ -1,37 +1,34 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Windows.Forms;
 
 namespace DateManager
 {
     public partial class LauncherForm : Form
     {
-        // 기존에 사용하던 리눅스 모델 폴더 기본 경로
-        private string _wslModelsRoot = @"\\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\models\";
+        private const string WslDistro = "Ubuntu-22.04";
+        private const int DrivePort = 8887;
 
         public LauncherForm()
         {
             InitializeComponent();
         }
 
-        // ---------------------------------------------------------------------
-        // [기능 1] 사진 모으기 (모델 없이 drive 서버를 수동 모드로 구동)
-        // ---------------------------------------------------------------------
         private void BtnCollect_Click(object sender, EventArgs e)
         {
             try
             {
                 CleanPort8887();
 
-                System.Diagnostics.ProcessStartInfo wslInfo = new System.Diagnostics.ProcessStartInfo();
-                wslInfo.FileName = "wsl.exe";
-                // 마지막에 '&& exec bash'를 추가하면 프로그램이 끝나도 터미널이 유지됩니다.
-                wslInfo.Arguments = "-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive && exec bash\"";
-                wslInfo.CreateNoWindow = false;
-                wslInfo.UseShellExecute = true;
-                System.Diagnostics.Process.Start(wslInfo);
+                StartWslDrive("");
 
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = "http://localhost:8887", UseShellExecute = true });
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = $"http://localhost:{DrivePort}",
+                    UseShellExecute = true
+                });
             }
             catch (Exception ex)
             {
@@ -39,62 +36,55 @@ namespace DateManager
             }
         }
 
-        // ---------------------------------------------------------------------
-        // [기능 2] 자율 주행 시키기 (원하는 학습 파일 선택 후 구동)
-        // ---------------------------------------------------------------------
         private void BtnAutoDrive_Click(object sender, EventArgs e)
         {
+            string modelsRoot = GetWindowsModelsRoot();
+
             using (OpenFileDialog ofd = new OpenFileDialog())
             {
                 ofd.Title = "자율주행에 사용할 모델 파일(.h5)을 선택하세요";
                 ofd.Filter = "DonkeyCar Model (*.h5)|*.h5";
 
-                if (Directory.Exists(_wslModelsRoot))
+                if (!string.IsNullOrWhiteSpace(modelsRoot) && Directory.Exists(modelsRoot))
                 {
-                    ofd.InitialDirectory = _wslModelsRoot;
+                    ofd.InitialDirectory = modelsRoot;
                 }
 
-                if (ofd.ShowDialog() == DialogResult.OK)
+                if (ofd.ShowDialog() != DialogResult.OK)
                 {
-                    string selectedFileName = Path.GetFileName(ofd.FileName);
+                    return;
+                }
 
-                    try
+                string selectedFileName = Path.GetFileName(ofd.FileName);
+
+                try
+                {
+                    CleanPort8887();
+
+                    StartWslDrive($"--model=./models/{EscapeBashArg(selectedFileName)} --type=linear");
+
+                    Process.Start(new ProcessStartInfo
                     {
-                        CleanPort8887();
-
-                        System.Diagnostics.ProcessStartInfo wslInfo = new System.Diagnostics.ProcessStartInfo();
-                        wslInfo.FileName = "wsl.exe";
-                        // 마지막에 '&& exec bash'를 추가하면 프로그램이 끝나도 터미널이 유지됩니다.
-                        wslInfo.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive --model=./models/{selectedFileName} --type=linear && exec bash\"";
-                        wslInfo.CreateNoWindow = false;
-                        wslInfo.UseShellExecute = true;
-                        System.Diagnostics.Process.Start(wslInfo);
-
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = "http://localhost:8887", UseShellExecute = true });
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"자율주행 구동 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                        FileName = $"http://localhost:{DrivePort}",
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"자율주행 구동 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
 
-        // ---------------------------------------------------------------------
-        // [기능 3] 기존 돈키카 UI 실행시키기 (Form1 열기)
-        // ---------------------------------------------------------------------
         private void BtnOpenMainUi_Click(object sender, EventArgs e)
         {
             Form1 mainForm = new Form1();
 
-            // 메인 폼이 동일한 위치에 열리도록 설정하여 자연스러운 전환 유도
             mainForm.StartPosition = FormStartPosition.Manual;
             mainForm.Location = this.Location;
 
             mainForm.FormClosed += (s, args) =>
             {
-                // 💡 런처가 이미 화면에 표시(Show)된 상태라면 런처를 닫지 않고, 
-                // 사용자가 Form1의 'X' 버튼을 눌러 아예 껐을 때만 프로그램 전체를 종료합니다.
                 if (!this.Visible)
                 {
                     this.Close();
@@ -102,23 +92,107 @@ namespace DateManager
             };
 
             mainForm.Show();
-            this.Hide(); // 런처 숨기기
+            this.Hide();
         }
 
-        // 포트 청소용 공통 헬퍼 함수
         private void CleanPort8887()
         {
-            System.Diagnostics.ProcessStartInfo killInfo = new System.Diagnostics.ProcessStartInfo
+            RunWslHidden($"fuser -k {DrivePort}/tcp || true", waitMilliseconds: 1500);
+        }
+
+        private void StartWslDrive(string extraArgs)
+        {
+            string command =
+                "set -e; " +
+                "MYCAR_DIR=\"${DONKEYCAR_MY_CAR_DIR:-$HOME/mycar}\"; " +
+                "if [ ! -f \"$MYCAR_DIR/manage.py\" ]; then " +
+                "echo \"mycar 폴더를 찾을 수 없습니다. WSL에서 DONKEYCAR_MY_CAR_DIR 환경변수를 설정하거나 $HOME/mycar에 프로젝트를 두세요.\"; " +
+                "exec bash; " +
+                "fi; " +
+                "PYTHON_BIN=\"${DONKEYCAR_PYTHON:-}\"; " +
+                "if [ -z \"$PYTHON_BIN\" ]; then " +
+                "if command -v conda >/dev/null 2>&1; then " +
+                "PYTHON_BIN=\"python\"; " +
+                "elif [ -x \"$HOME/miniconda3/envs/e2e_env/bin/python\" ]; then " +
+                "PYTHON_BIN=\"$HOME/miniconda3/envs/e2e_env/bin/python\"; " +
+                "elif [ -x \"$HOME/anaconda3/envs/e2e_env/bin/python\" ]; then " +
+                "PYTHON_BIN=\"$HOME/anaconda3/envs/e2e_env/bin/python\"; " +
+                "else " +
+                "PYTHON_BIN=\"python3\"; " +
+                "fi; " +
+                "fi; " +
+                "cd \"$MYCAR_DIR\"; " +
+                "export PYTHONUNBUFFERED=1; " +
+                $"\"$PYTHON_BIN\" manage.py drive {extraArgs}; " +
+                "exec bash";
+
+            ProcessStartInfo wslInfo = new ProcessStartInfo
             {
                 FileName = "wsl.exe",
-                Arguments = "-d Ubuntu-22.04 -e bash -c \"fuser -k 8887/tcp || true\"",
+                Arguments = $"-d {WslDistro} -e bash -lc \"{EscapeForWslDoubleQuotes(command)}\"",
+                CreateNoWindow = false,
+                UseShellExecute = true
+            };
+
+            Process.Start(wslInfo);
+        }
+
+        private void RunWslHidden(string command, int waitMilliseconds)
+        {
+            ProcessStartInfo info = new ProcessStartInfo
+            {
+                FileName = "wsl.exe",
+                Arguments = $"-d {WslDistro} -e bash -lc \"{EscapeForWslDoubleQuotes(command)}\"",
                 CreateNoWindow = true,
                 UseShellExecute = false
             };
-            using (var killProc = System.Diagnostics.Process.Start(killInfo))
+
+            using (Process proc = Process.Start(info))
             {
-                killProc.WaitForExit(1500);
+                proc?.WaitForExit(waitMilliseconds);
             }
+        }
+
+        private string GetWindowsModelsRoot()
+        {
+            string linuxHome = RunWslCapture("printf '%s' \"$HOME\"");
+            if (string.IsNullOrWhiteSpace(linuxHome))
+            {
+                return null;
+            }
+
+            string userName = linuxHome.Trim().Replace("/home/", "");
+            return $@"\\wsl.localhost\{WslDistro}\home\{userName}\mycar\models";
+        }
+
+        private string RunWslCapture(string command)
+        {
+            ProcessStartInfo info = new ProcessStartInfo
+            {
+                FileName = "wsl.exe",
+                Arguments = $"-d {WslDistro} -e bash -lc \"{EscapeForWslDoubleQuotes(command)}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                StandardOutputEncoding = Encoding.UTF8
+            };
+
+            using (Process proc = Process.Start(info))
+            {
+                string output = proc.StandardOutput.ReadToEnd();
+                proc.WaitForExit(3000);
+                return output;
+            }
+        }
+
+        private static string EscapeForWslDoubleQuotes(string value)
+        {
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static string EscapeBashArg(string value)
+        {
+            return value.Replace("'", "'\"'\"'");
         }
 
         private void btnTitle_Click(object sender, EventArgs e)
