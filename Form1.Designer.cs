@@ -52,8 +52,6 @@ namespace DateManager
             lblFrameListTitle = new Label();
             lstFrameData = new ListBox();
             pnlSystemOps = new Panel();
-            btnRestartTraining = new Button();
-            btnStopTraining = new Button();
             btnEndTraining = new Button();
             lblSystemOpsTitle = new Label();
             btnStartTraining = new Button();
@@ -86,6 +84,7 @@ namespace DateManager
             pnlManual = new Panel();
             lblManual = new Label();
             rtbManual = new RichTextBox();
+            pbChart = new PictureBox();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -98,6 +97,7 @@ namespace DateManager
             pnlDelete.SuspendLayout();
             pnlTrash.SuspendLayout();
             pnlManual.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbChart).BeginInit();
             SuspendLayout();
             // 
             // pbMainCam
@@ -403,8 +403,6 @@ namespace DateManager
             // 
             pnlSystemOps.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             pnlSystemOps.BackColor = Color.FromArgb(45, 45, 48);
-            pnlSystemOps.Controls.Add(btnRestartTraining);
-            pnlSystemOps.Controls.Add(btnStopTraining);
             pnlSystemOps.Controls.Add(btnEndTraining);
             pnlSystemOps.Controls.Add(lblSystemOpsTitle);
             pnlSystemOps.Controls.Add(btnStartTraining);
@@ -414,41 +412,9 @@ namespace DateManager
             pnlSystemOps.Size = new Size(175, 315);
             pnlSystemOps.TabIndex = 9;
             // 
-            // btnRestartTraining
-            // 
-            btnRestartTraining.BackColor = Color.FromArgb(0, 122, 204);
-            btnRestartTraining.FlatAppearance.BorderSize = 0;
-            btnRestartTraining.FlatStyle = FlatStyle.Flat;
-            btnRestartTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnRestartTraining.ForeColor = Color.White;
-            btnRestartTraining.Location = new Point(14, 106);
-            btnRestartTraining.Name = "btnRestartTraining";
-            btnRestartTraining.Size = new Size(147, 121);
-            btnRestartTraining.TabIndex = 11;
-            btnRestartTraining.Text = "AI 학습\r\n 재시작";
-            btnRestartTraining.UseVisualStyleBackColor = false;
-            btnRestartTraining.Visible = false;
-            btnRestartTraining.Click += btnRestartTraining_Click;
-            // 
-            // btnStopTraining
-            // 
-            btnStopTraining.BackColor = Color.FromArgb(255, 160, 0);
-            btnStopTraining.FlatAppearance.BorderSize = 0;
-            btnStopTraining.FlatStyle = FlatStyle.Flat;
-            btnStopTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnStopTraining.ForeColor = Color.White;
-            btnStopTraining.Location = new Point(14, 106);
-            btnStopTraining.Name = "btnStopTraining";
-            btnStopTraining.Size = new Size(147, 121);
-            btnStopTraining.TabIndex = 10;
-            btnStopTraining.Text = "AI 학습\r\n 정지";
-            btnStopTraining.UseVisualStyleBackColor = false;
-            btnStopTraining.Visible = false;
-            btnStopTraining.Click += btnStopTraining_Click;
-            // 
             // btnEndTraining
             // 
-            btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
+            btnEndTraining.BackColor = Color.FromArgb(62, 62, 66);
             btnEndTraining.FlatAppearance.BorderSize = 0;
             btnEndTraining.FlatStyle = FlatStyle.Flat;
             btnEndTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -474,7 +440,7 @@ namespace DateManager
             // 
             // btnStartTraining
             // 
-            btnStartTraining.BackColor = Color.FromArgb(0, 150, 136);
+            btnStartTraining.BackColor = Color.FromArgb(0, 122, 204);
             btnStartTraining.FlatAppearance.BorderSize = 0;
             btnStartTraining.FlatStyle = FlatStyle.Flat;
             btnStartTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -615,6 +581,7 @@ namespace DateManager
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
+            pnlTrainingLog.Controls.Add(pbChart);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
@@ -660,7 +627,7 @@ namespace DateManager
             rtbTrainLog.Location = new Point(14, 45);
             rtbTrainLog.Name = "rtbTrainLog";
             rtbTrainLog.ReadOnly = true;
-            rtbTrainLog.Size = new Size(816, 424);
+            rtbTrainLog.Size = new Size(816, 270);
             rtbTrainLog.TabIndex = 1;
             rtbTrainLog.Text = "";
             // 
@@ -796,7 +763,7 @@ namespace DateManager
             lstTrashItems.Location = new Point(14, 45);
             lstTrashItems.Name = "lstTrashItems";
             lstTrashItems.SelectionMode = SelectionMode.MultiExtended;
-            lstTrashItems.Size = new Size(350, 420);
+            lstTrashItems.Size = new Size(350, 400);
             lstTrashItems.TabIndex = 0;
             lstTrashItems.Click += lstTrashItems_SelectedIndexChanged;
             // 
@@ -867,6 +834,14 @@ namespace DateManager
             rtbManual.TabIndex = 1;
             rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
+            // pbChart
+            // 
+            pbChart.Location = new Point(14, 321);
+            pbChart.Name = "pbChart";
+            pbChart.Size = new Size(816, 148);
+            pbChart.TabIndex = 14;
+            pbChart.TabStop = false;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
@@ -913,6 +888,7 @@ namespace DateManager
             pnlTrash.PerformLayout();
             pnlManual.ResumeLayout(false);
             pnlManual.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbChart).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -964,9 +940,7 @@ namespace DateManager
         private Button btnEndTraining;
         private Panel pnlDelete;
         private Label lblDelete;
-        private Button btnStopTraining;
         private Button btnOpenTrash;
-        private Button btnRestartTraining;
         private Button btnSelectAll;
         private Panel pnlTrash;
         private Button btnCloseTrash;
@@ -979,5 +953,6 @@ namespace DateManager
         private Panel pnlManual;
         private Label lblManual;
         private RichTextBox rtbManual;
+        private PictureBox pbChart;
     }
 }

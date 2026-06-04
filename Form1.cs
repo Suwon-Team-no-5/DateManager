@@ -673,12 +673,15 @@ namespace DateManager
             }
 
             // 기존 학습 시작 로직...
-            btnStartTraining.Visible = false;
-            btnStopTraining.Visible = true;
+            btnStartTraining.Enabled = false;
+            btnEndTraining.Enabled = true;
 
             // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = true;
+
+            btnStartTraining.BackColor = Color.FromArgb(62, 62, 66);
+            btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
 
             // 버튼 색상 변경
             btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
@@ -760,11 +763,11 @@ namespace DateManager
             donkeyTrainer.KillProcess();
 
             // 2. UI 버튼 초기 상태로 복구 (처음 화면처럼)
-            btnRestartTraining.Visible = false;
-            btnStopTraining.Visible = false;
-
-            btnStartTraining.Visible = true;
+            btnEndTraining.Enabled = false;
             btnStartTraining.Enabled = true; // 시작 버튼 다시 깨우기
+
+            btnStartTraining.BackColor = Color.FromArgb(0, 122, 204);
+            btnEndTraining.BackColor = Color.FromArgb(62, 62, 66);
 
             // 3. 로그 출력
             rtbTrainLog.AppendText("\r\n⏹️ AI 학습 연동이 완전히 종료되었습니다. 새로운 학습을 준비합니다.\r\n");

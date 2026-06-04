@@ -35,7 +35,7 @@
             lblSub.Name = "lblSub";
             lblSub.Size = new Size(1295, 35);
             lblSub.TabIndex = 1;
-            lblSub.Text = "자율주행 데이터 수집 및 AI 학습 관리 시스템";
+            lblSub.Text = "자율주행 데이터 수집, AI 학습, 자율주행 시스템";
             lblSub.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // pnlAccentLine
@@ -121,7 +121,7 @@
             lblFooter.Name = "lblFooter";
             lblFooter.Size = new Size(1295, 30);
             lblFooter.TabIndex = 5;
-            lblFooter.Text = "© 2026 프로그래밍언어 및 실습 5팀 | MoveArt Project";
+            lblFooter.Text = "© 2026 프로그래밍언어 및 실습 5팀 | Donkeycar Project";
             lblFooter.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // btnTitle
