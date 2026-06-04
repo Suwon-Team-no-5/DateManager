@@ -1027,6 +1027,54 @@ namespace DateManager
                 _lastViewedFrameId = _displayedFrameList[lstFrameData.SelectedIndex].FrameIndex;
             }
 
+            if (lstTrashItems.ContextMenuStrip == null)
+            {
+                ContextMenuStrip ctxTrashMenu = new ContextMenuStrip();
+                ToolStripMenuItem menuRestore = new ToolStripMenuItem("선택한 항목 복원");
+
+                menuRestore.Click += (s, ev) =>
+                {
+                    // 화면 우하단에 있는 '선택 복원' 버튼을 원격 클릭
+                    if (btnRestoreData.Enabled)
+                    {
+                        btnRestoreData.PerformClick();
+                    }
+                };
+
+                ctxTrashMenu.Items.Add(menuRestore);
+                lstTrashItems.ContextMenuStrip = ctxTrashMenu;
+
+                // 마우스 우클릭 시 빈 공간을 누르더라도 무조건 메뉴가 뜨도록 마우스 다운 이벤트 추가
+                lstTrashItems.MouseDown += (snd, me) =>
+                {
+                    if (me.Button == MouseButtons.Right)
+                    {
+                        int index = lstTrashItems.IndexFromPoint(me.Location);
+                        if (index != ListBox.NoMatches)
+                        {
+                            // 실제 아이템(Frame)을 우클릭한 경우 해당 아이템 선택
+                            if (!lstTrashItems.GetSelected(index))
+                            {
+                                lstTrashItems.ClearSelected();
+                                lstTrashItems.SetSelected(index, true);
+                            }
+                        }
+                        else
+                        {
+                            // 아래쪽 빈 공간을 우클릭한 경우 맨 마지막 아이템이라도 자동 선택
+                            if (lstTrashItems.Items.Count > 0)
+                            {
+                                lstTrashItems.ClearSelected();
+                                lstTrashItems.SelectedIndex = lstTrashItems.Items.Count - 1;
+                            }
+                        }
+
+                        // 시스템에 맡기지 않고 마우스 위치에 메뉴 강제 팝업!
+                        ctxTrashMenu.Show(lstTrashItems, me.Location);
+                    }
+                };
+            }
+
             // 3. 휴지통 패널 표시
             pnlTrash.Visible = true;
             pnlTrash.BringToFront();
