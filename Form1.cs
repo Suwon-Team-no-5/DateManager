@@ -58,10 +58,15 @@ namespace DateManager
         private bool _isViewingTrash = false;
 
         private int _lastViewedFrameId = -1;
-        private bool _wasPlaying = false; // 💡 [추가] 휴지통 열기 전 재생 중이었는지 저장할 변수
+        private bool _wasPlaying = false; // 휴지통 열기 전 재생 중이었는지 저장할 변수
 
         private bool _isTrainingComplete = false; // 학습 완료 플래그
         private string _modelWinPath = @"\\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\models\mypilot.h5";
+
+        private int _deleteStartIndex = -1; // 삭제 시작 프레임 인덱스
+        private int _deleteEndIndex = -1;   // 삭제 끝 프레임 인덱스
+
+        private bool _isRangeSelecting = false; // 구간 선택 중인지 체크하는 보호막 플래그
 
         public Form1()
         {
@@ -315,8 +320,8 @@ namespace DateManager
         {
             if (lstFrameData.SelectedIndex == -1) return;
 
-            // 재생 코드가 선택을 바꾸는 중이면 start/end를 건드리지 않음
-            if (_isPlaybackSelecting) return;
+            // 재생 중이거나 '단축키로 구간 선택 중'일 때는 기존 start/end 변수를 절대 건드리지 않음!
+            if (_isPlaybackSelecting || _isRangeSelecting) return;
 
             _isViewingTrash = false;
             lstTrashItems.ClearSelected();
@@ -501,10 +506,42 @@ namespace DateManager
         // 폼 전체에 대한 키보드 단축키 핸들러
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
         {
-            // 스페이스: 재생/일시정지 토글
+            // 로그창 같은 텍스트 박스에 포커스가 있을 때는 단축키 오작동 방지
+            if (rtbTrainLog != null && rtbTrainLog.Focused) return;
+
             if (e.KeyCode == Keys.Space)
             {
-                // 💡 [안전장치] 휴지통 뷰가 아닐 때만 스페이스바로 재생 가능
+                e.Handled = true;
+                e.SuppressKeyPress = true; // 버튼 씹기
+
+                if (!_isViewingTrash)
+                {
+                    int currentIndex = lstFrameData.SelectedIndex;
+                    if (currentIndex >= 0)
+                    {
+                        if (_deleteStartIndex == -1)
+                        {
+                            _deleteStartIndex = currentIndex;
+                            rtbTrainLog?.AppendText($"\r\n[구간 지정] 삭제 시작 프레임: {currentIndex}");
+                        }
+                        else
+                        {
+                            _deleteEndIndex = currentIndex;
+                            rtbTrainLog?.AppendText($" -> 끝 프레임: {currentIndex}\r\n");
+
+                            // 여기서 위에 수정한 SelectFrameRange가 돌면서 튕김 없이 깔끔하게 선택됨!
+                            SelectFrameRange(_deleteStartIndex, _deleteEndIndex);
+
+                            _deleteStartIndex = -1;
+                            _deleteEndIndex = -1;
+                        }
+                    }
+                }
+            }
+
+            // ─── 3. 기존 Space 키: 순수하게 재생 / 일시정지 토글로 원상복구 ───
+            if (e.KeyCode == Keys.Space)
+            {
                 if (!_isViewingTrash)
                 {
                     btnPlay.PerformClick();
@@ -1432,6 +1469,42 @@ namespace DateManager
                         lstTrashItems.SetSelected(index, true);
                     }
                 }
+            }
+        }
+
+        private void SelectFrameRange(int start, int end)
+        {
+            // 정방향/역방향 관계없이 최소값과 최대값 정렬
+            int realStart = Math.Min(start, end);
+            int realEnd = Math.Max(start, end);
+
+            // 🔥 [추가] 이벤트 폭탄 방지 보호막 가동!
+            // 이 값이 true인 동안에는 lstFrameData_SelectedIndexChanged 내부 코드가 씹힙니다.
+            _isRangeSelecting = true;
+
+            // 대량 선택 시 화면 깜빡임 방지 및 성능 최적화
+            lstFrameData.BeginUpdate();
+            try
+            {
+                // 기존 선택 초기화
+                lstFrameData.ClearSelected();
+
+                // 시작점부터 끝점까지 루프 돌며 일괄 선택 활성화
+                for (int i = realStart; i <= realEnd; i++)
+                {
+                    if (i >= 0 && i < lstFrameData.Items.Count)
+                    {
+                        lstFrameData.SetSelected(i, true);
+                    }
+                }
+            }
+            finally
+            {
+                // 화면 갱신 다시 켜기
+                lstFrameData.EndUpdate();
+
+                // 🔥 [추가] 선택이 완전히 끝났으므로 보호막 해제!
+                _isRangeSelecting = false;
             }
         }
     }
