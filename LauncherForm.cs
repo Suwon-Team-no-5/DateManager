@@ -123,19 +123,32 @@ namespace DateManager
         {
             try
             {
-                // 1. 실행 파일이 있는 폴더에 HTML 파일 생성 경로 지정
+                // 1. 실행 파일이 있는 폴더에 HTML 파일 경로 지정
                 string filePath = System.IO.Path.Combine(Application.StartupPath, "Team5_Development_Plan.html");
 
-                // 2. 다크모드 토글 기능과 모던 CSS가 적용된 HTML 텍스트 작성
+                // 2. 어떤 브라우저에서도 100% 작동하는 안전한 토글 로직 적용
                 string htmlContent = @"
         <!DOCTYPE html>
-        <html lang='ko'>
+        <html lang=""ko"">
         <head>
-            <meta charset='UTF-8'>
+            <meta charset=""UTF-8"">
             <title>5팀 개발 계획서</title>
             <style>
-                /* 기본(라이트) 테마 색상 변수 */
+                /* 기본 테마: 다크 모드 (아무 설정이 없을 때 기본으로 적용) */
                 :root {
+                    --bg-color: #121212;
+                    --container-bg: #1e1e1e;
+                    --text-color: #e0e0e0;
+                    --title-color: #ffffff;
+                    --accent-color: #4da6ff;
+                    --card-bg: #2d2d2d;
+                    --card-hover: #383838;
+                    --role-color: #b0b0b0;
+                    --footer-color: #666666;
+                }
+
+                /* 라이트 테마: body에 light-mode 클래스가 추가되었을 때 덮어씌워짐 */
+                body.light-mode {
                     --bg-color: #f7f9fc;
                     --container-bg: #ffffff;
                     --text-color: #333333;
@@ -147,26 +160,13 @@ namespace DateManager
                     --footer-color: #aaaaaa;
                 }
 
-                /* 다크 테마 색상 변수 */
-                [data-theme='dark'] {
-                    --bg-color: #121212;
-                    --container-bg: #1e1e1e;
-                    --text-color: #e0e0e0;
-                    --title-color: #ffffff;
-                    --accent-color: #4da6ff; /* 다크모드에서는 파란색을 살짝 더 밝게 */
-                    --card-bg: #2d2d2d;
-                    --card-hover: #383838;
-                    --role-color: #b0b0b0;
-                    --footer-color: #666666;
-                }
-
                 body { 
                     font-family: 'Pretendard', 'Malgun Gothic', sans-serif; 
                     background-color: var(--bg-color); 
                     padding: 40px; 
                     color: var(--text-color); 
                     line-height: 1.6;
-                    transition: background-color 0.3s ease, color 0.3s ease; /* 부드러운 전환 효과 */
+                    transition: background-color 0.3s ease, color 0.3s ease; 
                 }
                 .container { 
                     max-width: 800px; 
@@ -189,7 +189,7 @@ namespace DateManager
                     transition: transform 0.2s;
                 }
                 .theme-toggle:hover {
-                    transform: scale(1.15); /* 마우스 올리면 버튼이 살짝 커짐 */
+                    transform: scale(1.15); 
                 }
                 h1 { 
                     color: var(--title-color); 
@@ -241,48 +241,50 @@ namespace DateManager
             </style>
         </head>
         <body>
-            <div class='container'>
-                <button class='theme-toggle' id='themeBtn' onclick='toggleTheme()' title='다크/라이트 모드 전환'>🌙</button>
+            <div class=""container"">
+                <button class=""theme-toggle"" id=""themeBtn"" onclick=""toggleTheme()"" title=""다크/라이트 모드 전환"">☀️</button>
                 
-                <h1>🚀 MoveArt Donkeycar Data Manager</h1>
+                <h1>🚀 5팀 Donkeycar Data Manager</h1>
                 <h3>프로그래밍언어 및 실습 5팀 역할 분담 계획서</h3>
                 
-                <div class='member-card'>
-                    <div class='name'>👑 김재서 (팀장)</div>
-                    <div class='role'>▪ 전체 WinForms 레이아웃 설계<br>▪ 미션 2/3 (이미지 표시 및 슬라이더) 연동 담당</div>
+                <div class=""member-card"">
+                    <div class=""name"">👑 김재서 (팀장)</div>
+                    <div class=""role"">▪ 23010114 컴퓨터SW학과<br>▪ 전체 WinForms 레이아웃 설계<br>▪ 미션 2/3 (이미지 표시 및 슬라이더) 연동 담당</div>
                 </div>
                 
-                <div class='member-card'>
-                    <div class='name'>💻 박진철</div>
-                    <div class='role'>▪ 미션 1 (JSON 파싱)<br>▪ 미션 6 (파일 시스템 삭제 로직) 담당</div>
+                <div class=""member-card"">
+                    <div class=""name"">💻 박진철</div>
+                    <div class=""role"">▪ 23017037 컴퓨터SW학과<br>▪ 미션 1 (JSON 파싱)<br>▪ 미션 6 (파일 시스템 삭제 로직) 담당</div>
                 </div>
                 
-                <div class='member-card'>
-                    <div class='name'>⚙️ 윤형규</div>
-                    <div class='role'>▪ 미션 4/5 (리스트 선택 및 LINQ 기반 데이터 필터링) 알고리즘 구현</div>
+                <div class=""member-card"">
+                    <div class=""name"">⚙️ 윤형규</div>
+                    <div class=""role"">▪ 23017056 컴퓨터SW학과<br>▪ 미션 4/5 (리스트 선택 및 LINQ 기반 데이터 필터링) 알고리즘 구현</div>
                 </div>
                 
-                <div class='member-card'>
-                    <div class='name'>🔗 이기주</div>
-                    <div class='role'>▪ 미션 7 (Python 프로세스 연동)<br>▪ 학습 로그 비동기 출력 구현</div>
+                <div class=""member-card"">
+                    <div class=""name"">🔗 이기주</div>
+                    <div class=""role"">▪ 23017057 컴퓨터SW학과<br>▪ 미션 7 (Python 프로세스 연동)<br>▪ 학습 로그 비동기 출력 구현</div>
                 </div>
 
-                <div class='footer'>
+                <div class=""footer"">
                     © 2026 프로그래밍언어 및 실습 5팀 | Final Exam Project
                 </div>
             </div>
 
             <script>
                 function toggleTheme() {
-                    const htmlDoc = document.documentElement;
+                    // body 태그에 'light-mode' 클래스를 껐다 켰다 합니다.
+                    document.body.classList.toggle('light-mode');
+                    
                     const btn = document.getElementById('themeBtn');
                     
-                    if (htmlDoc.getAttribute('data-theme') === 'dark') {
-                        htmlDoc.removeAttribute('data-theme');
-                        btn.textContent = '🌙'; // 라이트 모드일 땐 달 아이콘
+                    // 현재 라이트 모드 상태라면 달(🌙) 아이콘으로 변경
+                    if (document.body.classList.contains('light-mode')) {
+                        btn.textContent = '🌙'; 
                     } else {
-                        htmlDoc.setAttribute('data-theme', 'dark');
-                        btn.textContent = '☀️'; // 다크 모드일 땐 해 아이콘
+                        // 다크 모드 상태라면 해(☀️) 아이콘으로 변경
+                        btn.textContent = '☀️'; 
                     }
                 }
             </script>
