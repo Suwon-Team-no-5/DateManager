@@ -34,8 +34,13 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                     // WSL2에서 conda 환경을 확실하게 활성화하는 방법
                     // 특정 배포판 지정 (-d Ubuntu-22.04)
                     string safeWorkingDir = workingDir?.Replace("\"", "\\\"") ?? string.Empty;
-                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -lic \"export PYTHONUNBUFFERED=1; " +
-                        $"cd '{safeWorkingDir}' && {condaPath} run -n {condaEnvName} python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+                    //psi.Arguments = $"-d Ubuntu-22.04 -e bash -lic \"export PYTHONUNBUFFERED=1; " +
+                    //    $"cd '{safeWorkingDir}' && {condaPath} run -n {condaEnvName} python train.py --tub=./data/ --model=./models/mypilot.h5\"";
+
+                    // ✅ 해결 코드: 가상환경의 python 절대 경로를 직접 실행 (-lic 대신 -c 사용)
+                    string envPythonPath = "/home/jaeseo03/miniconda3/envs/e2e_env/bin/python";
+
+                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '{safeWorkingDir}' && export PYTHONUNBUFFERED=1 && {envPythonPath} train.py --tub=./data/ --model=./models/mypilot.h5\"";
 
                     // 로그로 실행 명령 확인(디버깅용)
                     LogReceived?.Invoke($"[CMD] {psi.FileName} {psi.Arguments}\r\n");
@@ -93,8 +98,51 @@ namespace DateManager // 프로젝트 네임스페이스에 맞게 수정
                         LogReceived?.Invoke(data.Trim() + "\r\n");
                     }
                 };
+
                 pythonProcess.ErrorDataReceived += (s, args) => {
-                    if (!string.IsNullOrEmpty(args.Data)) LogReceived?.Invoke("[ERROR] " + args.Data + "\r\n");
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        string data = args.Data;
+
+                        // 1. 에러 스트림으로 들어오지만 '단순 안내/경고'인 패턴 정의
+                        bool isNormalInfo = data.Contains("INFO:") ||
+                                            data.Contains("WARNING:") ||
+                                            data.Contains("Warning:") ||
+                                            data.Contains("Epoch ") ||
+                                            data.Contains("saving model to") ||
+                                            data.Contains("Summary on the non-converted ops") ||
+                                            data.Contains("occurrences") ||
+                                            data.Contains("Non-Converted Ops");
+
+                        // 2. 텐서플로우 전용 로그 필터 (시간 뒤에 : I = Info, : W = Warning)
+                        // 예: 2026-06-03 16:07:09.491678: W tensorflow...
+                        bool isTensorFlowLog = data.Contains(": I ") || data.Contains(": W ");
+
+                        // 3. 진짜 치명적인 에러 패턴 정의 (: E = Error, Traceback = 파이썬 에러 추적)
+                        bool isRealError = data.Contains(": E ") ||
+                                           data.Contains("ERROR:") ||
+                                           data.Contains("CRITICAL:") ||
+                                           data.Contains("Traceback") ||
+                                           data.Contains("Exception") ||
+                                           data.Contains("Error:");
+
+                        // [최종 분류 프로세스]
+                        if (isNormalInfo || isTensorFlowLog)
+                        {
+                            // 일반 안내 문구는 헤더 없이 깔끔하게 텍스트만 출력
+                            LogReceived?.Invoke($"{data}\r\n");
+                        }
+                        else if (isRealError)
+                        {
+                            // 검증된 진짜 에러 발생 시에만 빨간맛 [ERROR] 표시
+                            LogReceived?.Invoke($"[ERROR] {data}\r\n");
+                        }
+                        else
+                        {
+                            // 그 외에 분류되지 않은 일반 출력들도 사용자 안심을 위해 그냥 출력
+                            LogReceived?.Invoke($"{data}\r\n");
+                        }
+                    }
                 };
 
                 pythonProcess.Exited += (s, args) => {
