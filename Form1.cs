@@ -140,6 +140,8 @@ namespace DateManager
         /// </summary>
         private void Form1_Load(object sender, EventArgs e)
         {
+            //lstTrashItems.MouseDown += lstTrashItems_MouseDown;
+
             // 필요한 경우 여기에 초기화 코드를 넣습니다.
             // 요청된 탭 순서: 설정 파일 로드 -> 학습 데이터 로드 -> AI 학습 시작 -> 시작지점 -> 종료지점 -> 필터 적용 -> 삭제 -> 재생 -> 정지 -> 배속
             _focusOrder.Clear();
@@ -1262,6 +1264,24 @@ namespace DateManager
 
             // 현재 메인 관리 시스템 창(Form1)은 닫습니다.
             this.Close();
+
+        }
+
+        private void lstTrashItems_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right) // 우클릭 시
+            {
+                int index = lstTrashItems.IndexFromPoint(e.Location);
+                if (index != ListBox.NoMatches)
+                {
+                    // 우클릭한 항목이 이미 선택된 상태가 아니라면 새로 선택
+                    if (!lstTrashItems.GetSelected(index))
+                    {
+                        lstTrashItems.ClearSelected();
+                        lstTrashItems.SetSelected(index, true);
+                    }
+                }
+            }
         }
     }
 }
