@@ -808,7 +808,44 @@ namespace DateManager
 
             return hasFrames;
         }
-        public int start, end = 0;
+        // 시작/종료 인덱스 (구간 선택용)
+        private int start = 0;
+        private int end = 0;
+
+        // 텍스트박스 Leave 이벤트: Designer에서 사용하는 이름으로 구현
+        private void txtStartFrame_Leave(object sender, EventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                if (int.TryParse(tb.Text, out int v))
+                {
+                    start = Math.Max(0, Math.Min(v, (_displayedFrameList?.Count ?? 1) - 1));
+                    tb.Text = start.ToString();
+                }
+                else
+                {
+                    tb.Text = start.ToString();
+                }
+            }
+        }
+
+        private void txtEndFrame_Leave(object sender, EventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                if (int.TryParse(tb.Text, out int v))
+                {
+                    end = Math.Max(0, Math.Min(v, (_displayedFrameList?.Count ?? 1) - 1));
+                    tb.Text = end.ToString();
+                }
+                else
+                {
+                    tb.Text = end.ToString();
+                }
+            }
+        }
+
+        // (구간 선택 관련 중복 정의는 제거되어, Designer에 연결된 단일 구현을 사용합니다.)
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;

@@ -504,6 +504,8 @@
             pnlDataManagement.Controls.Add(lblDataMgmtTitle);
             pnlDataManagement.Controls.Add(btnApplyFilter);
             pnlDataManagement.Controls.Add(pnlFilterOptions);
+            pnlDataManagement.Controls.Add(txtStartIndex);
+            pnlDataManagement.Controls.Add(txtEndIndex);
             pnlDataManagement.Location = new Point(1389, 638);
             pnlDataManagement.Margin = new Padding(5);
             pnlDataManagement.Name = "pnlDataManagement";
@@ -735,7 +737,8 @@
             txtEndFrame.Name = "txtEndFrame";
             txtEndFrame.PlaceholderText = "끝";
             txtEndFrame.Size = new Size(179, 50);
-            txtEndFrame.TabIndex = 0;
+            txtEndFrame.TabIndex = 16;
+            txtEndFrame.Leave += new EventHandler(txtEndFrame_Leave);
             // 
             // txtStartFrame
             // 
@@ -744,7 +747,8 @@
             txtStartFrame.Name = "txtStartFrame";
             txtStartFrame.PlaceholderText = "시작";
             txtStartFrame.Size = new Size(180, 50);
-            txtStartFrame.TabIndex = 0;
+            txtStartFrame.TabIndex = 15;
+            txtStartFrame.Leave += new EventHandler(txtStartFrame_Leave);
             // 
             // btnSelectAll
             // 
@@ -1012,6 +1016,9 @@
         private Label lblDataMgmtTitle;
         private Label lblLogTitle;
         private Label lblFilterTitle;
+
+        private TextBox txtStartIndex;
+        private TextBox txtEndIndex;
 
         private TrackBar trkFrameSlider;
         private Button btnStop;
