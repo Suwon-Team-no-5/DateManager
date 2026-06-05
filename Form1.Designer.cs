@@ -107,10 +107,10 @@
             // 
             pbMainCam.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pbMainCam.BackColor = Color.FromArgb(30, 30, 30);
-            pbMainCam.Location = new Point(22, 128);
-            pbMainCam.Margin = new Padding(6);
+            pbMainCam.Location = new Point(14, 80);
+            pbMainCam.Margin = new Padding(4);
             pbMainCam.Name = "pbMainCam";
-            pbMainCam.Size = new Size(1266, 691);
+            pbMainCam.Size = new Size(814, 432);
             pbMainCam.TabIndex = 0;
             pbMainCam.TabStop = false;
             // 
@@ -119,10 +119,9 @@
             lblFrameIndex.AutoSize = true;
             lblFrameIndex.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             lblFrameIndex.ForeColor = Color.White;
-            lblFrameIndex.Location = new Point(22, 72);
-            lblFrameIndex.Margin = new Padding(5, 0, 5, 0);
+            lblFrameIndex.Location = new Point(14, 45);
             lblFrameIndex.Name = "lblFrameIndex";
-            lblFrameIndex.Size = new Size(207, 37);
+            lblFrameIndex.Size = new Size(130, 23);
             lblFrameIndex.TabIndex = 2;
             lblFrameIndex.Text = "프레임 번호 0/0";
             // 
@@ -131,10 +130,9 @@
             lblAngle.AutoSize = true;
             lblAngle.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             lblAngle.ForeColor = Color.White;
-            lblAngle.Location = new Point(516, 72);
-            lblAngle.Margin = new Padding(5, 0, 5, 0);
+            lblAngle.Location = new Point(332, 45);
             lblAngle.Name = "lblAngle";
-            lblAngle.Size = new Size(141, 37);
+            lblAngle.Size = new Size(87, 23);
             lblAngle.TabIndex = 3;
             lblAngle.Text = "방향: +0.0";
             // 
@@ -143,10 +141,9 @@
             lblThrottleTop.AutoSize = true;
             lblThrottleTop.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             lblThrottleTop.ForeColor = Color.White;
-            lblThrottleTop.Location = new Point(806, 72);
-            lblThrottleTop.Margin = new Padding(5, 0, 5, 0);
+            lblThrottleTop.Location = new Point(518, 45);
             lblThrottleTop.Name = "lblThrottleTop";
-            lblThrottleTop.Size = new Size(141, 37);
+            lblThrottleTop.Size = new Size(87, 23);
             lblThrottleTop.TabIndex = 4;
             lblThrottleTop.Text = "속도: +0.0";
             // 
@@ -155,10 +152,9 @@
             lblTimestamp.AutoSize = true;
             lblTimestamp.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             lblTimestamp.ForeColor = Color.DarkGray;
-            lblTimestamp.Location = new Point(1052, 72);
-            lblTimestamp.Margin = new Padding(5, 0, 5, 0);
+            lblTimestamp.Location = new Point(676, 45);
             lblTimestamp.Name = "lblTimestamp";
-            lblTimestamp.Size = new Size(132, 37);
+            lblTimestamp.Size = new Size(83, 23);
             lblTimestamp.TabIndex = 5;
             lblTimestamp.Text = "기록 시간";
             // 
@@ -172,10 +168,9 @@
             pnlCamView.Controls.Add(lblFrameIndex);
             pnlCamView.Controls.Add(lblThrottleTop);
             pnlCamView.Controls.Add(lblAngle);
-            pnlCamView.Location = new Point(48, 114);
-            pnlCamView.Margin = new Padding(5);
+            pnlCamView.Location = new Point(31, 71);
             pnlCamView.Name = "pnlCamView";
-            pnlCamView.Size = new Size(1314, 846);
+            pnlCamView.Size = new Size(845, 529);
             pnlCamView.TabIndex = 6;
             // 
             // lblCamViewTitle
@@ -183,10 +178,9 @@
             lblCamViewTitle.AutoSize = true;
             lblCamViewTitle.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblCamViewTitle.ForeColor = Color.DeepSkyBlue;
-            lblCamViewTitle.Location = new Point(22, 19);
-            lblCamViewTitle.Margin = new Padding(5, 0, 5, 0);
+            lblCamViewTitle.Location = new Point(14, 12);
             lblCamViewTitle.Name = "lblCamViewTitle";
-            lblCamViewTitle.Size = new Size(165, 38);
+            lblCamViewTitle.Size = new Size(100, 23);
             lblCamViewTitle.TabIndex = 6;
             lblCamViewTitle.Text = "주행 모니터";
             // 
@@ -198,10 +192,9 @@
             btnViewLog.FlatStyle = FlatStyle.Flat;
             btnViewLog.Font = new Font("Segoe UI Semibold", 9F);
             btnViewLog.ForeColor = Color.White;
-            btnViewLog.Location = new Point(1188, 53);
-            btnViewLog.Margin = new Padding(5);
+            btnViewLog.Location = new Point(764, 33);
             btnViewLog.Name = "btnViewLog";
-            btnViewLog.Size = new Size(174, 51);
+            btnViewLog.Size = new Size(112, 32);
             btnViewLog.TabIndex = 8;
             btnViewLog.Text = "📝 학습화면";
             btnViewLog.UseVisualStyleBackColor = false;
@@ -215,10 +208,9 @@
             btnViewMonitor.FlatStyle = FlatStyle.Flat;
             btnViewMonitor.Font = new Font("Segoe UI Semibold", 9F);
             btnViewMonitor.ForeColor = Color.White;
-            btnViewMonitor.Location = new Point(1014, 53);
-            btnViewMonitor.Margin = new Padding(5);
+            btnViewMonitor.Location = new Point(652, 33);
             btnViewMonitor.Name = "btnViewMonitor";
-            btnViewMonitor.Size = new Size(165, 51);
+            btnViewMonitor.Size = new Size(106, 32);
             btnViewMonitor.TabIndex = 7;
             btnViewMonitor.Text = "📊 모니터";
             btnViewMonitor.UseVisualStyleBackColor = false;
@@ -237,10 +229,9 @@
             pnlNavigation.Controls.Add(btnFastForward);
             pnlNavigation.Controls.Add(btnNext);
             pnlNavigation.Controls.Add(trkFrameSlider);
-            pnlNavigation.Location = new Point(48, 984);
-            pnlNavigation.Margin = new Padding(5);
+            pnlNavigation.Location = new Point(31, 615);
             pnlNavigation.Name = "pnlNavigation";
-            pnlNavigation.Size = new Size(1314, 256);
+            pnlNavigation.Size = new Size(845, 160);
             pnlNavigation.TabIndex = 7;
             // 
             // lblNavTitle
@@ -248,10 +239,9 @@
             lblNavTitle.AutoSize = true;
             lblNavTitle.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblNavTitle.ForeColor = Color.DeepSkyBlue;
-            lblNavTitle.Location = new Point(22, 19);
-            lblNavTitle.Margin = new Padding(5, 0, 5, 0);
+            lblNavTitle.Location = new Point(14, 12);
             lblNavTitle.Name = "lblNavTitle";
-            lblNavTitle.Size = new Size(341, 38);
+            lblNavTitle.Size = new Size(207, 23);
             lblNavTitle.TabIndex = 8;
             lblNavTitle.Text = "데이터프레임 탐색 컨트롤";
             // 
@@ -263,10 +253,9 @@
             btnSpeed.FlatStyle = FlatStyle.Flat;
             btnSpeed.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btnSpeed.ForeColor = Color.White;
-            btnSpeed.Location = new Point(22, 168);
-            btnSpeed.Margin = new Padding(5);
+            btnSpeed.Location = new Point(14, 105);
             btnSpeed.Name = "btnSpeed";
-            btnSpeed.Size = new Size(187, 67);
+            btnSpeed.Size = new Size(120, 42);
             btnSpeed.TabIndex = 7;
             btnSpeed.Text = "배속 x 1.0";
             btnSpeed.UseVisualStyleBackColor = false;
@@ -280,10 +269,9 @@
             btnPrev.FlatStyle = FlatStyle.Flat;
             btnPrev.Font = new Font("Segoe UI Emoji", 12F);
             btnPrev.ForeColor = Color.White;
-            btnPrev.Location = new Point(218, 168);
-            btnPrev.Margin = new Padding(5);
+            btnPrev.Location = new Point(140, 105);
             btnPrev.Name = "btnPrev";
-            btnPrev.Size = new Size(156, 67);
+            btnPrev.Size = new Size(100, 42);
             btnPrev.TabIndex = 3;
             btnPrev.Text = "⏮";
             btnPrev.UseVisualStyleBackColor = false;
@@ -297,10 +285,9 @@
             btnFastRewind.FlatStyle = FlatStyle.Flat;
             btnFastRewind.Font = new Font("Segoe UI Emoji", 12F);
             btnFastRewind.ForeColor = Color.White;
-            btnFastRewind.Location = new Point(383, 168);
-            btnFastRewind.Margin = new Padding(5);
+            btnFastRewind.Location = new Point(246, 105);
             btnFastRewind.Name = "btnFastRewind";
-            btnFastRewind.Size = new Size(156, 67);
+            btnFastRewind.Size = new Size(100, 42);
             btnFastRewind.TabIndex = 5;
             btnFastRewind.Text = "⏪";
             btnFastRewind.UseVisualStyleBackColor = false;
@@ -314,10 +301,9 @@
             btnPlay.FlatStyle = FlatStyle.Flat;
             btnPlay.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnPlay.ForeColor = Color.White;
-            btnPlay.Location = new Point(548, 168);
-            btnPlay.Margin = new Padding(5);
+            btnPlay.Location = new Point(352, 105);
             btnPlay.Name = "btnPlay";
-            btnPlay.Size = new Size(174, 67);
+            btnPlay.Size = new Size(112, 42);
             btnPlay.TabIndex = 2;
             btnPlay.Text = "▶ 재생";
             btnPlay.UseVisualStyleBackColor = false;
@@ -331,10 +317,9 @@
             btnStop.FlatStyle = FlatStyle.Flat;
             btnStop.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnStop.ForeColor = Color.White;
-            btnStop.Location = new Point(740, 168);
-            btnStop.Margin = new Padding(5);
+            btnStop.Location = new Point(476, 105);
             btnStop.Name = "btnStop";
-            btnStop.Size = new Size(174, 67);
+            btnStop.Size = new Size(112, 42);
             btnStop.TabIndex = 0;
             btnStop.Text = "⏹ 초기화";
             btnStop.UseVisualStyleBackColor = false;
@@ -348,10 +333,9 @@
             btnFastForward.FlatStyle = FlatStyle.Flat;
             btnFastForward.Font = new Font("Segoe UI Emoji", 12F);
             btnFastForward.ForeColor = Color.White;
-            btnFastForward.Location = new Point(924, 168);
-            btnFastForward.Margin = new Padding(5);
+            btnFastForward.Location = new Point(594, 105);
             btnFastForward.Name = "btnFastForward";
-            btnFastForward.Size = new Size(156, 67);
+            btnFastForward.Size = new Size(100, 42);
             btnFastForward.TabIndex = 6;
             btnFastForward.Text = "⏩";
             btnFastForward.UseVisualStyleBackColor = false;
@@ -365,10 +349,9 @@
             btnNext.FlatStyle = FlatStyle.Flat;
             btnNext.Font = new Font("Segoe UI Emoji", 12F);
             btnNext.ForeColor = Color.White;
-            btnNext.Location = new Point(1089, 168);
-            btnNext.Margin = new Padding(5);
+            btnNext.Location = new Point(700, 105);
             btnNext.Name = "btnNext";
-            btnNext.Size = new Size(156, 67);
+            btnNext.Size = new Size(100, 42);
             btnNext.TabIndex = 4;
             btnNext.Text = "⏭";
             btnNext.UseVisualStyleBackColor = false;
@@ -377,10 +360,9 @@
             // trkFrameSlider
             // 
             trkFrameSlider.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            trkFrameSlider.Location = new Point(22, 77);
-            trkFrameSlider.Margin = new Padding(5);
+            trkFrameSlider.Location = new Point(14, 48);
             trkFrameSlider.Name = "trkFrameSlider";
-            trkFrameSlider.Size = new Size(1266, 90);
+            trkFrameSlider.Size = new Size(814, 56);
             trkFrameSlider.TabIndex = 1;
             trkFrameSlider.Scroll += trkFrameSlider_Scroll;
             // 
@@ -390,10 +372,9 @@
             pnlFrameList.BackColor = Color.FromArgb(45, 45, 48);
             pnlFrameList.Controls.Add(lblFrameListTitle);
             pnlFrameList.Controls.Add(lstFrameData);
-            pnlFrameList.Location = new Point(1389, 114);
-            pnlFrameList.Margin = new Padding(5);
+            pnlFrameList.Location = new Point(893, 71);
             pnlFrameList.Name = "pnlFrameList";
-            pnlFrameList.Size = new Size(294, 504);
+            pnlFrameList.Size = new Size(189, 315);
             pnlFrameList.TabIndex = 8;
             // 
             // lblFrameListTitle
@@ -401,10 +382,9 @@
             lblFrameListTitle.AutoSize = true;
             lblFrameListTitle.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblFrameListTitle.ForeColor = Color.DeepSkyBlue;
-            lblFrameListTitle.Location = new Point(17, 19);
-            lblFrameListTitle.Margin = new Padding(5, 0, 5, 0);
+            lblFrameListTitle.Location = new Point(11, 12);
             lblFrameListTitle.Name = "lblFrameListTitle";
-            lblFrameListTitle.Size = new Size(165, 38);
+            lblFrameListTitle.Size = new Size(100, 23);
             lblFrameListTitle.TabIndex = 7;
             lblFrameListTitle.Text = "프레임 목록";
             // 
@@ -415,11 +395,10 @@
             lstFrameData.BorderStyle = BorderStyle.None;
             lstFrameData.ForeColor = Color.White;
             lstFrameData.FormattingEnabled = true;
-            lstFrameData.Location = new Point(22, 72);
-            lstFrameData.Margin = new Padding(5);
+            lstFrameData.Location = new Point(14, 45);
             lstFrameData.Name = "lstFrameData";
             lstFrameData.SelectionMode = SelectionMode.MultiExtended;
-            lstFrameData.Size = new Size(250, 384);
+            lstFrameData.Size = new Size(161, 240);
             lstFrameData.TabIndex = 0;
             lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
             // 
@@ -431,10 +410,9 @@
             pnlSystemOps.Controls.Add(lblSystemOpsTitle);
             pnlSystemOps.Controls.Add(btnStartTraining);
             pnlSystemOps.Controls.Add(btnLoadTub);
-            pnlSystemOps.Location = new Point(1705, 114);
-            pnlSystemOps.Margin = new Padding(5);
+            pnlSystemOps.Location = new Point(1096, 71);
             pnlSystemOps.Name = "pnlSystemOps";
-            pnlSystemOps.Size = new Size(272, 504);
+            pnlSystemOps.Size = new Size(175, 315);
             pnlSystemOps.TabIndex = 9;
             // 
             // btnEndTraining
@@ -444,10 +422,9 @@
             btnEndTraining.FlatStyle = FlatStyle.Flat;
             btnEndTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnEndTraining.ForeColor = Color.White;
-            btnEndTraining.Location = new Point(22, 373);
-            btnEndTraining.Margin = new Padding(5);
+            btnEndTraining.Location = new Point(14, 233);
             btnEndTraining.Name = "btnEndTraining";
-            btnEndTraining.Size = new Size(229, 99);
+            btnEndTraining.Size = new Size(147, 62);
             btnEndTraining.TabIndex = 9;
             btnEndTraining.Text = "AI 학습\r\n 종료";
             btnEndTraining.UseVisualStyleBackColor = false;
@@ -458,10 +435,9 @@
             lblSystemOpsTitle.AutoSize = true;
             lblSystemOpsTitle.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblSystemOpsTitle.ForeColor = Color.DeepSkyBlue;
-            lblSystemOpsTitle.Location = new Point(17, 19);
-            lblSystemOpsTitle.Margin = new Padding(5, 0, 5, 0);
+            lblSystemOpsTitle.Location = new Point(11, 12);
             lblSystemOpsTitle.Name = "lblSystemOpsTitle";
-            lblSystemOpsTitle.Size = new Size(165, 38);
+            lblSystemOpsTitle.Size = new Size(100, 23);
             lblSystemOpsTitle.TabIndex = 8;
             lblSystemOpsTitle.Text = "데이터 로드";
             // 
@@ -472,10 +448,9 @@
             btnStartTraining.FlatStyle = FlatStyle.Flat;
             btnStartTraining.Font = new Font("Segoe UI", 10.8F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnStartTraining.ForeColor = Color.White;
-            btnStartTraining.Location = new Point(22, 170);
-            btnStartTraining.Margin = new Padding(5);
+            btnStartTraining.Location = new Point(14, 106);
             btnStartTraining.Name = "btnStartTraining";
-            btnStartTraining.Size = new Size(229, 194);
+            btnStartTraining.Size = new Size(147, 121);
             btnStartTraining.TabIndex = 2;
             btnStartTraining.Text = "AI 학습\r\n시작";
             btnStartTraining.UseVisualStyleBackColor = false;
@@ -488,10 +463,9 @@
             btnLoadTub.FlatStyle = FlatStyle.Flat;
             btnLoadTub.Font = new Font("Segoe UI", 10.2F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnLoadTub.ForeColor = Color.White;
-            btnLoadTub.Location = new Point(22, 61);
-            btnLoadTub.Margin = new Padding(5);
+            btnLoadTub.Location = new Point(14, 38);
             btnLoadTub.Name = "btnLoadTub";
-            btnLoadTub.Size = new Size(229, 99);
+            btnLoadTub.Size = new Size(147, 62);
             btnLoadTub.TabIndex = 1;
             btnLoadTub.Text = "학습 데이터 \r\n로드";
             btnLoadTub.UseVisualStyleBackColor = false;
@@ -504,10 +478,9 @@
             pnlDataManagement.Controls.Add(lblDataMgmtTitle);
             pnlDataManagement.Controls.Add(btnApplyFilter);
             pnlDataManagement.Controls.Add(pnlFilterOptions);
-            pnlDataManagement.Location = new Point(1389, 638);
-            pnlDataManagement.Margin = new Padding(5);
+            pnlDataManagement.Location = new Point(893, 399);
             pnlDataManagement.Name = "pnlDataManagement";
-            pnlDataManagement.Size = new Size(588, 322);
+            pnlDataManagement.Size = new Size(378, 201);
             pnlDataManagement.TabIndex = 10;
             // 
             // lblDataMgmtTitle
@@ -515,10 +488,9 @@
             lblDataMgmtTitle.AutoSize = true;
             lblDataMgmtTitle.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblDataMgmtTitle.ForeColor = Color.DeepSkyBlue;
-            lblDataMgmtTitle.Location = new Point(17, 16);
-            lblDataMgmtTitle.Margin = new Padding(5, 0, 5, 0);
+            lblDataMgmtTitle.Location = new Point(11, 10);
             lblDataMgmtTitle.Name = "lblDataMgmtTitle";
-            lblDataMgmtTitle.Size = new Size(137, 38);
+            lblDataMgmtTitle.Size = new Size(83, 23);
             lblDataMgmtTitle.TabIndex = 9;
             lblDataMgmtTitle.Text = "필터 설정";
             // 
@@ -529,10 +501,9 @@
             btnApplyFilter.FlatStyle = FlatStyle.Flat;
             btnApplyFilter.Font = new Font("Segoe UI", 9.5F);
             btnApplyFilter.ForeColor = Color.White;
-            btnApplyFilter.Location = new Point(22, 227);
-            btnApplyFilter.Margin = new Padding(5);
+            btnApplyFilter.Location = new Point(14, 142);
             btnApplyFilter.Name = "btnApplyFilter";
-            btnApplyFilter.Size = new Size(544, 67);
+            btnApplyFilter.Size = new Size(350, 42);
             btnApplyFilter.TabIndex = 3;
             btnApplyFilter.Text = "필터 적용";
             btnApplyFilter.UseVisualStyleBackColor = false;
@@ -545,10 +516,9 @@
             pnlFilterOptions.Controls.Add(chkFilterLargeAngle);
             pnlFilterOptions.Controls.Add(chkFilterLargeThr);
             pnlFilterOptions.Controls.Add(chkFilterThr);
-            pnlFilterOptions.Location = new Point(22, 72);
-            pnlFilterOptions.Margin = new Padding(5);
+            pnlFilterOptions.Location = new Point(14, 45);
             pnlFilterOptions.Name = "pnlFilterOptions";
-            pnlFilterOptions.Size = new Size(544, 139);
+            pnlFilterOptions.Size = new Size(350, 87);
             pnlFilterOptions.TabIndex = 0;
             // 
             // lblFilterTitle
@@ -556,10 +526,9 @@
             lblFilterTitle.AutoSize = true;
             lblFilterTitle.Font = new Font("Segoe UI Semibold", 8F, FontStyle.Bold);
             lblFilterTitle.ForeColor = Color.DarkGray;
-            lblFilterTitle.Location = new Point(8, 8);
-            lblFilterTitle.Margin = new Padding(5, 0, 5, 0);
+            lblFilterTitle.Location = new Point(5, 5);
             lblFilterTitle.Name = "lblFilterTitle";
-            lblFilterTitle.Size = new Size(107, 30);
+            lblFilterTitle.Size = new Size(69, 19);
             lblFilterTitle.TabIndex = 10;
             lblFilterTitle.Text = "필터 옵션";
             // 
@@ -567,10 +536,9 @@
             // 
             chkFilterLargeAngle.AutoSize = true;
             chkFilterLargeAngle.ForeColor = Color.White;
-            chkFilterLargeAngle.Location = new Point(8, 98);
-            chkFilterLargeAngle.Margin = new Padding(5);
+            chkFilterLargeAngle.Location = new Point(5, 61);
             chkFilterLargeAngle.Name = "chkFilterLargeAngle";
-            chkFilterLargeAngle.Size = new Size(198, 36);
+            chkFilterLargeAngle.Size = new Size(126, 24);
             chkFilterLargeAngle.TabIndex = 2;
             chkFilterLargeAngle.Text = "급커브 데이터";
             chkFilterLargeAngle.UseVisualStyleBackColor = true;
@@ -579,10 +547,9 @@
             // 
             chkFilterLargeThr.AutoSize = true;
             chkFilterLargeThr.ForeColor = Color.White;
-            chkFilterLargeThr.Location = new Point(213, 48);
-            chkFilterLargeThr.Margin = new Padding(5);
+            chkFilterLargeThr.Location = new Point(137, 30);
             chkFilterLargeThr.Name = "chkFilterLargeThr";
-            chkFilterLargeThr.Size = new Size(317, 36);
+            chkFilterLargeThr.Size = new Size(202, 24);
             chkFilterLargeThr.TabIndex = 1;
             chkFilterLargeThr.Text = "과속 데이터(속도 >= 0.5)";
             chkFilterLargeThr.UseVisualStyleBackColor = true;
@@ -591,10 +558,9 @@
             // 
             chkFilterThr.AutoSize = true;
             chkFilterThr.ForeColor = Color.White;
-            chkFilterThr.Location = new Point(8, 48);
-            chkFilterThr.Margin = new Padding(5);
+            chkFilterThr.Location = new Point(5, 30);
             chkFilterThr.Name = "chkFilterThr";
-            chkFilterThr.Size = new Size(124, 36);
+            chkFilterThr.Size = new Size(80, 24);
             chkFilterThr.TabIndex = 0;
             chkFilterThr.Text = "속도=0";
             chkFilterThr.UseVisualStyleBackColor = true;
@@ -606,10 +572,9 @@
             btnDeleteData.FlatStyle = FlatStyle.Flat;
             btnDeleteData.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnDeleteData.ForeColor = Color.White;
-            btnDeleteData.Location = new Point(208, 77);
-            btnDeleteData.Margin = new Padding(5);
+            btnDeleteData.Location = new Point(134, 48);
             btnDeleteData.Name = "btnDeleteData";
-            btnDeleteData.Size = new Size(180, 67);
+            btnDeleteData.Size = new Size(116, 42);
             btnDeleteData.TabIndex = 6;
             btnDeleteData.Text = "데이터 삭제";
             btnDeleteData.UseVisualStyleBackColor = false;
@@ -623,10 +588,9 @@
             pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
-            pnlTrainingLog.Location = new Point(48, 114);
-            pnlTrainingLog.Margin = new Padding(5);
+            pnlTrainingLog.Location = new Point(31, 71);
             pnlTrainingLog.Name = "pnlTrainingLog";
-            pnlTrainingLog.Size = new Size(1314, 846);
+            pnlTrainingLog.Size = new Size(845, 529);
             pnlTrainingLog.TabIndex = 11;
             pnlTrainingLog.Visible = false;
             // 
@@ -634,10 +598,9 @@
             // 
             pbChart.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pbChart.BackColor = Color.FromArgb(30, 30, 30);
-            pbChart.Location = new Point(22, 514);
-            pbChart.Margin = new Padding(5);
+            pbChart.Location = new Point(14, 321);
             pbChart.Name = "pbChart";
-            pbChart.Size = new Size(1269, 237);
+            pbChart.Size = new Size(816, 148);
             pbChart.TabIndex = 14;
             pbChart.TabStop = false;
             // 
@@ -649,10 +612,9 @@
             btnRunSimulator.FlatStyle = FlatStyle.Flat;
             btnRunSimulator.Font = new Font("Segoe UI Semibold", 9F);
             btnRunSimulator.ForeColor = Color.White;
-            btnRunSimulator.Location = new Point(1126, 760);
-            btnRunSimulator.Margin = new Padding(5);
+            btnRunSimulator.Location = new Point(724, 475);
             btnRunSimulator.Name = "btnRunSimulator";
-            btnRunSimulator.Size = new Size(165, 80);
+            btnRunSimulator.Size = new Size(106, 50);
             btnRunSimulator.TabIndex = 13;
             btnRunSimulator.Text = "자율주행 \r\n구동";
             btnRunSimulator.UseVisualStyleBackColor = false;
@@ -663,10 +625,9 @@
             lblLogTitle.AutoSize = true;
             lblLogTitle.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblLogTitle.ForeColor = Color.DeepSkyBlue;
-            lblLogTitle.Location = new Point(17, 19);
-            lblLogTitle.Margin = new Padding(5, 0, 5, 0);
+            lblLogTitle.Location = new Point(11, 12);
             lblLogTitle.Name = "lblLogTitle";
-            lblLogTitle.Size = new Size(174, 38);
+            lblLogTitle.Size = new Size(105, 23);
             lblLogTitle.TabIndex = 10;
             lblLogTitle.Text = "AI 학습 로그";
             // 
@@ -676,11 +637,10 @@
             rtbTrainLog.BackColor = Color.FromArgb(30, 30, 30);
             rtbTrainLog.BorderStyle = BorderStyle.None;
             rtbTrainLog.ForeColor = Color.LightGreen;
-            rtbTrainLog.Location = new Point(22, 72);
-            rtbTrainLog.Margin = new Padding(5);
+            rtbTrainLog.Location = new Point(14, 45);
             rtbTrainLog.Name = "rtbTrainLog";
             rtbTrainLog.ReadOnly = true;
-            rtbTrainLog.Size = new Size(1269, 432);
+            rtbTrainLog.Size = new Size(816, 270);
             rtbTrainLog.TabIndex = 1;
             rtbTrainLog.Text = "";
             // 
@@ -689,10 +649,9 @@
             lblTitle.AutoSize = true;
             lblTitle.Font = new Font("Segoe UI", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblTitle.ForeColor = Color.White;
-            lblTitle.Location = new Point(110, 35);
-            lblTitle.Margin = new Padding(5, 0, 5, 0);
+            lblTitle.Location = new Point(71, 22);
             lblTitle.Name = "lblTitle";
-            lblTitle.Size = new Size(324, 65);
+            lblTitle.Size = new Size(203, 41);
             lblTitle.TabIndex = 12;
             lblTitle.Text = "5팀 동키카 UI";
             // 
@@ -707,10 +666,9 @@
             pnlDelete.Controls.Add(btnOpenTrash);
             pnlDelete.Controls.Add(lblDelete);
             pnlDelete.Controls.Add(btnDeleteData);
-            pnlDelete.Location = new Point(1389, 984);
-            pnlDelete.Margin = new Padding(5);
+            pnlDelete.Location = new Point(893, 615);
             pnlDelete.Name = "pnlDelete";
-            pnlDelete.Size = new Size(588, 256);
+            pnlDelete.Size = new Size(378, 160);
             pnlDelete.TabIndex = 11;
             // 
             // btnSelectRange
@@ -720,9 +678,10 @@
             btnSelectRange.FlatStyle = FlatStyle.Flat;
             btnSelectRange.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnSelectRange.ForeColor = Color.White;
-            btnSelectRange.Location = new Point(393, 160);
+            btnSelectRange.Location = new Point(253, 100);
+            btnSelectRange.Margin = new Padding(2, 2, 2, 2);
             btnSelectRange.Name = "btnSelectRange";
-            btnSelectRange.Size = new Size(180, 50);
+            btnSelectRange.Size = new Size(116, 31);
             btnSelectRange.TabIndex = 0;
             btnSelectRange.Text = "구간 선택";
             btnSelectRange.UseVisualStyleBackColor = false;
@@ -734,10 +693,11 @@
             txtEndFrame.BorderStyle = BorderStyle.FixedSingle;
             txtEndFrame.Font = new Font("Segoe UI", 11F);
             txtEndFrame.ForeColor = Color.White;
-            txtEndFrame.Location = new Point(208, 160);
+            txtEndFrame.Location = new Point(134, 100);
+            txtEndFrame.Margin = new Padding(2, 2, 2, 2);
             txtEndFrame.Name = "txtEndFrame";
             txtEndFrame.PlaceholderText = "끝";
-            txtEndFrame.Size = new Size(180, 47);
+            txtEndFrame.Size = new Size(116, 32);
             txtEndFrame.TabIndex = 16;
             txtEndFrame.Leave += txtEndFrame_Leave;
             // 
@@ -747,10 +707,11 @@
             txtStartFrame.BorderStyle = BorderStyle.FixedSingle;
             txtStartFrame.Font = new Font("Segoe UI", 11F);
             txtStartFrame.ForeColor = Color.White;
-            txtStartFrame.Location = new Point(23, 160);
+            txtStartFrame.Location = new Point(15, 100);
+            txtStartFrame.Margin = new Padding(2, 2, 2, 2);
             txtStartFrame.Name = "txtStartFrame";
             txtStartFrame.PlaceholderText = "시작";
-            txtStartFrame.Size = new Size(180, 47);
+            txtStartFrame.Size = new Size(116, 32);
             txtStartFrame.TabIndex = 15;
             txtStartFrame.Leave += txtStartFrame_Leave;
             // 
@@ -761,10 +722,9 @@
             btnSelectAll.FlatStyle = FlatStyle.Flat;
             btnSelectAll.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
             btnSelectAll.ForeColor = Color.White;
-            btnSelectAll.Location = new Point(393, 77);
-            btnSelectAll.Margin = new Padding(5);
+            btnSelectAll.Location = new Point(253, 48);
             btnSelectAll.Name = "btnSelectAll";
-            btnSelectAll.Size = new Size(190, 67);
+            btnSelectAll.Size = new Size(122, 42);
             btnSelectAll.TabIndex = 11;
             btnSelectAll.Text = "리스트 전체 선택";
             btnSelectAll.UseVisualStyleBackColor = false;
@@ -777,10 +737,9 @@
             btnOpenTrash.FlatStyle = FlatStyle.Flat;
             btnOpenTrash.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnOpenTrash.ForeColor = Color.White;
-            btnOpenTrash.Location = new Point(23, 77);
-            btnOpenTrash.Margin = new Padding(5);
+            btnOpenTrash.Location = new Point(15, 48);
             btnOpenTrash.Name = "btnOpenTrash";
-            btnOpenTrash.Size = new Size(180, 67);
+            btnOpenTrash.Size = new Size(116, 42);
             btnOpenTrash.TabIndex = 10;
             btnOpenTrash.Text = "휴지통";
             btnOpenTrash.UseVisualStyleBackColor = false;
@@ -791,10 +750,9 @@
             lblDelete.AutoSize = true;
             lblDelete.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblDelete.ForeColor = Color.DeepSkyBlue;
-            lblDelete.Location = new Point(17, 16);
-            lblDelete.Margin = new Padding(5, 0, 5, 0);
+            lblDelete.Location = new Point(11, 10);
             lblDelete.Name = "lblDelete";
-            lblDelete.Size = new Size(165, 38);
+            lblDelete.Size = new Size(100, 23);
             lblDelete.TabIndex = 9;
             lblDelete.Text = "데이터 삭제";
             // 
@@ -806,10 +764,9 @@
             pnlTrash.Controls.Add(btnRestoreData);
             pnlTrash.Controls.Add(lblTrash);
             pnlTrash.Controls.Add(lstTrashItems);
-            pnlTrash.Location = new Point(1389, 114);
-            pnlTrash.Margin = new Padding(5);
+            pnlTrash.Location = new Point(893, 71);
             pnlTrash.Name = "pnlTrash";
-            pnlTrash.Size = new Size(588, 846);
+            pnlTrash.Size = new Size(378, 529);
             pnlTrash.TabIndex = 9;
             pnlTrash.Visible = false;
             // 
@@ -821,10 +778,9 @@
             btnCloseTrash.FlatStyle = FlatStyle.Flat;
             btnCloseTrash.Font = new Font("Segoe UI Semibold", 9F);
             btnCloseTrash.ForeColor = Color.White;
-            btnCloseTrash.Location = new Point(535, 0);
-            btnCloseTrash.Margin = new Padding(5);
+            btnCloseTrash.Location = new Point(344, 0);
             btnCloseTrash.Name = "btnCloseTrash";
-            btnCloseTrash.Size = new Size(53, 51);
+            btnCloseTrash.Size = new Size(34, 32);
             btnCloseTrash.TabIndex = 13;
             btnCloseTrash.Text = "X";
             btnCloseTrash.UseVisualStyleBackColor = false;
@@ -838,10 +794,9 @@
             btnRestoreData.FlatStyle = FlatStyle.Flat;
             btnRestoreData.Font = new Font("Segoe UI Semibold", 9F);
             btnRestoreData.ForeColor = Color.White;
-            btnRestoreData.Location = new Point(401, 762);
-            btnRestoreData.Margin = new Padding(5);
+            btnRestoreData.Location = new Point(258, 476);
             btnRestoreData.Name = "btnRestoreData";
-            btnRestoreData.Size = new Size(165, 51);
+            btnRestoreData.Size = new Size(106, 32);
             btnRestoreData.TabIndex = 13;
             btnRestoreData.Text = "선택 복원";
             btnRestoreData.UseVisualStyleBackColor = false;
@@ -852,10 +807,9 @@
             lblTrash.AutoSize = true;
             lblTrash.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblTrash.ForeColor = Color.DeepSkyBlue;
-            lblTrash.Location = new Point(17, 19);
-            lblTrash.Margin = new Padding(5, 0, 5, 0);
+            lblTrash.Location = new Point(11, 12);
             lblTrash.Name = "lblTrash";
-            lblTrash.Size = new Size(101, 38);
+            lblTrash.Size = new Size(61, 23);
             lblTrash.TabIndex = 7;
             lblTrash.Text = "휴지통";
             // 
@@ -866,11 +820,10 @@
             lstTrashItems.BorderStyle = BorderStyle.None;
             lstTrashItems.ForeColor = Color.White;
             lstTrashItems.FormattingEnabled = true;
-            lstTrashItems.Location = new Point(22, 72);
-            lstTrashItems.Margin = new Padding(5);
+            lstTrashItems.Location = new Point(14, 45);
             lstTrashItems.Name = "lstTrashItems";
             lstTrashItems.SelectionMode = SelectionMode.MultiExtended;
-            lstTrashItems.Size = new Size(544, 640);
+            lstTrashItems.Size = new Size(350, 400);
             lstTrashItems.TabIndex = 0;
             lstTrashItems.Click += lstTrashItems_SelectedIndexChanged;
             // 
@@ -882,10 +835,9 @@
             btnOpenManual.FlatStyle = FlatStyle.Flat;
             btnOpenManual.Font = new Font("Segoe UI Semibold", 9F);
             btnOpenManual.ForeColor = Color.White;
-            btnOpenManual.Location = new Point(831, 53);
-            btnOpenManual.Margin = new Padding(5);
+            btnOpenManual.Location = new Point(534, 33);
             btnOpenManual.Name = "btnOpenManual";
-            btnOpenManual.Size = new Size(174, 51);
+            btnOpenManual.Size = new Size(112, 32);
             btnOpenManual.TabIndex = 13;
             btnOpenManual.Text = "📘설명서";
             btnOpenManual.UseVisualStyleBackColor = false;
@@ -898,10 +850,9 @@
             btnGoHome.FlatStyle = FlatStyle.Flat;
             btnGoHome.Font = new Font("Segoe UI Semibold", 9F);
             btnGoHome.ForeColor = Color.White;
-            btnGoHome.Location = new Point(48, 53);
-            btnGoHome.Margin = new Padding(5);
+            btnGoHome.Location = new Point(31, 33);
             btnGoHome.Name = "btnGoHome";
-            btnGoHome.Size = new Size(53, 51);
+            btnGoHome.Size = new Size(34, 32);
             btnGoHome.TabIndex = 14;
             btnGoHome.Text = "<";
             btnGoHome.UseVisualStyleBackColor = false;
@@ -913,10 +864,9 @@
             pnlManual.BackColor = Color.FromArgb(45, 45, 48);
             pnlManual.Controls.Add(rtbManual);
             pnlManual.Controls.Add(lblManual);
-            pnlManual.Location = new Point(48, 114);
-            pnlManual.Margin = new Padding(5);
+            pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
-            pnlManual.Size = new Size(1314, 846);
+            pnlManual.Size = new Size(845, 529);
             pnlManual.TabIndex = 14;
             pnlManual.Visible = false;
             // 
@@ -926,11 +876,10 @@
             rtbManual.BackColor = Color.FromArgb(30, 30, 30);
             rtbManual.BorderStyle = BorderStyle.None;
             rtbManual.ForeColor = Color.LightGreen;
-            rtbManual.Location = new Point(22, 61);
-            rtbManual.Margin = new Padding(5);
+            rtbManual.Location = new Point(14, 38);
             rtbManual.Name = "rtbManual";
             rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(1271, 758);
+            rtbManual.Size = new Size(817, 474);
             rtbManual.TabIndex = 11;
             rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
@@ -939,19 +888,18 @@
             lblManual.AutoSize = true;
             lblManual.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
             lblManual.ForeColor = Color.DeepSkyBlue;
-            lblManual.Location = new Point(17, 19);
-            lblManual.Margin = new Padding(5, 0, 5, 0);
+            lblManual.Location = new Point(11, 12);
             lblManual.Name = "lblManual";
-            lblManual.Size = new Size(165, 38);
+            lblManual.Size = new Size(100, 23);
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(14F, 32F);
+            AutoScaleDimensions = new SizeF(9F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(30, 30, 30);
-            ClientSize = new Size(2014, 1288);
+            ClientSize = new Size(1295, 805);
             Controls.Add(pnlManual);
             Controls.Add(btnGoHome);
             Controls.Add(btnOpenManual);
@@ -966,8 +914,8 @@
             Controls.Add(pnlSystemOps);
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
-            Margin = new Padding(6);
-            MinimumSize = new Size(2023, 1279);
+            Margin = new Padding(4);
+            MinimumSize = new Size(1310, 826);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
@@ -1020,9 +968,6 @@
         private Label lblDataMgmtTitle;
         private Label lblLogTitle;
         private Label lblFilterTitle;
-
-        private TextBox txtStartIndex;
-        private TextBox txtEndIndex;
 
         private TrackBar trkFrameSlider;
         private Button btnStop;
