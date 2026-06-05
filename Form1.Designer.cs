@@ -504,8 +504,6 @@
             pnlDataManagement.Controls.Add(lblDataMgmtTitle);
             pnlDataManagement.Controls.Add(btnApplyFilter);
             pnlDataManagement.Controls.Add(pnlFilterOptions);
-            pnlDataManagement.Controls.Add(txtStartIndex);
-            pnlDataManagement.Controls.Add(txtEndIndex);
             pnlDataManagement.Location = new Point(1389, 638);
             pnlDataManagement.Margin = new Padding(5);
             pnlDataManagement.Name = "pnlDataManagement";
@@ -724,7 +722,7 @@
             btnSelectRange.ForeColor = Color.White;
             btnSelectRange.Location = new Point(393, 160);
             btnSelectRange.Name = "btnSelectRange";
-            btnSelectRange.Size = new Size(174, 75);
+            btnSelectRange.Size = new Size(180, 50);
             btnSelectRange.TabIndex = 0;
             btnSelectRange.Text = "구간 선택";
             btnSelectRange.UseVisualStyleBackColor = false;
@@ -732,35 +730,41 @@
             // 
             // txtEndFrame
             // 
-            txtEndFrame.Font = new Font("Segoe UI", 12F);
+            txtEndFrame.BackColor = Color.FromArgb(30, 30, 30);
+            txtEndFrame.BorderStyle = BorderStyle.FixedSingle;
+            txtEndFrame.Font = new Font("Segoe UI", 11F);
+            txtEndFrame.ForeColor = Color.White;
             txtEndFrame.Location = new Point(208, 160);
             txtEndFrame.Name = "txtEndFrame";
             txtEndFrame.PlaceholderText = "끝";
-            txtEndFrame.Size = new Size(179, 50);
+            txtEndFrame.Size = new Size(180, 47);
             txtEndFrame.TabIndex = 16;
-            txtEndFrame.Leave += new EventHandler(txtEndFrame_Leave);
+            txtEndFrame.Leave += txtEndFrame_Leave;
             // 
             // txtStartFrame
             // 
-            txtStartFrame.Font = new Font("Segoe UI", 12F);
+            txtStartFrame.BackColor = Color.FromArgb(30, 30, 30);
+            txtStartFrame.BorderStyle = BorderStyle.FixedSingle;
+            txtStartFrame.Font = new Font("Segoe UI", 11F);
+            txtStartFrame.ForeColor = Color.White;
             txtStartFrame.Location = new Point(23, 160);
             txtStartFrame.Name = "txtStartFrame";
             txtStartFrame.PlaceholderText = "시작";
-            txtStartFrame.Size = new Size(180, 50);
+            txtStartFrame.Size = new Size(180, 47);
             txtStartFrame.TabIndex = 15;
-            txtStartFrame.Leave += new EventHandler(txtStartFrame_Leave);
+            txtStartFrame.Leave += txtStartFrame_Leave;
             // 
             // btnSelectAll
             // 
             btnSelectAll.BackColor = Color.FromArgb(62, 62, 66);
             btnSelectAll.FlatAppearance.BorderSize = 0;
             btnSelectAll.FlatStyle = FlatStyle.Flat;
-            btnSelectAll.Font = new Font("Segoe UI", 7.875F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnSelectAll.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
             btnSelectAll.ForeColor = Color.White;
             btnSelectAll.Location = new Point(393, 77);
             btnSelectAll.Margin = new Padding(5);
             btnSelectAll.Name = "btnSelectAll";
-            btnSelectAll.Size = new Size(180, 67);
+            btnSelectAll.Size = new Size(190, 67);
             btnSelectAll.TabIndex = 11;
             btnSelectAll.Text = "리스트 전체 선택";
             btnSelectAll.UseVisualStyleBackColor = false;
