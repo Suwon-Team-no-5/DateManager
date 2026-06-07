@@ -2,8 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 using System.Runtime.InteropServices; // 이 줄을 코드 맨 위에 추가하세요.
+using System.Windows.Forms;
+using System.Diagnostics;  // 💡 Process 및 ProcessStartInfo를 쓰기 위해 필요!
+using System.Text.Json;    // 💡 JsonSerializerOptions를 쓰기 위해 필요!
+using System.IO;           // 💡 StreamReader를 쓰기 위해 필요!
+
 
 namespace DateManager
 {
@@ -52,6 +56,17 @@ namespace DateManager
         private readonly SolidBrush _bgBrush = new SolidBrush(Color.FromArgb(100, 200, 200, 200));
         private readonly SolidBrush _barBlueBrush = new SolidBrush(Color.DeepSkyBlue);
         private readonly SolidBrush _barOrangeBrush = new SolidBrush(Color.Orange);
+        // ==========================================
+        // ✨ [추가] AI 예측 시각화를 위한 멤버 변수
+        // ==========================================
+        public class AiPredictFrame
+        {
+            public float Angle { get; set; }
+            public float Throttle { get; set; }
+        }
+
+        private List<AiPredictFrame> _aiPredictedList = new List<AiPredictFrame>();
+        private readonly SolidBrush _barLimeBrush = new SolidBrush(Color.LimeGreen); // AI 속도바용 브러시
 
         private List<DonkeyFrame> _trashFrameList = new List<DonkeyFrame>();
         private List<float> lossPoints = new List<float>();
@@ -184,6 +199,71 @@ namespace DateManager
         }
 
 
+        private List<AiPredictFrame> PredictAllFrames(string tubPath, string modelPath)
+        {
+            List<AiPredictFrame> predictedList = new List<AiPredictFrame>();
+
+            //이미 검증 완료된 wsl.exe 엔진 호출 방식 적용
+            string pythonPath = "wsl.exe";
+
+            //파이썬 스크립트의 절대 경로 지정
+            string scriptPath = "/home/jaeseo03/mycar/predict_all.py";
+
+
+            string linuxTubPath = ConvertToLinuxPath(tubPath);
+            string linuxModelPath = ConvertToLinuxPath(modelPath);
+
+
+            string linuxPythonEnv = "/home/jaeseo03/miniconda3/envs/donkey/bin/python";//파이썬 경로 확인 필요!!!!
+
+            ProcessStartInfo start = new ProcessStartInfo();
+            start.FileName = pythonPath;
+
+
+            start.Arguments = $" -d Ubuntu-22.04 {linuxPythonEnv} {scriptPath} \"{linuxTubPath}\" \"{linuxModelPath}\"";
+
+            start.UseShellExecute = false;
+            start.RedirectStandardOutput = true;
+            start.CreateNoWindow = true;
+
+            try
+            {
+                using (Process process = Process.Start(start))
+                {
+                    using (StreamReader reader = process.StandardOutput)
+                    {
+                        string jsonResult = reader.ReadToEnd();
+                        process.WaitForExit();
+
+                        if (!string.IsNullOrEmpty(jsonResult))
+                        {
+                            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                            var records = JsonSerializer.Deserialize<List<Dictionary<string, float>>>(jsonResult, options);
+
+                            if (records != null)
+                            {
+                                foreach (var item in records)
+                                {
+                                    predictedList.Add(new AiPredictFrame
+                                    {
+                                        Angle = item.ContainsKey("steering") ? item["steering"] : 0f,
+                                        Throttle = item.ContainsKey("throttle") ? item["throttle"] : 0f
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"AI 예측값 연산 중 오류 발생: {ex.Message}");
+            }
+
+            return predictedList;
+        }
+
+
         private async void btnLoadTub_Click(object sender, EventArgs e)
         {
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
@@ -191,25 +271,36 @@ namespace DateManager
                 fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
-                    _currentCatalogPath = fbd.SelectedPath; //(경로 저장)
-                    _backupManager.CurrentCatalogPath = _currentCatalogPath;
                     string selectedPath = fbd.SelectedPath;
 
-                    // 로딩 중임을 사용자에게 알림 (UI가 멈추지 않음)
+                    // 💡 [추가] 분석에 사용할 AI 모델(.h5) 선택 파일창
+                    string modelPath = "";
+                    using (OpenFileDialog ofd = new OpenFileDialog())
+                    {
+                        ofd.Title = "분석에 사용할 동키카 모델(.h5) 파일을 선택하세요.";
+                        ofd.Filter = "Keras Model (*.h5)|*.h5|All Files (*.*)|*.*";
+                        // 기본 지정 경로인 _modelWinPath가 있으면 초기 위치로 맵핑 가능
+                        if (ofd.ShowDialog() == DialogResult.OK) modelPath = ofd.FileName;
+                        else return;
+                    }
+
+                    _currentCatalogPath = selectedPath;
+                    _backupManager.CurrentCatalogPath = _currentCatalogPath;
                     this.Cursor = Cursors.WaitCursor;
                     lstFrameData.Items.Clear();
-                    //lstFrameData.Items.Add("데이터 로드 중... 잠시만 기다려주세요.");
 
                     try
                     {
-                        // 💡 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행
+                        // 1. 기존 주행 데이터 로드
                         _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath));
 
-                        // 로드 완료 후 UI 업데이트: 마스터 리스트를 바로 표시 리스트로 반영
                         if (_masterFrameList != null && _masterFrameList.Count > 0)
                         {
+                            // 2. 💡 [추가] 백그라운드에서 AI 예측값 전체 동시 계산 실행
+                            _aiPredictedList = await Task.Run(() => PredictAllFrames(selectedPath, modelPath));
+
                             RefreshFrameList(_masterFrameList);
-                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터를 로드했습니다!");
+                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터와 AI 예측 연산을 완료했습니다!");
                         }
                     }
                     catch (Exception ex)
@@ -218,12 +309,12 @@ namespace DateManager
                     }
                     finally
                     {
-                        // 커서 복구
                         this.Cursor = Cursors.Default;
                     }
                 }
             }
         }
+
 
         private void btnApplyFilter_Click(object sender, EventArgs e)
         {
