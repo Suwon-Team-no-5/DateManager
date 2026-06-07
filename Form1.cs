@@ -1573,5 +1573,10 @@ namespace DateManager
                 MessageBox.Show("올바른 프레임 숫자를 입력해주세요!", "입력 오류");
             }
         }
+
+        private void btnCompareDataset_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

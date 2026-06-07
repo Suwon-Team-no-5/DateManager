@@ -88,6 +88,7 @@
             pnlManual = new Panel();
             rtbManual = new RichTextBox();
             lblManual = new Label();
+            btnCompareDataset = new Button();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -584,6 +585,7 @@
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
+            pnlTrainingLog.Controls.Add(btnCompareDataset);
             pnlTrainingLog.Controls.Add(pbChart);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
@@ -679,7 +681,7 @@
             btnSelectRange.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnSelectRange.ForeColor = Color.White;
             btnSelectRange.Location = new Point(253, 100);
-            btnSelectRange.Margin = new Padding(2, 2, 2, 2);
+            btnSelectRange.Margin = new Padding(2);
             btnSelectRange.Name = "btnSelectRange";
             btnSelectRange.Size = new Size(116, 31);
             btnSelectRange.TabIndex = 0;
@@ -694,7 +696,7 @@
             txtEndFrame.Font = new Font("Segoe UI", 11F);
             txtEndFrame.ForeColor = Color.White;
             txtEndFrame.Location = new Point(134, 100);
-            txtEndFrame.Margin = new Padding(2, 2, 2, 2);
+            txtEndFrame.Margin = new Padding(2);
             txtEndFrame.Name = "txtEndFrame";
             txtEndFrame.PlaceholderText = "끝";
             txtEndFrame.Size = new Size(116, 32);
@@ -708,7 +710,7 @@
             txtStartFrame.Font = new Font("Segoe UI", 11F);
             txtStartFrame.ForeColor = Color.White;
             txtStartFrame.Location = new Point(15, 100);
-            txtStartFrame.Margin = new Padding(2, 2, 2, 2);
+            txtStartFrame.Margin = new Padding(2);
             txtStartFrame.Name = "txtStartFrame";
             txtStartFrame.PlaceholderText = "시작";
             txtStartFrame.Size = new Size(116, 32);
@@ -894,6 +896,22 @@
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
             // 
+            // btnCompareDataset
+            // 
+            btnCompareDataset.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCompareDataset.BackColor = Color.FromArgb(0, 122, 204);
+            btnCompareDataset.FlatAppearance.BorderSize = 0;
+            btnCompareDataset.FlatStyle = FlatStyle.Flat;
+            btnCompareDataset.Font = new Font("Segoe UI Semibold", 9F);
+            btnCompareDataset.ForeColor = Color.White;
+            btnCompareDataset.Location = new Point(612, 475);
+            btnCompareDataset.Name = "btnCompareDataset";
+            btnCompareDataset.Size = new Size(106, 50);
+            btnCompareDataset.TabIndex = 15;
+            btnCompareDataset.Text = "학습파일 \r\n비교";
+            btnCompareDataset.UseVisualStyleBackColor = false;
+            btnCompareDataset.Click += btnCompareDataset_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
@@ -917,7 +935,7 @@
             Margin = new Padding(4);
             MinimumSize = new Size(1310, 826);
             Name = "Form1";
-            Text = "MoveArt Donkeycar 데이터 관리 시스템";
+            Text = "5팀 Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
             pnlCamView.ResumeLayout(false);
             pnlCamView.PerformLayout();
@@ -1010,5 +1028,6 @@
         private TextBox txtStartFrame;
         private TextBox txtEndFrame;
         private Button btnSelectRange;
+        private Button btnCompareDataset;
     }
 }
