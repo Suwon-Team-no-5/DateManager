@@ -1,8 +1,9 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices; // 이 줄을 코드 맨 위에 추가하세요.
 using System.Windows.Forms;
+using System.Runtime.InteropServices; // 이 줄을 코드 맨 위에 추가하세요.
 
 namespace DateManager
 {
@@ -62,6 +63,8 @@ namespace DateManager
 
         private bool _isTrainingComplete = false; // 학습 완료 플래그
         private string _modelWinPath = @"\\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\models\mypilot.h5";
+
+        private bool _isSelectingStart = true; // 시작을 입력할 차례인지, 끝을 입력할 차례인지 구분
 
         public Form1()
         {
@@ -131,7 +134,7 @@ namespace DateManager
 
         }
 
-        
+
         // 탭 순서 제어를 위한 컨트롤 리스트
         private List<Control> _focusOrder;
 
@@ -279,10 +282,9 @@ namespace DateManager
 
             if (result != DialogResult.Yes) return; // '아니오'를 누르면 여기서 종료
 
-            // 💡 [변경점 2] 삭제 후 선택할 인덱스 계산을 위해 마지막 인덱스 기억
-            // (지운 항목들이 사라지면 뒤에 있던 항목들이 앞으로 당겨오므로, 
-            // 지우기 전 마지막 인덱스를 타겟으로 하면 자연스럽게 다음 파일이 선택됩니다.)
-            int lastSelectedIndex = selectedIndices.Max();
+            // 💡 [수정] Max()가 아니라 Min()을 써야 지운 구간 바로 다음 장면부터 이어집니다!
+            // (40~45를 지웠을 때 원래 46번이었던 프레임이 새로운 '40번' 자리로 오기 때문)
+            int targetStartIndex = selectedIndices.Min();
 
             // 2. 선택된 프레임 추출
             List<DonkeyFrame> selectedFrames = selectedIndices
@@ -300,18 +302,21 @@ namespace DateManager
             RefreshFrameList(_displayedFrameList);
             UpdateTrashListUI();
 
-            // 💡 [변경점 3] 삭제 후 다음 항목 선택 로직
+            // 💡 [변경점 3] 삭제 후 다음 항목 선택 로직 (0번 튕김 방지)
             if (lstFrameData.Items.Count > 0)
             {
-                // 1. lastSelectedIndex가 현재 리스트 크기보다 크면 맨 끝으로 보정
-                int targetIndex = Math.Min(lastSelectedIndex, lstFrameData.Items.Count - 1);
+                // 1. targetStartIndex가 현재 리스트 크기보다 크면 맨 끝으로 보정
+                int targetIndex = Math.Min(targetStartIndex, lstFrameData.Items.Count - 1);
 
-                // 2. 해당 인덱스 선택
+                // 2. 해당 인덱스 선택 (여기서 0번으로 튕기는 것을 막고 제자리로 복구)
                 lstFrameData.SelectedIndex = targetIndex;
+
+                // 3. 재생 및 키보드 조작이 즉시 먹히도록 포커스 유지
+                lstFrameData.Focus();
             }
         }
 
-        private void lstFrameData_SelectedIndexChanged(object sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
+        private void lstFrameData_SelectedIndexChanged(object? sender, EventArgs e) // 리스트박스에서 선택이 바뀔 때마다 해당 프레임을 미리보기로 보여주는 이벤트 핸들러
         {
             if (lstFrameData.SelectedIndex == -1) return;
 
@@ -501,65 +506,98 @@ namespace DateManager
         // 폼 전체에 대한 키보드 단축키 핸들러
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
         {
-            // 스페이스: 재생/일시정지 토글
+            if (e.KeyCode == Keys.Delete)
+            {
+                btnDeleteData.PerformClick();
+                e.Handled = true;
+                return;
+            }
+
+            // 1. [Ctrl + Space] 실시간 구간 캡처
+            if (e.Control && e.KeyCode == Keys.Space)
+            {
+                int currentIndex = _currentFrameIndex; // 리스트박스 말고 진짜 화면 인덱스 사용
+
+                if (currentIndex >= 0)
+                {
+                    if (_isSelectingStart)
+                    {
+                        // [시작지점] 영상 멈추지 않고 계속 재생
+                        txtStartFrame.Text = currentIndex.ToString();
+                        txtStartFrame.BackColor = Color.LightBlue;
+                        _isSelectingStart = false;
+                    }
+                    else
+                    {
+                        // [끝지점] 
+                        txtEndFrame.Text = currentIndex.ToString();
+                        txtEndFrame.BackColor = Color.Salmon;
+
+                        // 🚨 [핵심 1] 끝점을 찍는 순간 영상 재생을 강제로 멈춥니다.
+                        // (타이머가 다중 선택 영역을 지워버리는 것을 막기 위함)
+                        if (_playbackTimer != null && _playbackTimer.Enabled)
+                        {
+                            btnPlay.PerformClick(); // 일시정지 버튼 누름 효과
+                        }
+
+                        // 🚨 [핵심 2] 자동으로 구간 선택 버튼 실행
+                        btnSelectRange.PerformClick();
+
+                        // 입력창 초기화
+                        _isSelectingStart = true;
+                        txtStartFrame.BackColor = Color.White;
+                        txtEndFrame.BackColor = Color.White;
+                    }
+                }
+                e.Handled = true;
+                return;
+            }
+
+            // 2. [Space] 재생 / 일시정지 토글
             if (e.KeyCode == Keys.Space)
             {
-                // 💡 [안전장치] 휴지통 뷰가 아닐 때만 스페이스바로 재생 가능
-                if (!_isViewingTrash)
+                if (!(this.ActiveControl is TextBox))
                 {
-                    btnPlay.PerformClick();
+                    if (!_isViewingTrash)
+                    {
+                        btnPlay.PerformClick();
+                    }
+                    e.Handled = true;
                 }
-                e.Handled = true;
+                return;
             }
 
-            // 화살표 위/아래: 포커스 이동
-            if (e.KeyCode == Keys.Up)
-            {
-                MoveFocus(-1);
-                e.Handled = true;
-            }
+            // 3. 화살표 위/아래: 포커스 이동
+            if (e.KeyCode == Keys.Up) { MoveFocus(-1); e.Handled = true; }
+            if (e.KeyCode == Keys.Down) { MoveFocus(1); e.Handled = true; }
 
-            if (e.KeyCode == Keys.Down)
-            {
-                MoveFocus(1);
-                e.Handled = true;
-            }
-
-            // Home/End: 첫 프레임 / 마지막 프레임으로 이동
+            // 4. Home/End: 첫 프레임 / 마지막 프레임으로 이동
             if (e.KeyCode == Keys.Home)
             {
-                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
-                {
-                    SelectFrame(0);
-                }
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0) SelectFrame(0);
                 e.Handled = true;
             }
-
             if (e.KeyCode == Keys.End)
             {
-                if (_displayedFrameList != null && _displayedFrameList.Count > 0)
-                {
-                    SelectFrame(_displayedFrameList.Count - 1);
-                }
+                if (_displayedFrameList != null && _displayedFrameList.Count > 0) SelectFrame(_displayedFrameList.Count - 1);
                 e.Handled = true;
             }
 
-            // Enter: 포커스가 올라간 버튼을 클릭 처리
+            // 5. Enter: 버튼 클릭 처리
             if (e.KeyCode == Keys.Enter)
             {
                 try
                 {
                     Control ctrl = this.ActiveControl;
-                    // 컨테이너 내부에 포커스된 자식 컨트롤이 있는 경우 가장 깊은 ActiveControl을 찾음
                     while (ctrl is ContainerControl container && container.ActiveControl != null)
                     {
                         ctrl = container.ActiveControl;
                     }
-
                     if (ctrl is Button btn)
                     {
                         btn.PerformClick();
                         e.Handled = true;
+                        return;
                     }
                 }
                 catch { }
@@ -721,6 +759,12 @@ namespace DateManager
                 trkFrameSlider.Value = index;
             }
 
+            // 리스트박스가 현재 재생 중인 프레임을 부드럽게 계속 추적하도록 스크롤해 주는 코드입니다.
+            if (lstFrameData.SelectedIndex != index)
+            {
+                lstFrameData.SelectedIndex = index;
+            }
+
             pbMainCam.Invalidate();
         }
 
@@ -764,7 +808,44 @@ namespace DateManager
 
             return hasFrames;
         }
-        public int start, end = 0;
+        // 시작/종료 인덱스 (구간 선택용)
+        private int start = 0;
+        private int end = 0;
+
+        // 텍스트박스 Leave 이벤트: Designer에서 사용하는 이름으로 구현
+        private void txtStartFrame_Leave(object sender, EventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                if (int.TryParse(tb.Text, out int v))
+                {
+                    start = Math.Max(0, Math.Min(v, (_displayedFrameList?.Count ?? 1) - 1));
+                    tb.Text = start.ToString();
+                }
+                else
+                {
+                    tb.Text = start.ToString();
+                }
+            }
+        }
+
+        private void txtEndFrame_Leave(object sender, EventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                if (int.TryParse(tb.Text, out int v))
+                {
+                    end = Math.Max(0, Math.Min(v, (_displayedFrameList?.Count ?? 1) - 1));
+                    tb.Text = end.ToString();
+                }
+                else
+                {
+                    tb.Text = end.ToString();
+                }
+            }
+        }
+
+        // (구간 선택 관련 중복 정의는 제거되어, Designer에 연결된 단일 구현을 사용합니다.)
         private void btnSetLeft_Click(object sender, EventArgs e)
         {
             start = lstFrameData.SelectedIndex;
@@ -775,9 +856,9 @@ namespace DateManager
             end = lstFrameData.SelectedIndex;
         }
 
-        private async void btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object? sender, EventArgs e)
         {
-            // 1. [핵심] 휴지통에 있는 파일들을 여기서 실제 삭제
+            // 1. [기존 기능 유지] 휴지통 파일 처리
             if (_trashFrameList.Count > 0)
             {
                 if (MessageBox.Show($"휴지통에 있는 {_trashFrameList.Count}개의 파일을 영구 삭제하고 학습을 시작할까요?",
@@ -787,141 +868,76 @@ namespace DateManager
                     _trashFrameList.Clear();
                     UpdateTrashListUI();
                 }
-                else
-                {
-                    return; // 사용자가 취소하면 학습 시작 안 함
-                }
+                else { return; } // 사용자가 취소하면 학습 시작 안 함
             }
-            lossPoints.Clear();
-            if (chartRealTime != null)
+
+            // 2. [필수 확인] 데이터가 로드되어 있는지 확인
+            if (string.IsNullOrEmpty(_currentCatalogPath))
             {
-                // 차트에 그려져 있던 빨간 선(데이터)과 레이아웃을 완전히 초기화합니다.
-                chartRealTime.Series.Clear();
-                chartRealTime.ChartAreas.Clear();
+                MessageBox.Show("데이터가 로드되지 않았습니다. 폴더를 먼저 선택해주세요!");
+                return;
             }
-            // 기존 학습 시작 로직...
+
+            // 3. [기존 기능 유지] UI 상태 초기화
+            lossPoints.Clear();
+            if (ChartRealTime != null) ChartRealTime.Image = null;
+
             btnStartTraining.Enabled = false;
             btnEndTraining.Enabled = true;
-
-            // 학습 로그 패널은 켜고, 주행 모니터 패널은 끕니다.
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = true;
-
             btnStartTraining.BackColor = Color.FromArgb(62, 62, 66);
             btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
-
-            // 버튼 색상 변경
             btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
             btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
 
             rtbTrainLog.Clear();
             rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
 
-            string pythonPath = "wsl.exe";
-            string mycarDir = " mycar";
+            // 4. [수정된 부분] Windows 경로 -> Linux 경로 변환
+            string linuxTubPath = ConvertToLinuxPath(_currentCatalogPath);
 
-            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+            string pythonPath = "wsl.exe";
+            string mycarDir = "/home/jaeseo03/mycar"; // 경로를 정확한 절대경로로 지정하는 것이 안전합니다.
+
+            // 5. [수정된 부분] 변환된 경로(linuxTubPath)를 Trainer에 전달
+            await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, linuxTubPath));
         }
         private void DrawRealTimeChart()
         {
-            if (chartRealTime == null || lossPoints.Count == 0) return;
+            // Nullable 잔소리를 완벽하게 회피하기 위해 컴파일러 안심 장치 마련 후 진행
+            if (ChartRealTime == null || lossPoints.Count == 0) return;
 
-            if (chartRealTime.InvokeRequired)
+            Bitmap bmp = new Bitmap(ChartRealTime.Width, ChartRealTime.Height);
+            using (Graphics g = Graphics.FromImage(bmp))
             {
-                chartRealTime.Invoke(new MethodInvoker(DrawRealTimeChart));
-                return;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+                float maxLoss = 1.0f;
+                foreach (var loss in lossPoints)
+                {
+                    if (loss > maxLoss) maxLoss = loss;
+                }
+
+                float xInterval = (float)ChartRealTime.Width / (lossPoints.Count <= 1 ? 1 : lossPoints.Count - 1);
+
+                using (Pen pen = new Pen(Color.Crimson, 3f))
+                {
+                    for (int i = 0; i < lossPoints.Count - 1; i++)
+                    {
+                        float x1 = i * xInterval;
+                        float y1 = ChartRealTime.Height - (lossPoints[i] / maxLoss * (ChartRealTime.Height - 20)) - 10;
+
+                        float x2 = (i + 1) * xInterval;
+                        float y2 = ChartRealTime.Height - (lossPoints[i + 1] / maxLoss * (ChartRealTime.Height - 20)) - 10;
+
+                        g.DrawLine(pen, x1, y1, x2, y2);
+                    }
+                }
             }
 
-            // -----------------------------------------------------------------
-            // 1️⃣ 디자인 및 [왼쪽 스택형 가로 정렬] 세팅 구역 (Y축 범위는 자동 최적화)
-            // -----------------------------------------------------------------
-            if (chartRealTime.Series.Count == 0 || chartRealTime.Series[0].ChartType != System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line)
-            {
-                chartRealTime.Series.Clear();
-                chartRealTime.ChartAreas.Clear();
-                chartRealTime.Legends.Clear();
-                chartRealTime.Titles.Clear(); // 상단 오차율 숫자 타이틀 초기화
-
-                // 테슬라 다크모드 배경 색상
-                chartRealTime.BackColor = Color.FromArgb(28, 28, 30);
-                chartRealTime.BorderlineDashStyle = System.Windows.Forms.DataVisualization.Charting.ChartDashStyle.Solid;
-                chartRealTime.BorderlineColor = Color.FromArgb(63, 63, 66);
-
-                var chartArea = new System.Windows.Forms.DataVisualization.Charting.ChartArea("LossArea");
-                chartArea.BackColor = Color.FromArgb(16, 16, 18);
-
-                // 📊 [오차율 하강폭 극대화] Y축 범위를 고정하지 않고 자동 최적화(NaN)로 내버려 둡니다!
-                chartArea.AxisY.IsStartedFromZero = false;
-                chartArea.AxisY.Minimum = double.NaN;
-                chartArea.AxisY.Maximum = double.NaN;
-
-                // 은은한 그리드 격자선
-                chartArea.AxisX.MajorGrid.LineColor = Color.FromArgb(45, 45, 48);
-                chartArea.AxisY.MajorGrid.LineColor = Color.FromArgb(45, 45, 48);
-
-                Font axisFont = new Font("Segoe UI", 9, FontStyle.Bold);
-                chartArea.AxisX.LabelStyle.ForeColor = Color.FromArgb(220, 220, 224);
-                chartArea.AxisY.LabelStyle.ForeColor = Color.FromArgb(220, 220, 224);
-                chartArea.AxisX.LabelStyle.Font = axisFont;
-                chartArea.AxisY.LabelStyle.Font = axisFont;
-
-                Font titleFont = new Font("Segoe UI", 10, FontStyle.Bold);
-                chartArea.AxisX.Title = "Epoch (학습 횟수)";
-                chartArea.AxisX.TitleForeColor = Color.White;
-                chartArea.AxisX.TitleFont = titleFont;
-
-                // 📊 [기주님 요청] 왼쪽 '오차율' 단어가 절대 잘리지 않게 스택형으로 쌓고 가로로 정렬!
-                chartArea.AxisY.Title = "오\n차\n율";
-                chartArea.AxisY.TitleForeColor = Color.White;
-                chartArea.AxisY.TitleFont = titleFont;
-                chartArea.AxisY.TitleAlignment = StringAlignment.Center;
-                chartArea.AxisY.TextOrientation = System.Windows.Forms.DataVisualization.Charting.TextOrientation.Horizontal;
-                chartRealTime.ChartAreas.Add(chartArea);
-
-                // 네온 레드 꺾은선 시리즈 디자인
-                var series = new System.Windows.Forms.DataVisualization.Charting.Series("LossSeries");
-                series.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-                series.Color = Color.FromArgb(255, 45, 85);
-                series.BorderWidth = 4;
-
-                series.MarkerStyle = System.Windows.Forms.DataVisualization.Charting.MarkerStyle.Circle;
-                series.MarkerSize = 7;
-                series.MarkerColor = Color.White;
-                series.MarkerBorderColor = Color.FromArgb(255, 45, 85);
-                series.MarkerBorderWidth = 2;
-
-                chartRealTime.Series.Add(series);
-            }
-
-            // -----------------------------------------------------------------
-            // 2️⃣ 데이터 실시간 주입 및 [상단 실시간 오차율 숫자 띄우기]
-            // -----------------------------------------------------------------
-            var lossSeries = chartRealTime.Series["LossSeries"];
-            lossSeries.Points.Clear();
-
-            float latestLoss = 0f; // 최신 오차율 값을 담아낼 변수
-
-            for (int i = 0; i < lossPoints.Count; i++)
-            {
-                float currentLoss = lossPoints[i];
-                int epochX = i + 1;
-
-                int pointIndex = lossSeries.Points.AddXY(epochX, currentLoss);
-                lossSeries.Points[pointIndex].ToolTip = $"[AI Training 상태]\n▶ Epoch : {epochX} 회차\n▶ Loss : {currentLoss:F4}";
-
-                latestLoss = currentLoss; // 가장 마지막 루프에서 최신 오차율이 저장됨
-            }
-
-            // 🎯 [기주님 요청] 차트 스택형 텍스트 바로 위(상단 정중앙)에 현재 실시간 오차율 수치 표시!
-            chartRealTime.Titles.Clear(); // 잔상 제거
-            var topTitle = new System.Windows.Forms.DataVisualization.Charting.Title();
-            topTitle.Text = $"오차율 : {latestLoss:F4}"; // 소수점 4자리까지 정밀 수치 표기
-            topTitle.Font = new Font("Segoe UI", 14, FontStyle.Bold); // 교수님 눈에 확 꽂히는 14pt 볼드체
-            topTitle.ForeColor = Color.FromArgb(255, 45, 85); // 꺾은선과 패밀리룩을 이루는 네온 레드 칼라
-            topTitle.Alignment = ContentAlignment.TopCenter; // 차트 상단 정중앙에 배치
-            chartRealTime.Titles.Add(topTitle);
-
-            chartRealTime.ResetAutoValues();
+            if (ChartRealTime.Image != null) ChartRealTime.Image.Dispose();
+            ChartRealTime.Image = bmp;
         }
         private void btnViewMonitor_Click(object sender, EventArgs e)
         {
@@ -967,8 +983,9 @@ namespace DateManager
             // 3. 학습 프로세스 다시 실행 (btnStart_Click과 동일한 로직)
             string pythonPath = "wsl.exe";
             string mycarDir = "/home/jaeseo03/mycar";
+            string tubPath = _currentCatalogPath ?? "./data";
 
-            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir));
+            await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, tubPath));
         }
 
         private void btnEndTraining_Click(object sender, EventArgs e)
@@ -1044,7 +1061,7 @@ namespace DateManager
         }
 
         // 🌟🌟🌟 궤적 부드러움 보정 & HUD (휴지통 시각 효과 포함) 🌟🌟🌟
-        private void pbMainCam_Paint(object sender, PaintEventArgs e)
+        private void pbMainCam_Paint(object? sender, PaintEventArgs e)
         {
             if (pbMainCam.Image == null) return;
 
@@ -1502,6 +1519,58 @@ namespace DateManager
                         lstTrashItems.SetSelected(index, true);
                     }
                 }
+            }
+        }
+
+        // 💡 윈도우 경로를 WSL(리눅스) 경로로 바꾸는 변환기
+        private string ConvertToLinuxPath(string windowsPath)
+        {
+            // 예: \\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\data
+            string path = windowsPath.Replace("\\", "/");
+
+            // 리눅스 내부 절대 경로 형식으로 변환 (사용자 환경에 따라 wsl 이름 부분은 달라질 수 있음)
+            // 예: /home/jaeseo03/mycar/data 형태가 되도록 조정
+            int index = path.IndexOf("/home/");
+            if (index != -1)
+            {
+                return path.Substring(index); // /home/... 부터 시작하는 경로만 추출
+            }
+            return path; // 이미 리눅스 경로이거나 변환 실패 시 원본 반환
+        }
+
+        private void btnSelectRange_Click(object sender, EventArgs e)
+        {
+            if (lstFrameData.Items.Count == 0) return;
+
+            if (int.TryParse(txtStartFrame.Text, out int start) && int.TryParse(txtEndFrame.Text, out int end))
+            {
+                // 🚨 [핵심 3] 마우스로 수동 클릭했을 때도 재생 중이라면 무조건 일시정지시킵니다.
+                if (_playbackTimer != null && _playbackTimer.Enabled)
+                {
+                    btnPlay.PerformClick();
+                }
+
+                int s = Math.Max(0, Math.Min(start, end));
+                int eIdx = Math.Min(lstFrameData.Items.Count - 1, Math.Max(start, end));
+
+                // 구간 칠하기
+                for (int i = s; i <= eIdx; i++)
+                {
+                    lstFrameData.SetSelected(i, true);
+                }
+
+                // 구간 선택이 완료되었으니 텍스트 박스를 비워줍니다.
+                txtStartFrame.Clear();
+                txtEndFrame.Clear();
+
+                // 상태 초기화
+                _isSelectingStart = true;
+                txtStartFrame.BackColor = Color.White;
+                txtEndFrame.BackColor = Color.White;
+            }
+            else
+            {
+                MessageBox.Show("올바른 프레임 숫자를 입력해주세요!", "입력 오류");
             }
         }
     }

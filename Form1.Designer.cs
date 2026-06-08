@@ -66,12 +66,15 @@
             chkFilterThr = new CheckBox();
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
-            chartRealTime = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            ChartRealTime = new PictureBox();
             btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
             lblTitle = new Label();
             pnlDelete = new Panel();
+            btnSelectRange = new Button();
+            txtEndFrame = new TextBox();
+            txtStartFrame = new TextBox();
             btnSelectAll = new Button();
             btnOpenTrash = new Button();
             lblDelete = new Label();
@@ -83,8 +86,8 @@
             btnOpenManual = new Button();
             btnGoHome = new Button();
             pnlManual = new Panel();
-            lblManual = new Label();
             rtbManual = new RichTextBox();
+            lblManual = new Label();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -94,7 +97,7 @@
             pnlDataManagement.SuspendLayout();
             pnlFilterOptions.SuspendLayout();
             pnlTrainingLog.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)chartRealTime).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)ChartRealTime).BeginInit();
             pnlDelete.SuspendLayout();
             pnlTrash.SuspendLayout();
             pnlManual.SuspendLayout();
@@ -107,7 +110,7 @@
             pbMainCam.Location = new Point(14, 80);
             pbMainCam.Margin = new Padding(4);
             pbMainCam.Name = "pbMainCam";
-            pbMainCam.Size = new Size(814, 432);
+            pbMainCam.Size = new Size(814, 372);
             pbMainCam.TabIndex = 0;
             pbMainCam.TabStop = false;
             // 
@@ -167,7 +170,7 @@
             pnlCamView.Controls.Add(lblAngle);
             pnlCamView.Location = new Point(31, 71);
             pnlCamView.Name = "pnlCamView";
-            pnlCamView.Size = new Size(845, 529);
+            pnlCamView.Size = new Size(845, 469);
             pnlCamView.TabIndex = 6;
             // 
             // lblCamViewTitle
@@ -296,7 +299,7 @@
             btnPlay.BackColor = Color.FromArgb(0, 122, 204);
             btnPlay.FlatAppearance.BorderSize = 0;
             btnPlay.FlatStyle = FlatStyle.Flat;
-            btnPlay.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnPlay.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnPlay.ForeColor = Color.White;
             btnPlay.Location = new Point(352, 105);
             btnPlay.Name = "btnPlay";
@@ -312,7 +315,7 @@
             btnStop.BackColor = Color.FromArgb(211, 47, 47);
             btnStop.FlatAppearance.BorderSize = 0;
             btnStop.FlatStyle = FlatStyle.Flat;
-            btnStop.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            btnStop.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnStop.ForeColor = Color.White;
             btnStop.Location = new Point(476, 105);
             btnStop.Name = "btnStop";
@@ -567,11 +570,11 @@
             btnDeleteData.BackColor = Color.FromArgb(211, 47, 47);
             btnDeleteData.FlatAppearance.BorderSize = 0;
             btnDeleteData.FlatStyle = FlatStyle.Flat;
-            btnDeleteData.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            btnDeleteData.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnDeleteData.ForeColor = Color.White;
-            btnDeleteData.Location = new Point(15, 107);
+            btnDeleteData.Location = new Point(134, 48);
             btnDeleteData.Name = "btnDeleteData";
-            btnDeleteData.Size = new Size(160, 42);
+            btnDeleteData.Size = new Size(116, 42);
             btnDeleteData.TabIndex = 6;
             btnDeleteData.Text = "데이터 삭제";
             btnDeleteData.UseVisualStyleBackColor = false;
@@ -581,7 +584,7 @@
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
-            pnlTrainingLog.Controls.Add(chartRealTime);
+            pnlTrainingLog.Controls.Add(ChartRealTime);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
@@ -591,15 +594,15 @@
             pnlTrainingLog.TabIndex = 11;
             pnlTrainingLog.Visible = false;
             // 
-            // chartRealTime
+            // ChartRealTime
             // 
-            chartRealTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            chartRealTime.BackColor = Color.FromArgb(30, 30, 30);
-            chartRealTime.Location = new Point(14, 325);
-            chartRealTime.Name = "chartRealTime";
-            chartRealTime.Size = new Size(816, 144);
-            chartRealTime.TabIndex = 14;
-            chartRealTime.Text = "chart1";
+            ChartRealTime.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            ChartRealTime.BackColor = Color.FromArgb(30, 30, 30);
+            ChartRealTime.Location = new Point(14, 321);
+            ChartRealTime.Name = "ChartRealTime";
+            ChartRealTime.Size = new Size(816, 148);
+            ChartRealTime.TabIndex = 14;
+            ChartRealTime.TabStop = false;
             // 
             // btnRunSimulator
             // 
@@ -656,6 +659,9 @@
             // 
             pnlDelete.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             pnlDelete.BackColor = Color.FromArgb(45, 45, 48);
+            pnlDelete.Controls.Add(btnSelectRange);
+            pnlDelete.Controls.Add(txtEndFrame);
+            pnlDelete.Controls.Add(txtStartFrame);
             pnlDelete.Controls.Add(btnSelectAll);
             pnlDelete.Controls.Add(btnOpenTrash);
             pnlDelete.Controls.Add(lblDelete);
@@ -665,16 +671,60 @@
             pnlDelete.Size = new Size(378, 160);
             pnlDelete.TabIndex = 11;
             // 
+            // btnSelectRange
+            // 
+            btnSelectRange.BackColor = Color.FromArgb(62, 62, 66);
+            btnSelectRange.FlatAppearance.BorderSize = 0;
+            btnSelectRange.FlatStyle = FlatStyle.Flat;
+            btnSelectRange.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnSelectRange.ForeColor = Color.White;
+            btnSelectRange.Location = new Point(253, 100);
+            btnSelectRange.Margin = new Padding(2);
+            btnSelectRange.Name = "btnSelectRange";
+            btnSelectRange.Size = new Size(116, 31);
+            btnSelectRange.TabIndex = 0;
+            btnSelectRange.Text = "구간 선택";
+            btnSelectRange.UseVisualStyleBackColor = false;
+            btnSelectRange.Click += btnSelectRange_Click;
+            // 
+            // txtEndFrame
+            // 
+            txtEndFrame.BackColor = Color.FromArgb(30, 30, 30);
+            txtEndFrame.BorderStyle = BorderStyle.FixedSingle;
+            txtEndFrame.Font = new Font("Segoe UI", 11F);
+            txtEndFrame.ForeColor = Color.White;
+            txtEndFrame.Location = new Point(134, 100);
+            txtEndFrame.Margin = new Padding(2);
+            txtEndFrame.Name = "txtEndFrame";
+            txtEndFrame.PlaceholderText = "끝";
+            txtEndFrame.Size = new Size(116, 32);
+            txtEndFrame.TabIndex = 16;
+            txtEndFrame.Leave += txtEndFrame_Leave;
+            // 
+            // txtStartFrame
+            // 
+            txtStartFrame.BackColor = Color.FromArgb(30, 30, 30);
+            txtStartFrame.BorderStyle = BorderStyle.FixedSingle;
+            txtStartFrame.Font = new Font("Segoe UI", 11F);
+            txtStartFrame.ForeColor = Color.White;
+            txtStartFrame.Location = new Point(15, 100);
+            txtStartFrame.Margin = new Padding(2);
+            txtStartFrame.Name = "txtStartFrame";
+            txtStartFrame.PlaceholderText = "시작";
+            txtStartFrame.Size = new Size(116, 32);
+            txtStartFrame.TabIndex = 15;
+            txtStartFrame.Leave += txtStartFrame_Leave;
+            // 
             // btnSelectAll
             // 
             btnSelectAll.BackColor = Color.FromArgb(62, 62, 66);
             btnSelectAll.FlatAppearance.BorderSize = 0;
             btnSelectAll.FlatStyle = FlatStyle.Flat;
-            btnSelectAll.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            btnSelectAll.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
             btnSelectAll.ForeColor = Color.White;
-            btnSelectAll.Location = new Point(203, 107);
+            btnSelectAll.Location = new Point(253, 48);
             btnSelectAll.Name = "btnSelectAll";
-            btnSelectAll.Size = new Size(160, 42);
+            btnSelectAll.Size = new Size(122, 42);
             btnSelectAll.TabIndex = 11;
             btnSelectAll.Text = "리스트 전체 선택";
             btnSelectAll.UseVisualStyleBackColor = false;
@@ -685,11 +735,11 @@
             btnOpenTrash.BackColor = Color.FromArgb(0, 122, 204);
             btnOpenTrash.FlatAppearance.BorderSize = 0;
             btnOpenTrash.FlatStyle = FlatStyle.Flat;
-            btnOpenTrash.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            btnOpenTrash.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnOpenTrash.ForeColor = Color.White;
             btnOpenTrash.Location = new Point(15, 48);
             btnOpenTrash.Name = "btnOpenTrash";
-            btnOpenTrash.Size = new Size(160, 42);
+            btnOpenTrash.Size = new Size(116, 42);
             btnOpenTrash.TabIndex = 10;
             btnOpenTrash.Text = "휴지통";
             btnOpenTrash.UseVisualStyleBackColor = false;
@@ -812,13 +862,26 @@
             // 
             pnlManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlManual.BackColor = Color.FromArgb(45, 45, 48);
-            pnlManual.Controls.Add(lblManual);
             pnlManual.Controls.Add(rtbManual);
+            pnlManual.Controls.Add(lblManual);
             pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
-            pnlManual.Size = new Size(845, 529);
+            pnlManual.Size = new Size(845, 466);
             pnlManual.TabIndex = 14;
             pnlManual.Visible = false;
+            // 
+            // rtbManual
+            // 
+            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
+            rtbManual.BorderStyle = BorderStyle.None;
+            rtbManual.ForeColor = Color.LightGreen;
+            rtbManual.Location = new Point(14, 38);
+            rtbManual.Name = "rtbManual";
+            rtbManual.ReadOnly = true;
+            rtbManual.Size = new Size(817, 411);
+            rtbManual.TabIndex = 11;
+            rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
             // lblManual
             // 
@@ -830,19 +893,6 @@
             lblManual.Size = new Size(100, 23);
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
-            // 
-            // rtbManual
-            // 
-            rtbManual.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            rtbManual.BackColor = Color.FromArgb(30, 30, 30);
-            rtbManual.BorderStyle = BorderStyle.None;
-            rtbManual.ForeColor = Color.LightGreen;
-            rtbManual.Location = new Point(11, 45);
-            rtbManual.Name = "rtbManual";
-            rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(817, 449);
-            rtbManual.TabIndex = 1;
-            rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
             // Form1
             // 
@@ -865,7 +915,7 @@
             Controls.Add(pnlFrameList);
             Controls.Add(pnlNavigation);
             Margin = new Padding(4);
-            MinimumSize = new Size(1310, 842);
+            MinimumSize = new Size(1310, 826);
             Name = "Form1";
             Text = "MoveArt Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
@@ -884,7 +934,7 @@
             pnlFilterOptions.PerformLayout();
             pnlTrainingLog.ResumeLayout(false);
             pnlTrainingLog.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)chartRealTime).EndInit();
+            ((System.ComponentModel.ISupportInitialize)ChartRealTime).EndInit();
             pnlDelete.ResumeLayout(false);
             pnlDelete.PerformLayout();
             pnlTrash.ResumeLayout(false);
@@ -954,7 +1004,11 @@
         private Button btnGoHome;
         private Panel pnlManual;
         private Label lblManual;
+        private PictureBox ChartRealTime;
+        private RichTextBox richTextBox1;
         private RichTextBox rtbManual;
-        private System.Windows.Forms.DataVisualization.Charting.Chart chartRealTime;
+        private TextBox txtStartFrame;
+        private TextBox txtEndFrame;
+        private Button btnSelectRange;
     }
 }
