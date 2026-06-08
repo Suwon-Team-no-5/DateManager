@@ -587,7 +587,7 @@
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
             pnlTrainingLog.Controls.Add(ChartRealTime);
             pnlTrainingLog.Controls.Add(btnCompareDataset);
-            pnlTrainingLog.Controls.Add(pbChart);
+            pnlTrainingLog.Controls.Add(ChartRealTime);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
@@ -1029,5 +1029,7 @@
         private TextBox txtEndFrame;
         private Button btnSelectRange;
         private System.Windows.Forms.DataVisualization.Charting.Chart ChartRealTime;
+        private Button btnCompareDataset;
+
     }
 }
