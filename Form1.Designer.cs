@@ -66,7 +66,7 @@
             chkFilterThr = new CheckBox();
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
-            pbChart = new PictureBox();
+            ChartRealTime = new System.Windows.Forms.DataVisualization.Charting.Chart();
             btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
@@ -98,7 +98,7 @@
             pnlDataManagement.SuspendLayout();
             pnlFilterOptions.SuspendLayout();
             pnlTrainingLog.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pbChart).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)ChartRealTime).BeginInit();
             pnlDelete.SuspendLayout();
             pnlTrash.SuspendLayout();
             pnlManual.SuspendLayout();
@@ -111,7 +111,7 @@
             pbMainCam.Location = new Point(14, 80);
             pbMainCam.Margin = new Padding(4);
             pbMainCam.Name = "pbMainCam";
-            pbMainCam.Size = new Size(814, 432);
+            pbMainCam.Size = new Size(814, 363);
             pbMainCam.TabIndex = 0;
             pbMainCam.TabStop = false;
             // 
@@ -171,7 +171,7 @@
             pnlCamView.Controls.Add(lblAngle);
             pnlCamView.Location = new Point(31, 71);
             pnlCamView.Name = "pnlCamView";
-            pnlCamView.Size = new Size(845, 529);
+            pnlCamView.Size = new Size(845, 460);
             pnlCamView.TabIndex = 6;
             // 
             // lblCamViewTitle
@@ -585,6 +585,7 @@
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
+            pnlTrainingLog.Controls.Add(ChartRealTime);
             pnlTrainingLog.Controls.Add(btnCompareDataset);
             pnlTrainingLog.Controls.Add(pbChart);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
@@ -596,15 +597,15 @@
             pnlTrainingLog.TabIndex = 11;
             pnlTrainingLog.Visible = false;
             // 
-            // pbChart
+            // ChartRealTime
             // 
-            pbChart.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            pbChart.BackColor = Color.FromArgb(30, 30, 30);
-            pbChart.Location = new Point(14, 321);
-            pbChart.Name = "pbChart";
-            pbChart.Size = new Size(816, 148);
-            pbChart.TabIndex = 14;
-            pbChart.TabStop = false;
+            ChartRealTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            ChartRealTime.BackColor = Color.FromArgb(30, 30, 30);
+            ChartRealTime.Location = new Point(14, 328);
+            ChartRealTime.Name = "ChartRealTime";
+            ChartRealTime.Size = new Size(814, 132);
+            ChartRealTime.TabIndex = 14;
+            ChartRealTime.Text = "chart1";
             // 
             // btnRunSimulator
             // 
@@ -868,7 +869,7 @@
             pnlManual.Controls.Add(lblManual);
             pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
-            pnlManual.Size = new Size(845, 529);
+            pnlManual.Size = new Size(845, 460);
             pnlManual.TabIndex = 14;
             pnlManual.Visible = false;
             // 
@@ -881,7 +882,7 @@
             rtbManual.Location = new Point(14, 38);
             rtbManual.Name = "rtbManual";
             rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(817, 474);
+            rtbManual.Size = new Size(817, 405);
             rtbManual.TabIndex = 11;
             rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
@@ -952,7 +953,7 @@
             pnlFilterOptions.PerformLayout();
             pnlTrainingLog.ResumeLayout(false);
             pnlTrainingLog.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)pbChart).EndInit();
+            ((System.ComponentModel.ISupportInitialize)ChartRealTime).EndInit();
             pnlDelete.ResumeLayout(false);
             pnlDelete.PerformLayout();
             pnlTrash.ResumeLayout(false);
@@ -1022,12 +1023,11 @@
         private Button btnGoHome;
         private Panel pnlManual;
         private Label lblManual;
-        private PictureBox pbChart;
         private RichTextBox richTextBox1;
         private RichTextBox rtbManual;
         private TextBox txtStartFrame;
         private TextBox txtEndFrame;
         private Button btnSelectRange;
-        private Button btnCompareDataset;
+        private System.Windows.Forms.DataVisualization.Charting.Chart ChartRealTime;
     }
 }
