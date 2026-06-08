@@ -66,7 +66,7 @@
             chkFilterThr = new CheckBox();
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
-            ChartRealTime = new PictureBox();
+            ChartRealTime = new System.Windows.Forms.DataVisualization.Charting.Chart();
             btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
@@ -110,7 +110,7 @@
             pbMainCam.Location = new Point(14, 80);
             pbMainCam.Margin = new Padding(4);
             pbMainCam.Name = "pbMainCam";
-            pbMainCam.Size = new Size(814, 372);
+            pbMainCam.Size = new Size(814, 363);
             pbMainCam.TabIndex = 0;
             pbMainCam.TabStop = false;
             // 
@@ -170,7 +170,7 @@
             pnlCamView.Controls.Add(lblAngle);
             pnlCamView.Location = new Point(31, 71);
             pnlCamView.Name = "pnlCamView";
-            pnlCamView.Size = new Size(845, 469);
+            pnlCamView.Size = new Size(845, 460);
             pnlCamView.TabIndex = 6;
             // 
             // lblCamViewTitle
@@ -596,13 +596,13 @@
             // 
             // ChartRealTime
             // 
-            ChartRealTime.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            ChartRealTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             ChartRealTime.BackColor = Color.FromArgb(30, 30, 30);
-            ChartRealTime.Location = new Point(14, 321);
+            ChartRealTime.Location = new Point(14, 328);
             ChartRealTime.Name = "ChartRealTime";
-            ChartRealTime.Size = new Size(816, 148);
+            ChartRealTime.Size = new Size(814, 132);
             ChartRealTime.TabIndex = 14;
-            ChartRealTime.TabStop = false;
+            ChartRealTime.Text = "chart1";
             // 
             // btnRunSimulator
             // 
@@ -866,7 +866,7 @@
             pnlManual.Controls.Add(lblManual);
             pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
-            pnlManual.Size = new Size(845, 466);
+            pnlManual.Size = new Size(845, 460);
             pnlManual.TabIndex = 14;
             pnlManual.Visible = false;
             // 
@@ -879,7 +879,7 @@
             rtbManual.Location = new Point(14, 38);
             rtbManual.Name = "rtbManual";
             rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(817, 411);
+            rtbManual.Size = new Size(817, 405);
             rtbManual.TabIndex = 11;
             rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
@@ -1004,11 +1004,11 @@
         private Button btnGoHome;
         private Panel pnlManual;
         private Label lblManual;
-        private PictureBox ChartRealTime;
         private RichTextBox richTextBox1;
         private RichTextBox rtbManual;
         private TextBox txtStartFrame;
         private TextBox txtEndFrame;
         private Button btnSelectRange;
+        private System.Windows.Forms.DataVisualization.Charting.Chart ChartRealTime;
     }
 }
