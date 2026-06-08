@@ -88,6 +88,7 @@
             pnlManual = new Panel();
             rtbManual = new RichTextBox();
             lblManual = new Label();
+            btnCompareDataset = new Button();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -585,6 +586,8 @@
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
             pnlTrainingLog.Controls.Add(ChartRealTime);
+            pnlTrainingLog.Controls.Add(btnCompareDataset);
+            pnlTrainingLog.Controls.Add(pbChart);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
@@ -894,6 +897,22 @@
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
             // 
+            // btnCompareDataset
+            // 
+            btnCompareDataset.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCompareDataset.BackColor = Color.FromArgb(0, 122, 204);
+            btnCompareDataset.FlatAppearance.BorderSize = 0;
+            btnCompareDataset.FlatStyle = FlatStyle.Flat;
+            btnCompareDataset.Font = new Font("Segoe UI Semibold", 9F);
+            btnCompareDataset.ForeColor = Color.White;
+            btnCompareDataset.Location = new Point(612, 475);
+            btnCompareDataset.Name = "btnCompareDataset";
+            btnCompareDataset.Size = new Size(106, 50);
+            btnCompareDataset.TabIndex = 15;
+            btnCompareDataset.Text = "학습파일 \r\n비교";
+            btnCompareDataset.UseVisualStyleBackColor = false;
+            btnCompareDataset.Click += btnCompareDataset_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
@@ -917,7 +936,7 @@
             Margin = new Padding(4);
             MinimumSize = new Size(1310, 826);
             Name = "Form1";
-            Text = "MoveArt Donkeycar 데이터 관리 시스템";
+            Text = "5팀 Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
             pnlCamView.ResumeLayout(false);
             pnlCamView.PerformLayout();
