@@ -1556,7 +1556,17 @@ namespace DateManager
 
         private void btnCompareDataset_Click(object sender, EventArgs e)
         {
-
+            
+                    // 💡 [추가] 분석에 사용할 AI 모델(.h5) 선택 파일창
+                    string modelPath = "";
+                    using (OpenFileDialog ofd = new OpenFileDialog())
+                    {
+                        ofd.Title = "분석에 사용할 동키카 모델(.h5) 파일을 선택하세요.";
+                        ofd.Filter = "Keras Model (*.h5)|*.h5|All Files (*.*)|*.*";
+                        // 기본 지정 경로인 _modelWinPath가 있으면 초기 위치로 맵핑 가능
+                        if (ofd.ShowDialog() == DialogResult.OK) modelPath = ofd.FileName;
+                        else return;
+                    }
         }
     }
 }
