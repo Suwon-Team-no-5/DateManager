@@ -67,6 +67,27 @@ namespace DateManager
             public float Throttle { get; set; }
         }
 
+        private string ConvertToLinuxPath(string winPath)
+        {
+            if (string.IsNullOrWhiteSpace(winPath)) return winPath ?? "";
+            try
+            {
+                // \wsl$ style or drive-letter style 변환
+                string p = winPath.Replace("\\", "/");
+                // C:/Users/... -> /mnt/c/Users/...
+                if (p.Length >= 2 && char.IsLetter(p[0]) && p[1] == ':')
+                {
+                    char drive = char.ToLowerInvariant(p[0]);
+                    string rest = p.Substring(2);
+                    return $"/mnt/{drive}{rest}".Replace("//", "/");
+                }
+                // \wsl.localhost\... network path - map to WSL mount if possible
+                if (p.StartsWith("/wsl.localhost/")) return p;
+                return p;
+            }
+            catch { return winPath ?? ""; }
+        }
+
         private List<AiPredictFrame> _aiPredictedList = new List<AiPredictFrame>();
         private readonly SolidBrush _barLimeBrush = new SolidBrush(Color.LimeGreen); // AI 속도바용 브러시
 
@@ -205,8 +226,10 @@ namespace DateManager
             string scriptPath = "/home/jaeseo03/mycar/predict_all.py";
 
 
-            string linuxTubPath = ConvertToLinuxPath(tubPath);
-            string linuxModelPath = ConvertToLinuxPath(modelPath);
+            // WSL에서 실행할 때만 Windows 경로를 Linux 스타일로 변환
+            bool useWsl = pythonPath != null && pythonPath.IndexOf("wsl", StringComparison.OrdinalIgnoreCase) >= 0;
+            string linuxTubPath = useWsl ? ConvertToLinuxPath(tubPath) : tubPath;
+            string linuxModelPath = useWsl ? ConvertToLinuxPath(modelPath) : modelPath;
 
 
             string linuxPythonEnv = "/home/jaeseo03/miniconda3/envs/donkey/bin/python";//파이썬 경로 확인 필요!!!!
@@ -214,26 +237,40 @@ namespace DateManager
             ProcessStartInfo start = new ProcessStartInfo();
             start.FileName = pythonPath;
 
-
-            start.Arguments = $" -d Ubuntu-22.04 {linuxPythonEnv} {scriptPath} \"{linuxTubPath}\" \"{linuxModelPath}\"";
+            // Use -d <distro> -e to execute the python binary inside WSL distribution
+            // Wrap command safely using bash -lc to allow complex commands if needed
+            start.Arguments = $"-d Ubuntu-22.04 -e bash -lc \"{linuxPythonEnv} '{scriptPath}' '{linuxTubPath}' '{linuxModelPath}'\"";
 
             start.UseShellExecute = false;
             start.RedirectStandardOutput = true;
+            start.RedirectStandardError = true;
             start.CreateNoWindow = true;
 
             try
             {
                 using (Process process = Process.Start(start))
                 {
-                    using (StreamReader reader = process.StandardOutput)
-                    {
-                        string jsonResult = reader.ReadToEnd();
-                        process.WaitForExit();
+                    if (process == null) throw new Exception("프로세스 시작 실패");
 
-                        if (!string.IsNullOrEmpty(jsonResult))
+                    string stdout = process.StandardOutput.ReadToEnd();
+                    string stderr = process.StandardError.ReadToEnd();
+                    process.WaitForExit();
+
+                    if (!string.IsNullOrWhiteSpace(stderr))
+                    {
+                        // 로그에 경고는 남기되, 치명적 오류면 사용자에게 알립니다.
+                        if (!stderr.Contains("WARNING") && !stderr.Contains("tensorflow"))
+                        {
+                            MessageBox.Show($"AI 예측 스크립트 오류: {stderr}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(stdout))
+                    {
+                        try
                         {
                             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                            var records = JsonSerializer.Deserialize<List<Dictionary<string, float>>>(jsonResult, options);
+                            var records = JsonSerializer.Deserialize<List<Dictionary<string, float>>>(stdout, options);
 
                             if (records != null)
                             {
@@ -246,6 +283,10 @@ namespace DateManager
                                     });
                                 }
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"AI 예측 결과 파싱 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
                 }
@@ -1192,6 +1233,49 @@ namespace DateManager
                 }
             }
 
+            // AI 예측 경로(연두색) 오버레이: _aiPredictedList가 존재하면 동일한 로직으로 그립니다.
+            var aiList = _aiPredictedList; // 로컬 복사로 스레드 안전성 확보
+            if (aiList != null && aiList.Count > 0)
+            {
+                try
+                {
+                    float curXA = width / 2.0f;
+                    float angleSumA = 0f;
+                    PointF[] leftA = new PointF[segments + 1];
+                    PointF[] rightA = new PointF[segments + 1];
+
+                    leftA[0] = new PointF(curXA - bottomWidth / 2, height);
+                    rightA[0] = new PointF(curXA + bottomWidth / 2, height);
+
+                    float smoothedA = 0f;
+                    for (int i = 1; i <= segments; i++)
+                    {
+                        int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), aiList.Count - 1);
+                        float targetAngle = (float)aiList[futureIndex].Angle;
+                        smoothedA = (smoothedA * 0.7f) + (targetAngle * 0.3f);
+                        angleSumA += smoothedA;
+
+                        float progress = i / (float)segments;
+                        float nextY = height - (pathHeight * progress);
+                        float nextX = curXA + (angleSumA * maxDeflection);
+                        curXA = nextX;
+                        float currentWidth = bottomWidth - ((bottomWidth - topWidth) * progress);
+                        leftA[i] = new PointF(curXA - currentWidth / 2, nextY);
+                        rightA[i] = new PointF(curXA + currentWidth / 2, nextY);
+                    }
+
+                    using (SolidBrush aiBrush = new SolidBrush(Color.FromArgb(180, Color.LimeGreen)))
+                    {
+                        for (int i = 0; i < segments; i++)
+                        {
+                            PointF[] polyA = { leftA[i], rightA[i], new PointF(rightA[i + 1].X, rightA[i + 1].Y + 5f), new PointF(leftA[i + 1].X, leftA[i + 1].Y + 5f) };
+                            g.FillPolygon(aiBrush, polyA);
+                        }
+                    }
+                }
+                catch { }
+            }
+
             float throttle = (float)_displayedFrameList[_currentFrameIndex].Throttle;
             int displaySpeed = (int)Math.Round(Math.Abs(throttle) * 100);
             float hudRight = width - 50;
@@ -1511,16 +1595,6 @@ namespace DateManager
             }
         }
 
-        private string ConvertToLinuxPath(string windowsPath)
-        {
-            string path = windowsPath.Replace("\\", "/");
-            int index = path.IndexOf("/home/");
-            if (index != -1)
-            {
-                return path.Substring(index);
-            }
-            return path;
-        }
 
         private void btnSelectRange_Click(object sender, EventArgs e)
         {
