@@ -81,7 +81,17 @@ namespace DateManager
             Form1 mainForm = new Form1();
 
             mainForm.StartPosition = FormStartPosition.Manual;
-            mainForm.Location = this.Location;
+
+            if (this.WindowState == FormWindowState.Maximized)
+            {
+                mainForm.Location = this.Location;
+                mainForm.WindowState = FormWindowState.Maximized;
+            }
+            else
+            {
+                mainForm.WindowState = FormWindowState.Normal;
+                mainForm.Bounds = this.Bounds;
+            }
 
             mainForm.FormClosed += (s, args) =>
             {

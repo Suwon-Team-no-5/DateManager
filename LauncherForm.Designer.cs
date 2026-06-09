@@ -1,8 +1,16 @@
-﻿namespace DateManager
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace DateManager
 {
     partial class LauncherForm
     {
         private System.ComponentModel.IContainer components = null;
+
+        private const int BaseClientWidth = 1295;
+        private const int BaseClientHeight = 805;
+        private bool responsiveLayoutReady = false;
 
         protected override void Dispose(bool disposing)
         {
@@ -154,16 +162,95 @@
             Controls.Add(btnAutoDrive);
             Controls.Add(btnCollect);
             Controls.Add(lblSub);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
+            FormBorderStyle = FormBorderStyle.Sizable;
             Margin = new Padding(4);
-            MaximizeBox = false;
+            MaximizeBox = true;
+            MinimizeBox = true;
+            MinimumSize = new Size(900, 600);
             Name = "LauncherForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "DonkeyCar System Launcher";
+            Shown += LauncherForm_Shown;
+            Resize += LauncherForm_Resize;
             ResumeLayout(false);
         }
 
         #endregion
+
+        private void LauncherForm_Shown(object sender, EventArgs e)
+        {
+            responsiveLayoutReady = true;
+            ApplyResponsiveLayout();
+        }
+
+        private void LauncherForm_Resize(object sender, EventArgs e)
+        {
+            if (!responsiveLayoutReady)
+            {
+                return;
+            }
+
+            ApplyResponsiveLayout();
+        }
+
+        private void ApplyResponsiveLayout()
+        {
+            if (ClientSize.Width <= 0 || ClientSize.Height <= 0)
+            {
+                return;
+            }
+
+            float scaleX = ClientSize.Width / (float)BaseClientWidth;
+            float scaleY = ClientSize.Height / (float)BaseClientHeight;
+            float scale = Math.Min(scaleX, scaleY);
+
+            int layoutWidth = (int)Math.Round(BaseClientWidth * scale);
+            int layoutHeight = (int)Math.Round(BaseClientHeight * scale);
+            int offsetX = (ClientSize.Width - layoutWidth) / 2;
+            int offsetY = (ClientSize.Height - layoutHeight) / 2;
+
+            SuspendLayout();
+
+            SetScaledBounds(lblSub, 0, 180, 1295, 35, scale, offsetX, offsetY);
+            SetScaledBounds(pnlAccentLine, 597, 235, 100, 4, scale, offsetX, offsetY);
+            SetScaledBounds(btnCollect, 347, 300, 600, 90, scale, offsetX, offsetY);
+            SetScaledBounds(btnAutoDrive, 347, 420, 600, 90, scale, offsetX, offsetY);
+            SetScaledBounds(btnOpenMainUi, 347, 540, 600, 90, scale, offsetX, offsetY);
+            SetScaledBounds(lblFooter, 0, 720, 1295, 30, scale, offsetX, offsetY);
+            SetScaledBounds(btnTitle, -12, 93, 1307, 84, scale, offsetX, offsetY);
+
+            SetScaledFont(lblSub, 13F, scale);
+            SetScaledFont(btnCollect, 16F, scale);
+            SetScaledFont(btnAutoDrive, 16F, scale);
+            SetScaledFont(btnOpenMainUi, 16F, scale);
+            SetScaledFont(lblFooter, 10F, scale);
+            SetScaledFont(btnTitle, 32F, scale);
+
+            ResumeLayout(false);
+        }
+
+        private void SetScaledBounds(Control control, int x, int y, int width, int height, float scale, int offsetX, int offsetY)
+        {
+            control.SetBounds(
+                offsetX + (int)Math.Round(x * scale),
+                offsetY + (int)Math.Round(y * scale),
+                (int)Math.Round(width * scale),
+                (int)Math.Round(height * scale)
+            );
+        }
+
+        private void SetScaledFont(Control control, float baseFontSize, float scale)
+        {
+            float fontSize = Math.Max(8F, baseFontSize * scale);
+
+            if (Math.Abs(control.Font.Size - fontSize) < 0.2F)
+            {
+                return;
+            }
+
+            control.Font = new Font(control.Font.FontFamily, fontSize, control.Font.Style, GraphicsUnit.Point);
+        }
+
         private System.Windows.Forms.Label lblSub;
         private System.Windows.Forms.Panel pnlAccentLine;
         private System.Windows.Forms.Button btnCollect;

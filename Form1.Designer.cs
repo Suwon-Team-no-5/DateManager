@@ -66,7 +66,8 @@
             chkFilterThr = new CheckBox();
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
-            pbChart = new PictureBox();
+            ChartRealTime = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            btnCompareDataset = new Button();
             btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
@@ -97,7 +98,7 @@
             pnlDataManagement.SuspendLayout();
             pnlFilterOptions.SuspendLayout();
             pnlTrainingLog.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pbChart).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)ChartRealTime).BeginInit();
             pnlDelete.SuspendLayout();
             pnlTrash.SuspendLayout();
             pnlManual.SuspendLayout();
@@ -584,7 +585,8 @@
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
-            pnlTrainingLog.Controls.Add(pbChart);
+            pnlTrainingLog.Controls.Add(btnCompareDataset);
+            pnlTrainingLog.Controls.Add(ChartRealTime);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
             pnlTrainingLog.Controls.Add(lblLogTitle);
             pnlTrainingLog.Controls.Add(rtbTrainLog);
@@ -594,15 +596,31 @@
             pnlTrainingLog.TabIndex = 11;
             pnlTrainingLog.Visible = false;
             // 
-            // pbChart
+            // ChartRealTime
             // 
-            pbChart.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            pbChart.BackColor = Color.FromArgb(30, 30, 30);
-            pbChart.Location = new Point(14, 321);
-            pbChart.Name = "pbChart";
-            pbChart.Size = new Size(816, 148);
-            pbChart.TabIndex = 14;
-            pbChart.TabStop = false;
+            ChartRealTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            ChartRealTime.BackColor = Color.FromArgb(30, 30, 30);
+            ChartRealTime.Location = new Point(14, 328);
+            ChartRealTime.Name = "ChartRealTime";
+            ChartRealTime.Size = new Size(814, 132);
+            ChartRealTime.TabIndex = 14;
+            ChartRealTime.Text = "chart1";
+            // 
+            // btnCompareDataset
+            // 
+            btnCompareDataset.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCompareDataset.BackColor = Color.FromArgb(0, 122, 204);
+            btnCompareDataset.FlatAppearance.BorderSize = 0;
+            btnCompareDataset.FlatStyle = FlatStyle.Flat;
+            btnCompareDataset.Font = new Font("Segoe UI Semibold", 9F);
+            btnCompareDataset.ForeColor = Color.White;
+            btnCompareDataset.Location = new Point(612, 475);
+            btnCompareDataset.Name = "btnCompareDataset";
+            btnCompareDataset.Size = new Size(106, 50);
+            btnCompareDataset.TabIndex = 15;
+            btnCompareDataset.Text = "학습파일 \r\n비교";
+            btnCompareDataset.UseVisualStyleBackColor = false;
+            btnCompareDataset.Click += btnCompareDataset_Click;
             // 
             // btnRunSimulator
             // 
@@ -679,7 +697,7 @@
             btnSelectRange.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnSelectRange.ForeColor = Color.White;
             btnSelectRange.Location = new Point(253, 100);
-            btnSelectRange.Margin = new Padding(2, 2, 2, 2);
+            btnSelectRange.Margin = new Padding(2);
             btnSelectRange.Name = "btnSelectRange";
             btnSelectRange.Size = new Size(116, 31);
             btnSelectRange.TabIndex = 0;
@@ -694,7 +712,7 @@
             txtEndFrame.Font = new Font("Segoe UI", 11F);
             txtEndFrame.ForeColor = Color.White;
             txtEndFrame.Location = new Point(134, 100);
-            txtEndFrame.Margin = new Padding(2, 2, 2, 2);
+            txtEndFrame.Margin = new Padding(2);
             txtEndFrame.Name = "txtEndFrame";
             txtEndFrame.PlaceholderText = "끝";
             txtEndFrame.Size = new Size(116, 32);
@@ -708,7 +726,7 @@
             txtStartFrame.Font = new Font("Segoe UI", 11F);
             txtStartFrame.ForeColor = Color.White;
             txtStartFrame.Location = new Point(15, 100);
-            txtStartFrame.Margin = new Padding(2, 2, 2, 2);
+            txtStartFrame.Margin = new Padding(2);
             txtStartFrame.Name = "txtStartFrame";
             txtStartFrame.PlaceholderText = "시작";
             txtStartFrame.Size = new Size(116, 32);
@@ -917,7 +935,7 @@
             Margin = new Padding(4);
             MinimumSize = new Size(1310, 826);
             Name = "Form1";
-            Text = "MoveArt Donkeycar 데이터 관리 시스템";
+            Text = "5팀 Donkeycar 데이터 관리 시스템";
             ((System.ComponentModel.ISupportInitialize)pbMainCam).EndInit();
             pnlCamView.ResumeLayout(false);
             pnlCamView.PerformLayout();
@@ -934,7 +952,7 @@
             pnlFilterOptions.PerformLayout();
             pnlTrainingLog.ResumeLayout(false);
             pnlTrainingLog.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)pbChart).EndInit();
+            ((System.ComponentModel.ISupportInitialize)ChartRealTime).EndInit();
             pnlDelete.ResumeLayout(false);
             pnlDelete.PerformLayout();
             pnlTrash.ResumeLayout(false);
@@ -1004,11 +1022,13 @@
         private Button btnGoHome;
         private Panel pnlManual;
         private Label lblManual;
-        private PictureBox pbChart;
         private RichTextBox richTextBox1;
         private RichTextBox rtbManual;
         private TextBox txtStartFrame;
         private TextBox txtEndFrame;
         private Button btnSelectRange;
+        private System.Windows.Forms.DataVisualization.Charting.Chart ChartRealTime;
+        private Button btnCompareDataset;
+
     }
 }
