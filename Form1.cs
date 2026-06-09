@@ -1364,20 +1364,41 @@ namespace DateManager
 
         private void btnGoHome_Click(object sender, EventArgs e)
         {
-            Form launcherForm = Application.OpenForms["LauncherForm"];
+            bool isMaximized = this.WindowState == FormWindowState.Maximized;
 
-            if (launcherForm != null)
+            Rectangle targetBounds = isMaximized
+                ? this.RestoreBounds
+                : this.Bounds;
+
+            LauncherForm launcherForm = Application.OpenForms["LauncherForm"] as LauncherForm;
+
+            if (launcherForm == null)
             {
-                launcherForm.Location = this.Location;
-                launcherForm.Show();
+                launcherForm = new LauncherForm();
+            }
+
+            launcherForm.StartPosition = FormStartPosition.Manual;
+
+            // 기존 LauncherForm이 Maximized로 숨겨져 있었을 수 있으니 먼저 Normal로 초기화
+            launcherForm.WindowState = FormWindowState.Normal;
+            launcherForm.Bounds = targetBounds;
+
+            launcherForm.Show();
+
+            if (isMaximized)
+            {
+                launcherForm.WindowState = FormWindowState.Maximized;
             }
             else
             {
-                LauncherForm newLauncher = new LauncherForm();
-                newLauncher.StartPosition = FormStartPosition.Manual;
-                newLauncher.Location = this.Location;
-                newLauncher.Show();
+                // Show 이후에 한 번 더 Normal + Bounds 적용
+                launcherForm.BeginInvoke(new Action(() =>
+                {
+                    launcherForm.WindowState = FormWindowState.Normal;
+                    launcherForm.Bounds = targetBounds;
+                }));
             }
+
             this.Close();
         }
 

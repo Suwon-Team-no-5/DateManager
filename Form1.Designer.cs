@@ -67,6 +67,7 @@
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
             ChartRealTime = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            btnCompareDataset = new Button();
             btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
@@ -88,7 +89,6 @@
             pnlManual = new Panel();
             rtbManual = new RichTextBox();
             lblManual = new Label();
-            btnCompareDataset = new Button();
             ((System.ComponentModel.ISupportInitialize)pbMainCam).BeginInit();
             pnlCamView.SuspendLayout();
             pnlNavigation.SuspendLayout();
@@ -111,7 +111,7 @@
             pbMainCam.Location = new Point(14, 80);
             pbMainCam.Margin = new Padding(4);
             pbMainCam.Name = "pbMainCam";
-            pbMainCam.Size = new Size(814, 363);
+            pbMainCam.Size = new Size(814, 432);
             pbMainCam.TabIndex = 0;
             pbMainCam.TabStop = false;
             // 
@@ -171,7 +171,7 @@
             pnlCamView.Controls.Add(lblAngle);
             pnlCamView.Location = new Point(31, 71);
             pnlCamView.Name = "pnlCamView";
-            pnlCamView.Size = new Size(845, 460);
+            pnlCamView.Size = new Size(845, 529);
             pnlCamView.TabIndex = 6;
             // 
             // lblCamViewTitle
@@ -585,7 +585,6 @@
             // 
             pnlTrainingLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pnlTrainingLog.BackColor = Color.FromArgb(45, 45, 48);
-            pnlTrainingLog.Controls.Add(ChartRealTime);
             pnlTrainingLog.Controls.Add(btnCompareDataset);
             pnlTrainingLog.Controls.Add(ChartRealTime);
             pnlTrainingLog.Controls.Add(btnRunSimulator);
@@ -606,6 +605,22 @@
             ChartRealTime.Size = new Size(814, 132);
             ChartRealTime.TabIndex = 14;
             ChartRealTime.Text = "chart1";
+            // 
+            // btnCompareDataset
+            // 
+            btnCompareDataset.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCompareDataset.BackColor = Color.FromArgb(0, 122, 204);
+            btnCompareDataset.FlatAppearance.BorderSize = 0;
+            btnCompareDataset.FlatStyle = FlatStyle.Flat;
+            btnCompareDataset.Font = new Font("Segoe UI Semibold", 9F);
+            btnCompareDataset.ForeColor = Color.White;
+            btnCompareDataset.Location = new Point(612, 475);
+            btnCompareDataset.Name = "btnCompareDataset";
+            btnCompareDataset.Size = new Size(106, 50);
+            btnCompareDataset.TabIndex = 15;
+            btnCompareDataset.Text = "학습파일 \r\n비교";
+            btnCompareDataset.UseVisualStyleBackColor = false;
+            btnCompareDataset.Click += btnCompareDataset_Click;
             // 
             // btnRunSimulator
             // 
@@ -869,7 +884,7 @@
             pnlManual.Controls.Add(lblManual);
             pnlManual.Location = new Point(31, 71);
             pnlManual.Name = "pnlManual";
-            pnlManual.Size = new Size(845, 460);
+            pnlManual.Size = new Size(845, 529);
             pnlManual.TabIndex = 14;
             pnlManual.Visible = false;
             // 
@@ -882,7 +897,7 @@
             rtbManual.Location = new Point(14, 38);
             rtbManual.Name = "rtbManual";
             rtbManual.ReadOnly = true;
-            rtbManual.Size = new Size(817, 405);
+            rtbManual.Size = new Size(817, 474);
             rtbManual.TabIndex = 11;
             rtbManual.Text = resources.GetString("rtbManual.Text");
             // 
@@ -896,22 +911,6 @@
             lblManual.Size = new Size(100, 23);
             lblManual.TabIndex = 10;
             lblManual.Text = "사용 설명서";
-            // 
-            // btnCompareDataset
-            // 
-            btnCompareDataset.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnCompareDataset.BackColor = Color.FromArgb(0, 122, 204);
-            btnCompareDataset.FlatAppearance.BorderSize = 0;
-            btnCompareDataset.FlatStyle = FlatStyle.Flat;
-            btnCompareDataset.Font = new Font("Segoe UI Semibold", 9F);
-            btnCompareDataset.ForeColor = Color.White;
-            btnCompareDataset.Location = new Point(612, 475);
-            btnCompareDataset.Name = "btnCompareDataset";
-            btnCompareDataset.Size = new Size(106, 50);
-            btnCompareDataset.TabIndex = 15;
-            btnCompareDataset.Text = "학습파일 \r\n비교";
-            btnCompareDataset.UseVisualStyleBackColor = false;
-            btnCompareDataset.Click += btnCompareDataset_Click;
             // 
             // Form1
             // 
