@@ -1,23 +1,41 @@
 #!/usr/bin/env python3
-# predict_all.py (auto-batch, index 포함, stderr 진행 로그)
+# predict_all.py (robust batch, safe image load, retry, index 포함, 배치 로그 + 진단 덤프)
 import sys
 import os
 import json
+import math
 import numpy as np
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
-def safe_load_image(path, target_size=(120, 160)):
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+def safe_load_image(path, target_size=(120,160)):
     try:
         img = load_img(path, target_size=target_size)
-        return img_to_array(img) / 255.0
-    except Exception:
+        arr = img_to_array(img)
+        # 흑백/채널 부족 처리
+        if arr.ndim == 2:
+            arr = np.stack([arr]*3, axis=-1)
+        if arr.shape[-1] == 1:
+            arr = np.repeat(arr, 3, axis=-1)
+        # 사이즈 보장
+        if arr.shape[0] != target_size[0] or arr.shape[1] != target_size[1]:
+            img = load_img(path, target_size=target_size)
+            arr = img_to_array(img)
+            if arr.ndim == 2:
+                arr = np.stack([arr]*3, axis=-1)
+            if arr.shape[-1] == 1:
+                arr = np.repeat(arr, 3, axis=-1)
+        return arr.astype("float32") / 255.0
+    except Exception as ex:
+        eprint(f"[predict_all.py] image load failed: {path} -> {ex}")
         return np.zeros((target_size[0], target_size[1], 3), dtype=np.float32)
 
 def find_catalog_files(tub_path):
     files = []
     for root, dirs, filenames in os.walk(tub_path):
-        # backup 폴더는 건너뜀
         if f"{os.sep}backup{os.sep}" in root or root.endswith(f"{os.sep}backup"):
             continue
         for fn in filenames:
@@ -27,17 +45,18 @@ def find_catalog_files(tub_path):
 
 def load_all_records(catalog_files):
     records = []
-    for cat_file in catalog_files:
+    for cat in catalog_files:
         try:
-            with open(cat_file, 'r', encoding='utf-8') as f:
+            with open(cat, 'r', encoding='utf-8') as f:
                 for line in f:
-                    if not line.strip():
-                        continue
+                    if not line.strip(): continue
                     try:
                         records.append(json.loads(line))
                     except json.JSONDecodeError:
+                        # 무효 라인 건너뜀
                         continue
-        except Exception:
+        except Exception as ex:
+            eprint(f"[predict_all.py] failed reading catalog {cat}: {ex}")
             continue
     return records
 
@@ -48,14 +67,14 @@ def build_image_candidates(tub_path, rel_path):
         os.path.join(images_folder, rel_path),
         os.path.join(images_folder, os.path.basename(rel_path))
     ]
-    for cand in candidates:
-        if os.path.exists(cand):
-            return cand
+    for c in candidates:
+        if c and os.path.exists(c):
+            return c
     return None
 
 def _get_mem_available_bytes():
     try:
-        with open("/proc/meminfo", "r") as f:
+        with open("/proc/meminfo","r") as f:
             for line in f:
                 if line.startswith("MemAvailable:"):
                     parts = line.split()
@@ -63,7 +82,7 @@ def _get_mem_available_bytes():
     except Exception:
         pass
     try:
-        with open("/proc/meminfo", "r") as f:
+        with open("/proc/meminfo","r") as f:
             for line in f:
                 if line.startswith("MemTotal:"):
                     parts = line.split()
@@ -73,22 +92,63 @@ def _get_mem_available_bytes():
     return 1_000_000_000
 
 def choose_batch_size(arg_batch):
-    if arg_batch is not None:
+    if arg_batch:
         try:
             return max(1, int(arg_batch))
-        except Exception:
+        except:
             return 32
-    # 자동 추정
     avail = _get_mem_available_bytes()
-    per_image_bytes = 120 * 160 * 3 * 4  # float32
-    overhead_factor = 6
-    est_per_item = per_image_bytes * overhead_factor
-    guessed = max(1, int(avail / (est_per_item * 1.1)))
+    per_image = 120 * 160 * 3 * 4
+    overhead = 6
+    guessed = max(1, int(avail / (per_image * overhead * 1.1)))
     return int(max(1, min(64, guessed)))
+
+def normalize_preds(preds):
+    preds = np.asarray(preds)
+    if preds.ndim == 1:
+        preds = preds.reshape((-1, 1))
+    return preds
+
+def predict_with_retry(model, X, max_sub_batch=8):
+    try:
+        preds = model.predict(X, batch_size=max(1, min(X.shape[0], 64)), verbose=0)
+        return normalize_preds(preds)
+    except Exception as ex:
+        eprint(f"[predict_all.py] predict failed (full batch): {ex} -- retrying smaller sub-batches")
+        parts = []
+        try:
+            sub = max(1, min(max_sub_batch, max(1, X.shape[0] // 4)))
+            for i in range(0, X.shape[0], sub):
+                xi = X[i:i+sub]
+                try:
+                    p = model.predict(xi, batch_size=max(1, min(xi.shape[0], 32)), verbose=0)
+                    parts.append(normalize_preds(p))
+                except Exception as ex2:
+                    eprint(f"[predict_all.py] sub-batch predict error: {ex2} -- filling zeros for this sub-batch")
+                    parts.append(np.zeros((xi.shape[0], 2), dtype=np.float32))
+            if parts:
+                return np.vstack(parts)
+        except Exception as ex3:
+            eprint(f"[predict_all.py] retry mechanism failed: {ex3}")
+    # 폴백
+    return np.zeros((X.shape[0], 2), dtype=np.float32)
+
+def dump_diagnostics(results):
+    try:
+        zero_count = sum(1 for r in results if abs(r.get("steering",0)) < 1e-6 and abs(r.get("throttle",0)) < 1e-6)
+        nan_count = sum(1 for r in results if math.isnan(r.get("steering",0)) or math.isnan(r.get("throttle",0)))
+        inf_count = sum(1 for r in results if math.isinf(r.get("steering",0)) or math.isinf(r.get("throttle",0)))
+        zero_indices = [r.get("index", -1) for r in results if abs(r.get("steering",0)) < 1e-6 and abs(r.get("throttle",0)) < 1e-6][:200]
+        diag = {"zero_count": zero_count, "nan_count": nan_count, "inf_count": inf_count, "zero_indices_sample": zero_indices}
+        with open("/tmp/predict_diagnostics.json", "w", encoding="utf-8") as fh:
+            json.dump(diag, fh, ensure_ascii=False)
+        eprint("[predict_all.py] diagnostics written to /tmp/predict_diagnostics.json")
+    except Exception as ex:
+        eprint(f"[predict_all.py] diagnostics write failed: {ex}")
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: predict_all.py <tub_path> <model_path> [batch_size]", file=sys.stderr)
+        eprint("Usage: predict_all.py <tub_path> <model_path> [batch_size]")
         sys.exit(1)
 
     tub_path = sys.argv[1]
@@ -96,81 +156,76 @@ def main():
     arg_batch = sys.argv[3] if len(sys.argv) >= 4 else None
     batch_size = choose_batch_size(arg_batch)
 
-    # 모델 존재 확인
     if not os.path.exists(model_path):
-        print(f"[predict_all.py] Model not found: {model_path}", file=sys.stderr)
+        eprint(f"[predict_all.py] Model not found: {model_path}")
         print(json.dumps([]))
         return
 
     try:
         model = load_model(model_path)
-        print(f"[predict_all.py] model loaded: {model_path}", file=sys.stderr)
-    except Exception as e:
-        print("[predict_all.py] model load error: " + str(e), file=sys.stderr)
+        eprint(f"[predict_all.py] model loaded: {model_path}")
+    except Exception as ex:
+        eprint(f"[predict_all.py] model load error: {ex}")
         print(json.dumps([]))
         return
 
     catalog_files = find_catalog_files(tub_path)
     all_records = load_all_records(catalog_files)
     all_records.sort(key=lambda x: x.get('_index', 0))
-
     total = len(all_records)
     if total == 0:
-        print(json.dumps([]))
-        return
+        print(json.dumps([])); return
 
-    print(f"[predict_all.py] total records: {total}, using batch_size={batch_size}", file=sys.stderr)
+    eprint(f"[predict_all.py] total records: {total}, using batch_size={batch_size}")
 
     results = []
-    target_size = (120, 160)
+    target_size = (120,160)
 
     try:
         for start in range(0, total, batch_size):
-            end = min(start + batch_size, total)
-            batch_records = all_records[start:end]
-            batch_imgs = []
-            batch_indices = []
-            for rec in batch_records:
-                image_path_rel = rec.get('cam/image_array', '')
-                session_id = rec.get('_session_id', '')
-                frame_index = rec.get('_index', -1)
-
-                batch_indices.append(frame_index)
-
-                if session_id == "26-05-21_1" or not image_path_rel:
-                    batch_imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
+            end = min(start+batch_size, total)
+            batch = all_records[start:end]
+            imgs = []
+            indices = []
+            for rec in batch:
+                img_rel = rec.get('cam/image_array','')
+                session = rec.get('_session_id','')
+                idx = rec.get('_index', -1)
+                indices.append(idx)
+                if session == "26-05-21_1" or not img_rel:
+                    imgs.append(np.zeros((target_size[0], target_size[1],3), dtype=np.float32))
                     continue
-
-                full_img_path = build_image_candidates(tub_path, image_path_rel)
-                if full_img_path:
-                    batch_imgs.append(safe_load_image(full_img_path, target_size=target_size))
+                full = build_image_candidates(tub_path, img_rel)
+                if full:
+                    imgs.append(safe_load_image(full, target_size=target_size))
                 else:
-                    batch_imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
+                    eprint(f"[predict_all.py] image not found for record index {idx}: {img_rel}")
+                    imgs.append(np.zeros((target_size[0], target_size[1],3), dtype=np.float32))
 
-            X = np.array(batch_imgs, dtype=np.float32)
-            preds = model.predict(X, batch_size=max(1, min(batch_size, 64)), verbose=0)
+            X = np.array(imgs, dtype=np.float32)
+            preds = predict_with_retry(model, X)
+            preds = normalize_preds(preds)
+            pred_len = preds.shape[0]
+            expected = len(batch)
+            eprint(f"[predict_all.py] batch {start}-{end} preds {pred_len}/{expected}")
 
-            for idx, p in enumerate(preds):
-                try:
-                    steering = float(p[0])
-                    throttle = float(p[1]) if len(p) > 1 else 0.0
-                except Exception:
-                    steering = 0.0
-                    throttle = 0.0
-                results.append({
-                    "index": int(batch_indices[idx]) if batch_indices[idx] is not None else -1,
-                    "steering": steering,
-                    "throttle": throttle
-                })
-
-            # 진행 로그
-            print(f"[predict_all.py] processed {end}/{total}", file=sys.stderr)
+            for i in range(expected):
+                if i < pred_len:
+                    row = preds[i]
+                    steer = float(row[0]) if row.size>0 else 0.0
+                    thr = float(row[1]) if row.size>1 else 0.0
+                else:
+                    steer, thr = 0.0, 0.0
+                results.append({"index": int(indices[i]) if indices[i] is not None else -1,
+                                "steering": steer, "throttle": thr})
+            eprint(f"[predict_all.py] processed {end}/{total}")
     except Exception as ex:
-        print("[predict_all.py] runtime error: " + str(ex), file=sys.stderr)
+        eprint(f"[predict_all.py] runtime error: {ex}")
         print(json.dumps([]))
         return
 
-    print(f"[predict_all.py] final results count: {len(results)}", file=sys.stderr)
+    eprint(f"[predict_all.py] final results count: {len(results)}")
+    dump_diagnostics(results)
     print(json.dumps(results))
 
 if __name__ == "__main__":
