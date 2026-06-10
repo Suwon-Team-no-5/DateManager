@@ -107,13 +107,17 @@ namespace DateManager
 
         private void CleanPort8887()
         {
+            // 1. 기존 fuser 명령어로 8887 포트를 점유 중인 프로세스 종료 (여유 시간 1.5초)
             RunWslHidden($"fuser -k {DrivePort}/tcp || true", waitMilliseconds: 1500);
+
+            // 2. 포트는 닫혔지만 카메라 등을 물고 있는 좀비 manage.py 프로세스가 있다면 일괄 강제 종료 (여유 시간 1초)
+            RunWslHidden("pkill -f 'manage.py drive' || true", waitMilliseconds: 1000);
         }
 
         private void StartWslDrive(string extraArgs)
         {
+            // 🚨 핵심: set -e; 를 제거하여 에러가 나도 스크립트가 끝까지 실행되게(exec bash) 만듭니다.
             string command =
-                "set -e; " +
                 "MYCAR_DIR=\"${DONKEYCAR_MY_CAR_DIR:-$HOME/mycar}\"; " +
                 "if [ ! -f \"$MYCAR_DIR/manage.py\" ]; then " +
                 "echo \"mycar 폴더를 찾을 수 없습니다. WSL에서 DONKEYCAR_MY_CAR_DIR 환경변수를 설정하거나 $HOME/mycar에 프로젝트를 두세요.\"; " +
@@ -134,12 +138,18 @@ namespace DateManager
                 "cd \"$MYCAR_DIR\"; " +
                 "export PYTHONUNBUFFERED=1; " +
                 $"\"$PYTHON_BIN\" manage.py drive {extraArgs}; " +
-                "exec bash";
+                "echo \"\"; " +
+                "echo \"============================================================\"; " +
+                "echo \"[알림] 프로세스가 종료되었습니다. 위 에러 메시지를 확인하세요.\"; " +
+                "echo \"창을 닫으려면 exit를 입력하거나 우측 상단 X를 누르세요.\"; " +
+                "echo \"============================================================\"; " +
+                "exec bash"; // 에러가 나든 정상 종료되든 무조건 bash 쉘을 열어 창을 유지함
 
             ProcessStartInfo wslInfo = new ProcessStartInfo
             {
-                FileName = "wsl.exe",
-                Arguments = $"-d {WslDistro} -e bash -lc \"{EscapeForWslDoubleQuotes(command)}\"",
+                // cmd.exe를 거쳐서 실행하면 wsl.exe 자체가 튕기는 현상도 방어할 수 있습니다.
+                FileName = "cmd.exe",
+                Arguments = $"/c wsl.exe -d {WslDistro} -e bash -lc \"{EscapeForWslDoubleQuotes(command)}\"",
                 CreateNoWindow = false,
                 UseShellExecute = true
             };
