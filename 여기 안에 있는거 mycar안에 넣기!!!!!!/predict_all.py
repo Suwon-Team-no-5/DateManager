@@ -101,7 +101,7 @@ def choose_batch_size(arg_batch):
     per_image = 120 * 160 * 3 * 4
     overhead = 6
     guessed = max(1, int(avail / (per_image * overhead * 1.1)))
-    return int(max(1, min(64, guessed)))
+    return int(max(1, min(32, guessed)))
 
 def normalize_preds(preds):
     preds = np.asarray(preds)
@@ -111,27 +111,13 @@ def normalize_preds(preds):
 
 def predict_with_retry(model, X, max_sub_batch=8):
     try:
-        preds = model.predict(X, batch_size=max(1, min(X.shape[0], 64)), verbose=0)
+        # GPU가 없으므로 무리한 대용량 배치 대신 소규모 배치(verbose=0)로 안정적 예측
+        preds = model.predict(X, batch_size=max(1, min(X.shape[0], 16)), verbose=0)
         return normalize_preds(preds)
     except Exception as ex:
-        eprint(f"[predict_all.py] predict failed (full batch): {ex} -- retrying smaller sub-batches")
-        parts = []
-        try:
-            sub = max(1, min(max_sub_batch, max(1, X.shape[0] // 4)))
-            for i in range(0, X.shape[0], sub):
-                xi = X[i:i+sub]
-                try:
-                    p = model.predict(xi, batch_size=max(1, min(xi.shape[0], 32)), verbose=0)
-                    parts.append(normalize_preds(p))
-                except Exception as ex2:
-                    eprint(f"[predict_all.py] sub-batch predict error: {ex2} -- filling zeros for this sub-batch")
-                    parts.append(np.zeros((xi.shape[0], 2), dtype=np.float32))
-            if parts:
-                return np.vstack(parts)
-        except Exception as ex3:
-            eprint(f"[predict_all.py] retry mechanism failed: {ex3}")
-    # 폴백
-    return np.zeros((X.shape[0], 2), dtype=np.float32)
+        eprint(f"[predict_all.py] predict failed: {ex} -- 전량 안전 모드로 변환")
+        # 실패 시 에러만 내고 멈추지 않도록, 정확히 이미지 개수(X.shape[0])만큼 0으로 채운 배열 반환
+        return np.zeros((X.shape[0], 2), dtype=np.float32)
 
 def dump_diagnostics(results):
     try:
