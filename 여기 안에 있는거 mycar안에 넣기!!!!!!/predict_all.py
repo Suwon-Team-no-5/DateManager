@@ -104,10 +104,20 @@ def choose_batch_size(arg_batch):
     return int(max(1, min(32, guessed)))
 
 def normalize_preds(preds):
+    # 모델 출력이 [steering_preds, throttle_preds] 형태인 경우
+    if isinstance(preds, list):
+        # 각각 2차원 배열로 만들어줍니다.
+        p0 = np.asarray(preds[0]).reshape((-1, 1))
+        p1 = np.asarray(preds[1]).reshape((-1, 1)) if len(preds) > 1 else np.zeros_like(p0)
+        # 두 배열을 옆으로 붙여서 (배치사이즈, 2) 형태로 만듭니다.
+        return np.hstack([p0, p1])
+    
+    # 일반적인 단일 출력인 경우
     preds = np.asarray(preds)
     if preds.ndim == 1:
         preds = preds.reshape((-1, 1))
     return preds
+
 
 def predict_with_retry(model, X, max_sub_batch=8):
     try:
@@ -160,51 +170,67 @@ def main():
     all_records.sort(key=lambda x: x.get('_index', 0))
     total = len(all_records)
     if total == 0:
-        print(json.dumps([])); return
+        print(json.dumps([]))
+        return
 
     eprint(f"[predict_all.py] total records: {total}, using batch_size={batch_size}")
 
     results = []
-    target_size = (120,160)
+    target_size = (120, 160)
 
     try:
         for start in range(0, total, batch_size):
-            end = min(start+batch_size, total)
+            end = min(start + batch_size, total)
             batch = all_records[start:end]
             imgs = []
             indices = []
             for rec in batch:
-                img_rel = rec.get('cam/image_array','')
-                session = rec.get('_session_id','')
+                img_rel = rec.get('cam/image_array', '')
+                session = rec.get('_session_id', '')
                 idx = rec.get('_index', -1)
                 indices.append(idx)
                 if session == "26-05-21_1" or not img_rel:
-                    imgs.append(np.zeros((target_size[0], target_size[1],3), dtype=np.float32))
+                    imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
                     continue
                 full = build_image_candidates(tub_path, img_rel)
                 if full:
                     imgs.append(safe_load_image(full, target_size=target_size))
                 else:
                     eprint(f"[predict_all.py] image not found for record index {idx}: {img_rel}")
-                    imgs.append(np.zeros((target_size[0], target_size[1],3), dtype=np.float32))
+                    imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
 
             X = np.array(imgs, dtype=np.float32)
             preds = predict_with_retry(model, X)
             preds = normalize_preds(preds)
-            pred_len = preds.shape[0]
+            
+            # shape 검증 및 데이터 개수 일치 확인
+            pred_len = preds.shape[0] if hasattr(preds, 'shape') else len(preds)
             expected = len(batch)
             eprint(f"[predict_all.py] batch {start}-{end} preds {pred_len}/{expected}")
 
             for i in range(expected):
                 if i < pred_len:
                     row = preds[i]
-                    steer = float(row[0]) if row.size>0 else 0.0
-                    thr = float(row[1]) if row.size>1 else 0.0
+                    # row가 단일 숫자인지 배열인지 확인하여 안전하게 데이터 추출
+                    if hasattr(row, 'size'):
+                        steer = float(row[0]) if row.size > 0 else 0.0
+                        thr = float(row[1]) if row.size > 1 else 0.0
+                    elif isinstance(row, (list, np.ndarray)):
+                        steer = float(row[0]) if len(row) > 0 else 0.0
+                        thr = float(row[1]) if len(row) > 1 else 0.0
+                    else:
+                        steer = float(row)
+                        thr = 0.0
                 else:
                     steer, thr = 0.0, 0.0
-                results.append({"index": int(indices[i]) if indices[i] is not None else -1,
-                                "steering": steer, "throttle": thr})
+                
+                results.append({
+                    "index": int(indices[i]) if indices[i] is not None else -1,
+                    "steering": steer, 
+                    "throttle": thr
+                })
             eprint(f"[predict_all.py] processed {end}/{total}")
+            
     except Exception as ex:
         eprint(f"[predict_all.py] runtime error: {ex}")
         print(json.dumps([]))
