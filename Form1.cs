@@ -73,20 +73,42 @@ namespace DateManager
             if (string.IsNullOrWhiteSpace(winPath)) return winPath ?? "";
             try
             {
-                // \wsl$ style or drive-letter style 변환
+                // 통일: 역슬래시 -> 슬래시
                 string p = winPath.Replace("\\", "/");
-                // C:/Users/... -> /mnt/c/Users/...
+
+                // WSL UNC 형태: //wsl.localhost/Ubuntu-22.04/home/...
+                if (p.StartsWith("//wsl.localhost/", StringComparison.OrdinalIgnoreCase) ||
+                    p.StartsWith("/wsl.localhost/", StringComparison.OrdinalIgnoreCase))
+                {
+                    // 제거: //wsl.localhost/<distro>
+                    string rest = p.StartsWith("//wsl.localhost/", StringComparison.OrdinalIgnoreCase)
+                        ? p.Substring("//wsl.localhost/".Length)
+                        : p.Substring("/wsl.localhost/".Length);
+
+                    int idx = rest.IndexOf('/');
+                    if (idx >= 0)
+                    {
+                        // rest = "Ubuntu-22.04/home/jaeseo03/..."
+                        // 반환: "/home/jaeseo03/..."
+                        return rest.Substring(idx);
+                    }
+                    return "/" + rest;
+                }
+
+                // 드라이브 문자 형식 C:/...
                 if (p.Length >= 2 && char.IsLetter(p[0]) && p[1] == ':')
                 {
                     char drive = char.ToLowerInvariant(p[0]);
                     string rest = p.Substring(2);
                     return $"/mnt/{drive}{rest}".Replace("//", "/");
                 }
-                // \wsl.localhost\... network path - map to WSL mount if possible
-                if (p.StartsWith("/wsl.localhost/")) return p;
+
                 return p;
             }
-            catch { return winPath ?? ""; }
+            catch
+            {
+                return winPath ?? "";
+            }
         }
 
         private List<AiPredictFrame> _aiPredictedList = new List<AiPredictFrame>();
@@ -223,7 +245,7 @@ namespace DateManager
 
         private List<AiPredictFrame> PredictAllFrames(string tubPath, string modelPath)
         {
-            List<AiPredictFrame> predictedList = new List<AiPredictFrame>();
+            var predictedList = new List<AiPredictFrame>();
 
             string pythonPath = "wsl.exe";
             string scriptPath = "/home/jaeseo03/mycar/predict_all.py";
@@ -242,6 +264,7 @@ namespace DateManager
             start.RedirectStandardError = true;
             start.CreateNoWindow = true;
 
+            // 안전한 로그 appender
             void AppendLog(string text)
             {
                 try
@@ -259,84 +282,110 @@ namespace DateManager
                 catch { }
             }
 
+            var stdoutBuilder = new System.Text.StringBuilder();
+            var stderrBuilder = new System.Text.StringBuilder();
+
             try
             {
-                using (Process process = Process.Start(start))
+                using (var process = new Process())
                 {
-                    if (process == null) throw new Exception("프로세스 시작 실패");
+                    process.StartInfo = start;
 
-                    string stdout = process.StandardOutput.ReadToEnd();
-                    string stderr = process.StandardError.ReadToEnd();
+                    process.OutputDataReceived += (s, e) =>
+                    {
+                        if (e.Data == null) return;
+                        // STDOUT은 보통 최종 JSON이므로 여기서는 누적만 하고, 필요시 디버그로 출력 가능
+                        stdoutBuilder.AppendLine(e.Data);
+                    };
+
+                    process.ErrorDataReceived += (s, e) =>
+                    {
+                        if (e.Data == null) return;
+                        stderrBuilder.AppendLine(e.Data);
+                        // stderr는 진행 로그로 찍어 즉시 확인할 수 있게 함
+                        AppendLog("[predict_all.py STDERR] " + e.Data);
+                    };
+
+                    if (!process.Start())
+                        throw new Exception("프로세스 시작 실패");
+
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    // 프로세스 종료될 때까지 대기
                     process.WaitForExit();
+                }
 
-                    // 항상 로그 남기기(디버깅용)
-                    if (!string.IsNullOrWhiteSpace(stderr))
-                    {
-                        AppendLog("[predict_all.py STDERR] " + stderr.Trim());
-                    }
-                    if (!string.IsNullOrWhiteSpace(stdout))
-                    {
-                        AppendLog("[predict_all.py STDOUT] (length: " + stdout.Length + ")");
-                    }
-                    else
-                    {
-                        AppendLog("[predict_all.py STDOUT] (empty)");
-                    }
+                string stdout = stdoutBuilder.ToString();
+                string stderr = stderrBuilder.ToString();
 
-                    if (!string.IsNullOrWhiteSpace(stderr))
+                if (!string.IsNullOrWhiteSpace(stdout))
+                {
+                    AppendLog($"[predict_all.py STDOUT] (length: {stdout.Length})");
+                }
+                else
+                {
+                    AppendLog("[predict_all.py STDOUT] (empty)");
+                }
+
+                if (!string.IsNullOrWhiteSpace(stderr))
+                {
+                    // 치명적 오류인 경우 사용자에게 보여줌 (필요 시 필터 조정)
+                    if (!stderr.Contains("WARNING") && !stderr.Contains("tensorflow"))
                     {
-                        // 치명적 오류일 가능성 있으므로 사용자에게 보여줌
-                        if (!stderr.Contains("WARNING") && !stderr.Contains("tensorflow"))
+                        // 이미 stderr 라인은 rtbTrainLog로 출력되므로 MessageBox는 선택적
+                        AppendLog("[predict_all.py] 비정상 종료 로그 확인(상세는 위 stderr).");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(stdout))
+                {
+                    try
+                    {
+                        using (var doc = JsonDocument.Parse(stdout))
                         {
-                            MessageBox.Show($"AI 예측 스크립트 오류: {stderr}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(stdout))
-                    {
-                        try
-                        {
-                            using (var doc = JsonDocument.Parse(stdout))
+                            if (doc.RootElement.ValueKind == JsonValueKind.Array)
                             {
-                                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                                foreach (var el in doc.RootElement.EnumerateArray())
                                 {
-                                    foreach (var el in doc.RootElement.EnumerateArray())
-                                    {
-                                        float steering = 0f;
-                                        float throttle = 0f;
-                                        int frameIndex = -1;
-                                        if (el.ValueKind == JsonValueKind.Object)
-                                        {
-                                            if (el.TryGetProperty("steering", out var sProp))
-                                            {
-                                                if (sProp.ValueKind == JsonValueKind.Number && sProp.TryGetDouble(out double sVal)) steering = (float)sVal;
-                                                else if (sProp.ValueKind == JsonValueKind.String && float.TryParse(sProp.GetString(), out float sParsed)) steering = sParsed;
-                                            }
-                                            if (el.TryGetProperty("throttle", out var tProp))
-                                            {
-                                                if (tProp.ValueKind == JsonValueKind.Number && tProp.TryGetDouble(out double tVal)) throttle = (float)tVal;
-                                                else if (tProp.ValueKind == JsonValueKind.String && float.TryParse(tProp.GetString(), out float tParsed)) throttle = tParsed;
-                                            }
-                                            if (el.TryGetProperty("index", out var idxProp) && idxProp.ValueKind == JsonValueKind.Number && idxProp.TryGetInt32(out int idxVal))
-    frameIndex = idxVal;
-                                        }
+                                    float steering = 0f;
+                                    float throttle = 0f;
+                                    int index = -1;
 
-                                        predictedList.Add(new AiPredictFrame { FrameIndex = frameIndex, Angle = steering, Throttle = throttle });
+                                    if (el.ValueKind == JsonValueKind.Object)
+                                    {
+                                        if (el.TryGetProperty("steering", out var sProp))
+                                        {
+                                            if (sProp.ValueKind == JsonValueKind.Number && sProp.TryGetDouble(out double sVal)) steering = (float)sVal;
+                                            else if (sProp.ValueKind == JsonValueKind.String && float.TryParse(sProp.GetString(), out float sParsed)) steering = sParsed;
+                                        }
+                                        if (el.TryGetProperty("throttle", out var tProp))
+                                        {
+                                            if (tProp.ValueKind == JsonValueKind.Number && tProp.TryGetDouble(out double tVal)) throttle = (float)tVal;
+                                            else if (tProp.ValueKind == JsonValueKind.String && float.TryParse(tProp.GetString(), out float tParsed)) throttle = tParsed;
+                                        }
+                                        if (el.TryGetProperty("index", out var idxProp) && idxProp.ValueKind == JsonValueKind.Number && idxProp.TryGetInt32(out int idxVal))
+                                        {
+                                            index = idxVal;
+                                        }
                                     }
-                                }
-                                else
-                                {
-                                    AppendLog("[predict_all.py] JSON root is not array.");
+
+                                    var item = new AiPredictFrame { FrameIndex = index, Angle = steering, Throttle = throttle };
+                                    predictedList.Add(item);
                                 }
                             }
+                            else
+                            {
+                                AppendLog("[predict_all.py] JSON root is not array.");
+                            }
+                        }
 
-                            AppendLog($"[predict_all.py] parsed {predictedList.Count} prediction items.");
-                        }
-                        catch (Exception ex)
-                        {
-                            AppendLog("[predict_all.py] JSON parse error: " + ex.Message);
-                            MessageBox.Show($"AI 예측 결과 파싱 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        AppendLog($"[predict_all.py] parsed {predictedList.Count} prediction items.");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendLog("[predict_all.py] JSON parse error: " + ex.Message);
+                        MessageBox.Show($"AI 예측 결과 파싱 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
@@ -1260,6 +1309,9 @@ namespace DateManager
 
             if (_displayedFrameList == null || _displayedFrameList.Count == 0) return;
 
+            // AI 오버레이를 그릴지 판단: 모델을 선택하고 예측이 채워져 있어야 함
+            bool showAi = (_aiPredictedMap != null && _aiPredictedMap.Count > 0 && !string.IsNullOrWhiteSpace(_selectedModelPath));
+
             int segments = 10;
             int lookAheadStep = 2;
             float pathHeight = height * 0.6f;
@@ -1269,24 +1321,17 @@ namespace DateManager
             float angleSum = 0f;
             float maxDeflection = width * 0.012f;
 
+            // Ground-truth (파랑) 좌우 엣지 계산
             PointF[] leftEdge = new PointF[segments + 1];
             PointF[] rightEdge = new PointF[segments + 1];
-
             leftEdge[0] = new PointF(curX - bottomWidth / 2, height);
             rightEdge[0] = new PointF(curX + bottomWidth / 2, height);
 
             float smoothedAngle = 0f;
-
             for (int i = 1; i <= segments; i++)
             {
                 int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
-                var futureFrame = _displayedFrameList[futureIndex];
-                float targetAngle;
-                if (_aiPredictedMap != null && _aiPredictedMap.TryGetValue(futureFrame.FrameIndex, out var pred))
-    targetAngle = pred.Angle;
-    else
-    targetAngle = (float)futureFrame.Angle; // fallback
-
+                float targetAngle = (float)_displayedFrameList[futureIndex].Angle;
                 smoothedAngle = (smoothedAngle * 0.7f) + (targetAngle * 0.3f);
                 angleSum += smoothedAngle;
 
@@ -1299,24 +1344,24 @@ namespace DateManager
                 rightEdge[i] = new PointF(curX + currentWidth / 2, nextY);
             }
 
+            // 파란색 경로 그리기 (Ground-truth)
             for (int i = 0; i < segments; i++)
             {
                 float gap = 5f;
                 PointF[] poly = { leftEdge[i], rightEdge[i], new PointF(rightEdge[i + 1].X, rightEdge[i + 1].Y + gap), new PointF(leftEdge[i + 1].X, leftEdge[i + 1].Y + gap) };
                 int alpha = 180 - (int)(150 * (i / (float)segments));
-
                 using (SolidBrush pathBrush = new SolidBrush(Color.FromArgb(alpha, 30, 144, 255)))
                 {
                     g.FillPolygon(pathBrush, poly);
                 }
             }
 
-            // AI 예측 경로(연두색) 오버레이: _aiPredictedList가 존재하면 동일한 로직으로 그립니다.
-            var aiList = _aiPredictedList; // 로컬 복사로 스레드 안전성 확보
-            if (aiList != null && aiList.Count > 0)
+            // AI 오버레이 계산 및 그리기 (조건부)
+            if (showAi)
             {
                 try
                 {
+                    var aiMap = _aiPredictedMap;
                     float curXA = width / 2.0f;
                     float angleSumA = 0f;
                     PointF[] leftA = new PointF[segments + 1];
@@ -1328,9 +1373,21 @@ namespace DateManager
                     float smoothedA = 0f;
                     for (int i = 1; i <= segments; i++)
                     {
-                        int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), aiList.Count - 1);
-                        float targetAngle = (float)aiList[futureIndex].Angle;
-                        smoothedA = (smoothedA * 0.7f) + (targetAngle * 0.3f);
+                        int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
+                        var futureFrame = _displayedFrameList[futureIndex];
+
+                        float targetAngleA;
+                        if (aiMap != null && aiMap.TryGetValue(futureFrame.FrameIndex, out var pred))
+                        {
+                            targetAngleA = pred.Angle;
+                        }
+                        else
+                        {
+                            // AI 예측 없으면 GT로 폴백해 연속성 유지
+                            targetAngleA = (float)futureFrame.Angle;
+                        }
+
+                        smoothedA = (smoothedA * 0.7f) + (targetAngleA * 0.3f);
                         angleSumA += smoothedA;
 
                         float progress = i / (float)segments;
@@ -1342,7 +1399,7 @@ namespace DateManager
                         rightA[i] = new PointF(curXA + currentWidth / 2, nextY);
                     }
 
-                    using (SolidBrush aiBrush = new SolidBrush(Color.FromArgb(180, Color.LimeGreen)))
+                    using (SolidBrush aiBrush = new SolidBrush(Color.FromArgb(160, Color.LimeGreen)))
                     {
                         for (int i = 0; i < segments; i++)
                         {
@@ -1354,6 +1411,7 @@ namespace DateManager
                 catch { }
             }
 
+            // HUD: 속도 텍스트 및 바
             float throttle = (float)_displayedFrameList[_currentFrameIndex].Throttle;
             int displaySpeed = (int)Math.Round(Math.Abs(throttle) * 100);
             float hudRight = width - 50;

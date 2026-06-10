@@ -1,90 +1,243 @@
-# predict_all.py
+#!/usr/bin/env python3
+# predict_all.py (robust batch, safe image load, retry, index 포함, 배치 로그 + 진단 덤프)
 import sys
 import os
 import json
+import math
 import numpy as np
-import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
-def main():
-    tub_path = sys.argv[1]
-    model_path = sys.argv[2]
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
-    # 1. AI 모델 최초 1회 로드
-    model = load_model(model_path)
+def safe_load_image(path, target_size=(120,160)):
+    try:
+        img = load_img(path, target_size=target_size)
+        arr = img_to_array(img)
+        # 흑백/채널 부족 처리
+        if arr.ndim == 2:
+            arr = np.stack([arr]*3, axis=-1)
+        if arr.shape[-1] == 1:
+            arr = np.repeat(arr, 3, axis=-1)
+        # 사이즈 보장
+        if arr.shape[0] != target_size[0] or arr.shape[1] != target_size[1]:
+            img = load_img(path, target_size=target_size)
+            arr = img_to_array(img)
+            if arr.ndim == 2:
+                arr = np.stack([arr]*3, axis=-1)
+            if arr.shape[-1] == 1:
+                arr = np.repeat(arr, 3, axis=-1)
+        return arr.astype("float32") / 255.0
+    except Exception as ex:
+        eprint(f"[predict_all.py] image load failed: {path} -> {ex}")
+        return np.zeros((target_size[0], target_size[1], 3), dtype=np.float32)
 
-    # 2. .catalog 파일 목록 수집 (backup 폴더 제외)
-    catalog_files = []
-    for root, dirs, files in os.walk(tub_path):
+def find_catalog_files(tub_path):
+    files = []
+    for root, dirs, filenames in os.walk(tub_path):
         if f"{os.sep}backup{os.sep}" in root or root.endswith(f"{os.sep}backup"):
             continue
-        for file in files:
-            if file.endswith('.catalog'):
-                catalog_files.append(os.path.join(root, file))
+        for fn in filenames:
+            if fn.endswith('.catalog'):
+                files.append(os.path.join(root, fn))
+    return files
 
-    # 3. 모든 catalog 데이터 수집 및 _index 정렬
-    all_records = []
-    for cat_file in catalog_files:
+def load_all_records(catalog_files):
+    records = []
+    for cat in catalog_files:
         try:
-            with open(cat_file, 'r', encoding='utf-8') as f:
+            with open(cat, 'r', encoding='utf-8') as f:
                 for line in f:
                     if not line.strip(): continue
                     try:
-                        all_records.append(json.loads(line))
-                    except json.JSONDecodeError: continue
-        except Exception: continue
-
-    # 💡 C#의 allFrames.OrderBy(f => f.Index)와 일치화
-    all_records.sort(key=lambda x: x.get('_index', 0))
-
-    # 4. 이미지 순차 로드 및 메모리 적재
-    images = []
-    images_folder = os.path.join(tub_path, "images")
-
-    for record in all_records:
-        image_path_rel = record.get('cam/image_array', '')
-        session_id = record.get('_session_id', '')
-
-        if session_id == "26-05-21_1" or not image_path_rel:
-            images.append(np.zeros((120, 160, 3), dtype=np.float32))
+                        records.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        # 무효 라인 건너뜀
+                        continue
+        except Exception as ex:
+            eprint(f"[predict_all.py] failed reading catalog {cat}: {ex}")
             continue
+    return records
 
-        full_img_path = ""
-        candidates = [
-            os.path.join(tub_path, image_path_rel),
-            os.path.join(images_folder, image_path_rel),
-            os.path.join(images_folder, os.path.basename(image_path_rel))
-        ]
-        for cand in candidates:
-            if os.path.exists(cand):
-                full_img_path = cand
-                break
+def build_image_candidates(tub_path, rel_path):
+    images_folder = os.path.join(tub_path, "images")
+    candidates = [
+        os.path.join(tub_path, rel_path),
+        os.path.join(images_folder, rel_path),
+        os.path.join(images_folder, os.path.basename(rel_path))
+    ]
+    for c in candidates:
+        if c and os.path.exists(c):
+            return c
+    return None
 
-        if full_img_path and os.path.exists(full_img_path):
-            try:
-                img = load_img(full_img_path, target_size=(120, 160))
-                images.append(img_to_array(img) / 255.0)
-            except Exception:
-                images.append(np.zeros((120, 160, 3), dtype=np.float32))
-        else:
-            images.append(np.zeros((120, 160, 3), dtype=np.float32))
+def _get_mem_available_bytes():
+    try:
+        with open("/proc/meminfo","r") as f:
+            for line in f:
+                if line.startswith("MemAvailable:"):
+                    parts = line.split()
+                    return int(parts[1]) * 1024
+    except Exception:
+        pass
+    try:
+        with open("/proc/meminfo","r") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    parts = line.split()
+                    return int(parts[1]) * 1024 // 2
+    except Exception:
+        pass
+    return 1_000_000_000
 
-    if len(images) == 0:
+def choose_batch_size(arg_batch):
+    if arg_batch:
+        try:
+            return max(1, int(arg_batch))
+        except:
+            return 32
+    avail = _get_mem_available_bytes()
+    per_image = 120 * 160 * 3 * 4
+    overhead = 6
+    guessed = max(1, int(avail / (per_image * overhead * 1.1)))
+    return int(max(1, min(32, guessed)))
+
+def normalize_preds(preds):
+    # 모델 출력이 [steering_preds, throttle_preds] 형태인 경우
+    if isinstance(preds, list):
+        # 각각 2차원 배열로 만들어줍니다.
+        p0 = np.asarray(preds[0]).reshape((-1, 1))
+        p1 = np.asarray(preds[1]).reshape((-1, 1)) if len(preds) > 1 else np.zeros_like(p0)
+        # 두 배열을 옆으로 붙여서 (배치사이즈, 2) 형태로 만듭니다.
+        return np.hstack([p0, p1])
+    
+    # 일반적인 단일 출력인 경우
+    preds = np.asarray(preds)
+    if preds.ndim == 1:
+        preds = preds.reshape((-1, 1))
+    return preds
+
+
+def predict_with_retry(model, X, max_sub_batch=8):
+    try:
+        # GPU가 없으므로 무리한 대용량 배치 대신 소규모 배치(verbose=0)로 안정적 예측
+        preds = model.predict(X, batch_size=max(1, min(X.shape[0], 16)), verbose=0)
+        return normalize_preds(preds)
+    except Exception as ex:
+        eprint(f"[predict_all.py] predict failed: {ex} -- 전량 안전 모드로 변환")
+        # 실패 시 에러만 내고 멈추지 않도록, 정확히 이미지 개수(X.shape[0])만큼 0으로 채운 배열 반환
+        return np.zeros((X.shape[0], 2), dtype=np.float32)
+
+def dump_diagnostics(results):
+    try:
+        zero_count = sum(1 for r in results if abs(r.get("steering",0)) < 1e-6 and abs(r.get("throttle",0)) < 1e-6)
+        nan_count = sum(1 for r in results if math.isnan(r.get("steering",0)) or math.isnan(r.get("throttle",0)))
+        inf_count = sum(1 for r in results if math.isinf(r.get("steering",0)) or math.isinf(r.get("throttle",0)))
+        zero_indices = [r.get("index", -1) for r in results if abs(r.get("steering",0)) < 1e-6 and abs(r.get("throttle",0)) < 1e-6][:200]
+        diag = {"zero_count": zero_count, "nan_count": nan_count, "inf_count": inf_count, "zero_indices_sample": zero_indices}
+        with open("/tmp/predict_diagnostics.json", "w", encoding="utf-8") as fh:
+            json.dump(diag, fh, ensure_ascii=False)
+        eprint("[predict_all.py] diagnostics written to /tmp/predict_diagnostics.json")
+    except Exception as ex:
+        eprint(f"[predict_all.py] diagnostics write failed: {ex}")
+
+def main():
+    if len(sys.argv) < 3:
+        eprint("Usage: predict_all.py <tub_path> <model_path> [batch_size]")
+        sys.exit(1)
+
+    tub_path = sys.argv[1]
+    model_path = sys.argv[2]
+    arg_batch = sys.argv[3] if len(sys.argv) >= 4 else None
+    batch_size = choose_batch_size(arg_batch)
+
+    if not os.path.exists(model_path):
+        eprint(f"[predict_all.py] Model not found: {model_path}")
         print(json.dumps([]))
         return
 
-    # 5. 초고속 일괄 예측 계산
-    X = np.array(images, dtype=np.float32)
-    outputs = model.predict(X, batch_size=64, verbose=0)
+    try:
+        model = load_model(model_path)
+        eprint(f"[predict_all.py] model loaded: {model_path}")
+    except Exception as ex:
+        eprint(f"[predict_all.py] model load error: {ex}")
+        print(json.dumps([]))
+        return
 
-    # 6. JSON 반환
+    catalog_files = find_catalog_files(tub_path)
+    all_records = load_all_records(catalog_files)
+    all_records.sort(key=lambda x: x.get('_index', 0))
+    total = len(all_records)
+    if total == 0:
+        print(json.dumps([]))
+        return
+
+    eprint(f"[predict_all.py] total records: {total}, using batch_size={batch_size}")
+
     results = []
-    for out in outputs:
-        results.append({
-            "steering": float(out[0]),
-            "throttle": float(out[1])
-        })
+    target_size = (120, 160)
+
+    try:
+        for start in range(0, total, batch_size):
+            end = min(start + batch_size, total)
+            batch = all_records[start:end]
+            imgs = []
+            indices = []
+            for rec in batch:
+                img_rel = rec.get('cam/image_array', '')
+                session = rec.get('_session_id', '')
+                idx = rec.get('_index', -1)
+                indices.append(idx)
+                if session == "26-05-21_1" or not img_rel:
+                    imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
+                    continue
+                full = build_image_candidates(tub_path, img_rel)
+                if full:
+                    imgs.append(safe_load_image(full, target_size=target_size))
+                else:
+                    eprint(f"[predict_all.py] image not found for record index {idx}: {img_rel}")
+                    imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
+
+            X = np.array(imgs, dtype=np.float32)
+            preds = predict_with_retry(model, X)
+            preds = normalize_preds(preds)
+            
+            # shape 검증 및 데이터 개수 일치 확인
+            pred_len = preds.shape[0] if hasattr(preds, 'shape') else len(preds)
+            expected = len(batch)
+            eprint(f"[predict_all.py] batch {start}-{end} preds {pred_len}/{expected}")
+
+            for i in range(expected):
+                if i < pred_len:
+                    row = preds[i]
+                    # row가 단일 숫자인지 배열인지 확인하여 안전하게 데이터 추출
+                    if hasattr(row, 'size'):
+                        steer = float(row[0]) if row.size > 0 else 0.0
+                        thr = float(row[1]) if row.size > 1 else 0.0
+                    elif isinstance(row, (list, np.ndarray)):
+                        steer = float(row[0]) if len(row) > 0 else 0.0
+                        thr = float(row[1]) if len(row) > 1 else 0.0
+                    else:
+                        steer = float(row)
+                        thr = 0.0
+                else:
+                    steer, thr = 0.0, 0.0
+                
+                results.append({
+                    "index": int(indices[i]) if indices[i] is not None else -1,
+                    "steering": steer, 
+                    "throttle": thr
+                })
+            eprint(f"[predict_all.py] processed {end}/{total}")
+            
+    except Exception as ex:
+        eprint(f"[predict_all.py] runtime error: {ex}")
+        print(json.dumps([]))
+        return
+
+    eprint(f"[predict_all.py] final results count: {len(results)}")
+    dump_diagnostics(results)
     print(json.dumps(results))
 
 if __name__ == "__main__":
