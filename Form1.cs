@@ -245,7 +245,7 @@ namespace DateManager
 
         private List<AiPredictFrame> PredictAllFrames(string tubPath, string modelPath)
         {
-            List<AiPredictFrame> predictedList = new List<AiPredictFrame>();
+            var predictedList = new List<AiPredictFrame>();
 
             string pythonPath = "wsl.exe";
             string scriptPath = "/home/jaeseo03/mycar/predict_all.py";
@@ -264,6 +264,7 @@ namespace DateManager
             start.RedirectStandardError = true;
             start.CreateNoWindow = true;
 
+            // 안전한 로그 appender
             void AppendLog(string text)
             {
                 try
@@ -281,84 +282,110 @@ namespace DateManager
                 catch { }
             }
 
+            var stdoutBuilder = new System.Text.StringBuilder();
+            var stderrBuilder = new System.Text.StringBuilder();
+
             try
             {
-                using (Process process = Process.Start(start))
+                using (var process = new Process())
                 {
-                    if (process == null) throw new Exception("프로세스 시작 실패");
+                    process.StartInfo = start;
 
-                    string stdout = process.StandardOutput.ReadToEnd();
-                    string stderr = process.StandardError.ReadToEnd();
+                    process.OutputDataReceived += (s, e) =>
+                    {
+                        if (e.Data == null) return;
+                        // STDOUT은 보통 최종 JSON이므로 여기서는 누적만 하고, 필요시 디버그로 출력 가능
+                        stdoutBuilder.AppendLine(e.Data);
+                    };
+
+                    process.ErrorDataReceived += (s, e) =>
+                    {
+                        if (e.Data == null) return;
+                        stderrBuilder.AppendLine(e.Data);
+                        // stderr는 진행 로그로 찍어 즉시 확인할 수 있게 함
+                        AppendLog("[predict_all.py STDERR] " + e.Data);
+                    };
+
+                    if (!process.Start())
+                        throw new Exception("프로세스 시작 실패");
+
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    // 프로세스 종료될 때까지 대기
                     process.WaitForExit();
+                }
 
-                    // 항상 로그 남기기(디버깅용)
-                    if (!string.IsNullOrWhiteSpace(stderr))
-                    {
-                        AppendLog("[predict_all.py STDERR] " + stderr.Trim());
-                    }
-                    if (!string.IsNullOrWhiteSpace(stdout))
-                    {
-                        AppendLog("[predict_all.py STDOUT] (length: " + stdout.Length + ")");
-                    }
-                    else
-                    {
-                        AppendLog("[predict_all.py STDOUT] (empty)");
-                    }
+                string stdout = stdoutBuilder.ToString();
+                string stderr = stderrBuilder.ToString();
 
-                    if (!string.IsNullOrWhiteSpace(stderr))
+                if (!string.IsNullOrWhiteSpace(stdout))
+                {
+                    AppendLog($"[predict_all.py STDOUT] (length: {stdout.Length})");
+                }
+                else
+                {
+                    AppendLog("[predict_all.py STDOUT] (empty)");
+                }
+
+                if (!string.IsNullOrWhiteSpace(stderr))
+                {
+                    // 치명적 오류인 경우 사용자에게 보여줌 (필요 시 필터 조정)
+                    if (!stderr.Contains("WARNING") && !stderr.Contains("tensorflow"))
                     {
-                        // 치명적 오류일 가능성 있으므로 사용자에게 보여줌
-                        if (!stderr.Contains("WARNING") && !stderr.Contains("tensorflow"))
+                        // 이미 stderr 라인은 rtbTrainLog로 출력되므로 MessageBox는 선택적
+                        AppendLog("[predict_all.py] 비정상 종료 로그 확인(상세는 위 stderr).");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(stdout))
+                {
+                    try
+                    {
+                        using (var doc = JsonDocument.Parse(stdout))
                         {
-                            MessageBox.Show($"AI 예측 스크립트 오류: {stderr}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(stdout))
-                    {
-                        try
-                        {
-                            using (var doc = JsonDocument.Parse(stdout))
+                            if (doc.RootElement.ValueKind == JsonValueKind.Array)
                             {
-                                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                                foreach (var el in doc.RootElement.EnumerateArray())
                                 {
-                                    foreach (var el in doc.RootElement.EnumerateArray())
-                                    {
-                                        float steering = 0f;
-                                        float throttle = 0f;
-                                        int frameIndex = -1;
-                                        if (el.ValueKind == JsonValueKind.Object)
-                                        {
-                                            if (el.TryGetProperty("steering", out var sProp))
-                                            {
-                                                if (sProp.ValueKind == JsonValueKind.Number && sProp.TryGetDouble(out double sVal)) steering = (float)sVal;
-                                                else if (sProp.ValueKind == JsonValueKind.String && float.TryParse(sProp.GetString(), out float sParsed)) steering = sParsed;
-                                            }
-                                            if (el.TryGetProperty("throttle", out var tProp))
-                                            {
-                                                if (tProp.ValueKind == JsonValueKind.Number && tProp.TryGetDouble(out double tVal)) throttle = (float)tVal;
-                                                else if (tProp.ValueKind == JsonValueKind.String && float.TryParse(tProp.GetString(), out float tParsed)) throttle = tParsed;
-                                            }
-                                            if (el.TryGetProperty("index", out var idxProp) && idxProp.ValueKind == JsonValueKind.Number && idxProp.TryGetInt32(out int idxVal))
-    frameIndex = idxVal;
-                                        }
+                                    float steering = 0f;
+                                    float throttle = 0f;
+                                    int index = -1;
 
-                                        predictedList.Add(new AiPredictFrame { FrameIndex = frameIndex, Angle = steering, Throttle = throttle });
+                                    if (el.ValueKind == JsonValueKind.Object)
+                                    {
+                                        if (el.TryGetProperty("steering", out var sProp))
+                                        {
+                                            if (sProp.ValueKind == JsonValueKind.Number && sProp.TryGetDouble(out double sVal)) steering = (float)sVal;
+                                            else if (sProp.ValueKind == JsonValueKind.String && float.TryParse(sProp.GetString(), out float sParsed)) steering = sParsed;
+                                        }
+                                        if (el.TryGetProperty("throttle", out var tProp))
+                                        {
+                                            if (tProp.ValueKind == JsonValueKind.Number && tProp.TryGetDouble(out double tVal)) throttle = (float)tVal;
+                                            else if (tProp.ValueKind == JsonValueKind.String && float.TryParse(tProp.GetString(), out float tParsed)) throttle = tParsed;
+                                        }
+                                        if (el.TryGetProperty("index", out var idxProp) && idxProp.ValueKind == JsonValueKind.Number && idxProp.TryGetInt32(out int idxVal))
+                                        {
+                                            index = idxVal;
+                                        }
                                     }
-                                }
-                                else
-                                {
-                                    AppendLog("[predict_all.py] JSON root is not array.");
+
+                                    var item = new AiPredictFrame { FrameIndex = index, Angle = steering, Throttle = throttle };
+                                    predictedList.Add(item);
                                 }
                             }
+                            else
+                            {
+                                AppendLog("[predict_all.py] JSON root is not array.");
+                            }
+                        }
 
-                            AppendLog($"[predict_all.py] parsed {predictedList.Count} prediction items.");
-                        }
-                        catch (Exception ex)
-                        {
-                            AppendLog("[predict_all.py] JSON parse error: " + ex.Message);
-                            MessageBox.Show($"AI 예측 결과 파싱 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        AppendLog($"[predict_all.py] parsed {predictedList.Count} prediction items.");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppendLog("[predict_all.py] JSON parse error: " + ex.Message);
+                        MessageBox.Show($"AI 예측 결과 파싱 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }

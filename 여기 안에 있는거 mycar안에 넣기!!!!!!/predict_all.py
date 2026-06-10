@@ -1,9 +1,9 @@
-# predict_all.py (batch 처리 버전)
+#!/usr/bin/env python3
+# predict_all.py (auto-batch, index 포함, stderr 진행 로그)
 import sys
 import os
 import json
 import numpy as np
-import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
@@ -31,7 +31,7 @@ def load_all_records(catalog_files):
         try:
             with open(cat_file, 'r', encoding='utf-8') as f:
                 for line in f:
-                    if not line.strip(): 
+                    if not line.strip():
                         continue
                     try:
                         records.append(json.loads(line))
@@ -53,6 +53,39 @@ def build_image_candidates(tub_path, rel_path):
             return cand
     return None
 
+def _get_mem_available_bytes():
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if line.startswith("MemAvailable:"):
+                    parts = line.split()
+                    return int(parts[1]) * 1024
+    except Exception:
+        pass
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    parts = line.split()
+                    return int(parts[1]) * 1024 // 2
+    except Exception:
+        pass
+    return 1_000_000_000
+
+def choose_batch_size(arg_batch):
+    if arg_batch is not None:
+        try:
+            return max(1, int(arg_batch))
+        except Exception:
+            return 32
+    # 자동 추정
+    avail = _get_mem_available_bytes()
+    per_image_bytes = 120 * 160 * 3 * 4  # float32
+    overhead_factor = 6
+    est_per_item = per_image_bytes * overhead_factor
+    guessed = max(1, int(avail / (est_per_item * 1.1)))
+    return int(max(1, min(64, guessed)))
+
 def main():
     if len(sys.argv) < 3:
         print("Usage: predict_all.py <tub_path> <model_path> [batch_size]", file=sys.stderr)
@@ -60,16 +93,18 @@ def main():
 
     tub_path = sys.argv[1]
     model_path = sys.argv[2]
-    batch_size = int(sys.argv[3]) if len(sys.argv) >= 4 else 32
+    arg_batch = sys.argv[3] if len(sys.argv) >= 4 else None
+    batch_size = choose_batch_size(arg_batch)
 
     # 모델 존재 확인
     if not os.path.exists(model_path):
-        print(f"Model not found: {model_path}", file=sys.stderr)
+        print(f"[predict_all.py] Model not found: {model_path}", file=sys.stderr)
         print(json.dumps([]))
         return
 
     try:
         model = load_model(model_path)
+        print(f"[predict_all.py] model loaded: {model_path}", file=sys.stderr)
     except Exception as e:
         print("[predict_all.py] model load error: " + str(e), file=sys.stderr)
         print(json.dumps([]))
@@ -77,13 +112,14 @@ def main():
 
     catalog_files = find_catalog_files(tub_path)
     all_records = load_all_records(catalog_files)
-    # C#의 _index 정렬과 일치
     all_records.sort(key=lambda x: x.get('_index', 0))
 
     total = len(all_records)
     if total == 0:
         print(json.dumps([]))
         return
+
+    print(f"[predict_all.py] total records: {total}, using batch_size={batch_size}", file=sys.stderr)
 
     results = []
     target_size = (120, 160)
@@ -93,11 +129,14 @@ def main():
             end = min(start + batch_size, total)
             batch_records = all_records[start:end]
             batch_imgs = []
+            batch_indices = []
             for rec in batch_records:
                 image_path_rel = rec.get('cam/image_array', '')
                 session_id = rec.get('_session_id', '')
+                frame_index = rec.get('_index', -1)
 
-                # 기존 스페셜케이스 유지
+                batch_indices.append(frame_index)
+
                 if session_id == "26-05-21_1" or not image_path_rel:
                     batch_imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
                     continue
@@ -109,10 +148,9 @@ def main():
                     batch_imgs.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.float32))
 
             X = np.array(batch_imgs, dtype=np.float32)
-            # 예측 (batch_size 파라미터은 모델 예측 내부 배치와 별개)
             preds = model.predict(X, batch_size=max(1, min(batch_size, 64)), verbose=0)
 
-            for p in preds:
+            for idx, p in enumerate(preds):
                 try:
                     steering = float(p[0])
                     throttle = float(p[1]) if len(p) > 1 else 0.0
@@ -120,19 +158,18 @@ def main():
                     steering = 0.0
                     throttle = 0.0
                 results.append({
+                    "index": int(batch_indices[idx]) if batch_indices[idx] is not None else -1,
                     "steering": steering,
                     "throttle": throttle
                 })
 
-            # 진행 로그(디버그용)
+            # 진행 로그
             print(f"[predict_all.py] processed {end}/{total}", file=sys.stderr)
     except Exception as ex:
         print("[predict_all.py] runtime error: " + str(ex), file=sys.stderr)
-        # 실패 시 가능한 만큼의 결과만 반환하거나 빈 배열 반환
         print(json.dumps([]))
         return
 
-    # 최종 JSON 출력
     print(json.dumps(results))
 
 if __name__ == "__main__":
