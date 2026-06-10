@@ -11,7 +11,7 @@ namespace DateManager
         public event Action<string> LogReceived;
         public event Action TrainingFinished;
 
-        // 필수 인수 3개를 받도록 정확히 선언
+        // Trainer 클래스에서 학습을 시작하는 메인 함수
         public void StartTraining(string pythonPath, string workingDir, string tubPath)
         {
             if (pythonProcess != null && !pythonProcess.HasExited) return;
@@ -24,21 +24,23 @@ namespace DateManager
                 if (exeName.Contains("wsl"))
                 {
                     psi.FileName = pythonPath;
-                    string safeWorkingDir = workingDir?.Trim().Replace("\"", "").Replace("'", "") ?? string.Empty;
 
-                    if (safeWorkingDir.StartsWith("~/")) safeWorkingDir = safeWorkingDir.Replace("~/", "/home/jaeseo03/");
-                    else if (!safeWorkingDir.StartsWith("/")) safeWorkingDir = "/home/jaeseo03/" + safeWorkingDir;
+                    // 경로를 리눅스 절대 경로로 완벽하게 변환 (내부 로직 사용)
+                    string safeWorkingDir = ToLinuxPath(workingDir);
+                    string safeTubPath = ToLinuxPath(tubPath);
 
                     string envPythonPath = "/home/jaeseo03/miniconda3/envs/e2e_env/bin/python";
-                    // 3개 인수를 사용
-                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '{safeWorkingDir}' && export PYTHONUNBUFFERED=1 && {envPythonPath} train.py --tub={tubPath} --model=./models/mypilot.h5\"";
+
+                    // WSL 명령어 구성: 윈도우 경로 형식을 완전히 제거하고 리눅스 내부 경로만 사용
+                    // bash 내에서 따옴표 처리를 위해 단일 따옴표(') 사용
+                    psi.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '{safeWorkingDir}' && export PYTHONUNBUFFERED=1 && {envPythonPath} train.py --tubs '{safeTubPath}' --model './models/mypilot.h5'\"";
                 }
                 else
                 {
                     psi.FileName = pythonPath;
                     psi.WorkingDirectory = workingDir;
                     string scriptPath = Path.Combine(workingDir ?? string.Empty, "train.py");
-                    psi.Arguments = $"\"{scriptPath}\" --tub={tubPath} --model=./models/mypilot.h5";
+                    psi.Arguments = $"\"{scriptPath}\" --tub=\"{tubPath}\" --model=./models/mypilot.h5";
                 }
 
                 psi.UseShellExecute = false;
@@ -55,7 +57,6 @@ namespace DateManager
                 pythonProcess.OutputDataReceived += (s, args) => {
                     if (!string.IsNullOrEmpty(args.Data))
                     {
-                        // 백스페이스 문자('\b')와 캐리지 리턴('\r')을 제거합니다.
                         string cleanData = args.Data.Replace("\b", "").Replace("\r", "");
                         if (!string.IsNullOrWhiteSpace(cleanData))
                             LogReceived?.Invoke(cleanData + "\r\n");
@@ -65,27 +66,27 @@ namespace DateManager
                     if (!string.IsNullOrEmpty(args.Data))
                     {
                         string data = args.Data;
-
-                        // 텐서플로우의 단순 알림(CUDA 없음, 라이브러리 로딩 등)은 에러로 치지 않음
+                        // 단순 경고는 로그로만 출력, 진짜 에러만 [ERROR] 표시
                         if (data.Contains("Could not find") || data.Contains("WARNING") || data.Contains("tensorflow"))
-                        {
-                            LogReceived?.Invoke(data + "\r\n"); // [ERROR] 딱지 없이 그냥 출력
-                        }
+                            LogReceived?.Invoke(data + "\r\n");
                         else
-                        {
-                            LogReceived?.Invoke($"[ERROR] {data}\r\n"); // 진짜 에러만 딱지 붙임
-                        }
+                            LogReceived?.Invoke($"[ERROR] {data}\r\n");
                     }
                 };
-                pythonProcess.Exited += (s, args) => { LogReceived?.Invoke("✅ 동키카 AI 학습 완료!\r\n"); TrainingFinished?.Invoke(); pythonProcess?.Dispose(); pythonProcess = null; };
+                pythonProcess.Exited += (s, args) => {
+                    LogReceived?.Invoke("✅ 동키카 AI 학습 완료!\r\n");
+                    TrainingFinished?.Invoke();
+                    pythonProcess?.Dispose();
+                    pythonProcess = null;
+                };
 
                 pythonProcess.Start();
                 pythonProcess.BeginOutputReadLine();
                 pythonProcess.BeginErrorReadLine();
             }
-            catch (Exception) // ex 변수를 사용하지 않으면 그냥 Exception으로 써도 됩니다.
+            catch (Exception ex)
             {
-                LogReceived?.Invoke($"❌ 실행 오류 발생\r\n");
+                LogReceived?.Invoke($"❌ 실행 오류 발생: {ex.Message}\r\n");
             }
         }
 
@@ -95,6 +96,40 @@ namespace DateManager
             {
                 try { pythonProcess.Kill(); pythonProcess.Dispose(); pythonProcess = null; } catch { }
             }
+        }
+
+        // 윈도우 경로를 리눅스 내부 절대 경로로 강제 변환하는 메서드
+        private string ToLinuxPath(string inputPath)
+        {
+            if (string.IsNullOrEmpty(inputPath)) return "/home/jaeseo03/mycar";
+
+            string path = inputPath.Replace("\\", "/");
+
+            // 1. WSL 네트워크 경로 패턴 제거 (중요!)
+            // "//wsl.localhost/Ubuntu-22.04" 형태를 찾아서 루트(/)로 변경
+            if (path.Contains("wsl.localhost"))
+            {
+                int idx = path.IndexOf("Ubuntu-22.04");
+                if (idx != -1)
+                {
+                    path = path.Substring(idx + 12); // "Ubuntu-22.04" 뒤의 경로 추출
+                }
+            }
+
+            // 2. 만약 C:/ 와 같은 드라이브 문자열이 있다면 /mnt/c/ 로 변환
+            if (path.Length > 2 && path[1] == ':')
+            {
+                string drive = path.Substring(0, 1).ToLower();
+                path = "/mnt/" + drive + path.Substring(2);
+            }
+
+            // 3. 만약 리눅스 절대 경로(/)로 시작하지 않으면 강제로 홈 디렉토리 붙임
+            if (!path.StartsWith("/"))
+            {
+                path = "/home/jaeseo03/" + path.TrimStart('/');
+            }
+
+            return path;
         }
     }
 }

@@ -117,4 +117,20 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="rtbManual.Text" xml:space="preserve">
+    <value>📘 Donkey UI 사용자 가이드
+
+🚗 1. 수동 주행 (데이터 수집)
+ · 신규 데이터 생성이 필요할 때 선택
+ · 조종 데이터 + 카메라 영상 실시간 저장
+ · AI 모델 학습의 핵심 기초 자료(Tub)
+
+🚀 2. 자율 주행 (AI 드라이빙)
+ · AI학습 파일(.h5)이 있을경우 선택
+ · 내부 포트(8887) 최적화 후 시뮬레이션
+
+🔍 3. DonKey UI 실행 (데이터 관리)
+ · 신규 생성된 자료 편집
+ · AI학습 전 자료 필터 후 학습</value>
+  </data>
 </root>

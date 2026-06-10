@@ -393,5 +393,15 @@ namespace DateManager
                 MessageBox.Show($"문서를 여는 중 오류가 발생했습니다: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void btnManual_Click(object sender, EventArgs e)
+        {
+            pnlManual.Visible = true;
+        }
+
+        private void btnCloseManual_Click(object sender, EventArgs e)
+        {
+            pnlManual.Visible = false;
+        }
     }
 }

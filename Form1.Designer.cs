@@ -66,8 +66,8 @@
             chkFilterThr = new CheckBox();
             btnDeleteData = new Button();
             pnlTrainingLog = new Panel();
-            ChartRealTime = new System.Windows.Forms.DataVisualization.Charting.Chart();
             btnCompareDataset = new Button();
+            ChartRealTime = new System.Windows.Forms.DataVisualization.Charting.Chart();
             btnRunSimulator = new Button();
             lblLogTitle = new Label();
             rtbTrainLog = new RichTextBox();
@@ -596,16 +596,6 @@
             pnlTrainingLog.TabIndex = 11;
             pnlTrainingLog.Visible = false;
             // 
-            // ChartRealTime
-            // 
-            ChartRealTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            ChartRealTime.BackColor = Color.FromArgb(30, 30, 30);
-            ChartRealTime.Location = new Point(14, 328);
-            ChartRealTime.Name = "ChartRealTime";
-            ChartRealTime.Size = new Size(814, 132);
-            ChartRealTime.TabIndex = 14;
-            ChartRealTime.Text = "chart1";
-            // 
             // btnCompareDataset
             // 
             btnCompareDataset.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
@@ -621,6 +611,16 @@
             btnCompareDataset.Text = "학습파일 \r\n비교";
             btnCompareDataset.UseVisualStyleBackColor = false;
             btnCompareDataset.Click += btnCompareDataset_Click;
+            // 
+            // ChartRealTime
+            // 
+            ChartRealTime.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            ChartRealTime.BackColor = Color.FromArgb(30, 30, 30);
+            ChartRealTime.Location = new Point(14, 328);
+            ChartRealTime.Name = "ChartRealTime";
+            ChartRealTime.Size = new Size(814, 132);
+            ChartRealTime.TabIndex = 14;
+            ChartRealTime.Text = "chart1";
             // 
             // btnRunSimulator
             // 

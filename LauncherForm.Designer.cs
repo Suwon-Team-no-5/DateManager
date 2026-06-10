@@ -25,6 +25,7 @@ namespace DateManager
 
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LauncherForm));
             lblSub = new Label();
             pnlAccentLine = new Panel();
             btnCollect = new Button();
@@ -32,6 +33,12 @@ namespace DateManager
             btnOpenMainUi = new Button();
             lblFooter = new Label();
             btnTitle = new Button();
+            btnManual = new Button();
+            pnlManual = new Panel();
+            btnCloseManual = new Button();
+            rtbManual = new RichTextBox();
+            lblManual = new Label();
+            pnlManual.SuspendLayout();
             SuspendLayout();
             // 
             // lblSub
@@ -149,12 +156,83 @@ namespace DateManager
             btnTitle.UseVisualStyleBackColor = true;
             btnTitle.Click += btnTitle_Click;
             // 
+            // btnManual
+            // 
+            btnManual.Anchor = AnchorStyles.None;
+            btnManual.BackColor = Color.FromArgb(45, 45, 48);
+            btnManual.FlatAppearance.BorderSize = 0;
+            btnManual.FlatStyle = FlatStyle.Flat;
+            btnManual.Font = new Font("Segoe UI Semibold", 9F);
+            btnManual.ForeColor = Color.White;
+            btnManual.Image = Properties.Resources.user_guide;
+            btnManual.Location = new Point(265, 300);
+            btnManual.Name = "btnManual";
+            btnManual.Size = new Size(72, 55);
+            btnManual.TabIndex = 8;
+            btnManual.UseVisualStyleBackColor = false;
+            btnManual.Click += btnManual_Click;
+            // 
+            // pnlManual
+            // 
+            pnlManual.Anchor = AnchorStyles.None;
+            pnlManual.BackColor = Color.FromArgb(45, 45, 48);
+            pnlManual.Controls.Add(btnCloseManual);
+            pnlManual.Controls.Add(rtbManual);
+            pnlManual.Controls.Add(lblManual);
+            pnlManual.Location = new Point(4, 218);
+            pnlManual.Name = "pnlManual";
+            pnlManual.Size = new Size(336, 412);
+            pnlManual.TabIndex = 15;
+            pnlManual.Visible = false;
+            // 
+            // btnCloseManual
+            // 
+            btnCloseManual.Anchor = AnchorStyles.None;
+            btnCloseManual.BackColor = Color.Red;
+            btnCloseManual.FlatAppearance.BorderSize = 0;
+            btnCloseManual.FlatStyle = FlatStyle.Flat;
+            btnCloseManual.Font = new Font("Segoe UI Semibold", 9F);
+            btnCloseManual.ForeColor = Color.White;
+            btnCloseManual.Location = new Point(302, 0);
+            btnCloseManual.Name = "btnCloseManual";
+            btnCloseManual.Size = new Size(34, 32);
+            btnCloseManual.TabIndex = 14;
+            btnCloseManual.Text = "X";
+            btnCloseManual.UseVisualStyleBackColor = false;
+            btnCloseManual.Click += btnCloseManual_Click;
+            // 
+            // rtbManual
+            // 
+            rtbManual.Anchor = AnchorStyles.None;
+            rtbManual.BackColor = Color.FromArgb(37, 37, 38);
+            rtbManual.BorderStyle = BorderStyle.None;
+            rtbManual.ForeColor = Color.White;
+            rtbManual.Location = new Point(11, 53);
+            rtbManual.Name = "rtbManual";
+            rtbManual.ReadOnly = true;
+            rtbManual.Size = new Size(307, 345);
+            rtbManual.TabIndex = 11;
+            rtbManual.Text = resources.GetString("rtbManual.Text");
+            // 
+            // lblManual
+            // 
+            lblManual.AutoSize = true;
+            lblManual.Font = new Font("Segoe UI", 10.2F, FontStyle.Bold);
+            lblManual.ForeColor = Color.DeepSkyBlue;
+            lblManual.Location = new Point(11, 12);
+            lblManual.Name = "lblManual";
+            lblManual.Size = new Size(100, 23);
+            lblManual.TabIndex = 10;
+            lblManual.Text = "사용 설명서";
+            // 
             // LauncherForm
             // 
             AutoScaleDimensions = new SizeF(9F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(28, 28, 30);
             ClientSize = new Size(1295, 805);
+            Controls.Add(pnlManual);
+            Controls.Add(btnManual);
             Controls.Add(btnTitle);
             Controls.Add(pnlAccentLine);
             Controls.Add(lblFooter);
@@ -162,16 +240,15 @@ namespace DateManager
             Controls.Add(btnAutoDrive);
             Controls.Add(btnCollect);
             Controls.Add(lblSub);
-            FormBorderStyle = FormBorderStyle.Sizable;
             Margin = new Padding(4);
-            MaximizeBox = true;
-            MinimizeBox = true;
             MinimumSize = new Size(900, 600);
             Name = "LauncherForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "DonkeyCar System Launcher";
             Shown += LauncherForm_Shown;
             Resize += LauncherForm_Resize;
+            pnlManual.ResumeLayout(false);
+            pnlManual.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -211,6 +288,7 @@ namespace DateManager
 
             SuspendLayout();
 
+            // 1. 기존 컨트롤 스케일링
             SetScaledBounds(lblSub, 0, 180, 1295, 35, scale, offsetX, offsetY);
             SetScaledBounds(pnlAccentLine, 597, 235, 100, 4, scale, offsetX, offsetY);
             SetScaledBounds(btnCollect, 347, 300, 600, 90, scale, offsetX, offsetY);
@@ -219,12 +297,28 @@ namespace DateManager
             SetScaledBounds(lblFooter, 0, 720, 1295, 30, scale, offsetX, offsetY);
             SetScaledBounds(btnTitle, -12, 93, 1307, 84, scale, offsetX, offsetY);
 
+            // 🌟 2. 새로 추가된 설명서 UI 스케일링
+            SetScaledBounds(btnManual, 43, 257, 72, 55, scale, offsetX, offsetY);
+            SetScaledBounds(pnlManual, 4, 218, 336, 412, scale, offsetX, offsetY);
+
+            // 🌟 3. 패널(pnlManual) 내부 컨트롤들 (부모 패널 내부 좌표이므로 offset은 0으로)
+            SetScaledBounds(lblManual, 11, 12, 100, 23, scale, 0, 0);
+            SetScaledBounds(btnCloseManual, 302, 0, 34, 32, scale, 0, 0);
+            SetScaledBounds(rtbManual, 11, 53, 307, 345, scale, 0, 0);
+
+            // 4. 기존 폰트 스케일링
             SetScaledFont(lblSub, 13F, scale);
             SetScaledFont(btnCollect, 16F, scale);
             SetScaledFont(btnAutoDrive, 16F, scale);
             SetScaledFont(btnOpenMainUi, 16F, scale);
             SetScaledFont(lblFooter, 10F, scale);
             SetScaledFont(btnTitle, 32F, scale);
+
+            // 🌟 5. 새로 추가된 설명서 UI 폰트 스케일링
+            SetScaledFont(btnManual, 9F, scale);
+            SetScaledFont(lblManual, 10.2F, scale);
+            SetScaledFont(btnCloseManual, 9F, scale);
+            SetScaledFont(rtbManual, 9F, scale); // 기본 텍스트 크기를 9F 기준으로 계산
 
             ResumeLayout(false);
         }
@@ -258,5 +352,10 @@ namespace DateManager
         private System.Windows.Forms.Button btnOpenMainUi;
         private System.Windows.Forms.Label lblFooter;
         private Button btnTitle;
+        private Button btnManual;
+        private Panel pnlManual;
+        private RichTextBox rtbManual;
+        private Label lblManual;
+        private Button btnCloseManual;
     }
 }

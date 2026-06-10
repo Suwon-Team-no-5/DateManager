@@ -965,12 +965,26 @@ namespace DateManager
 
         private async void btnStart_Click(object? sender, EventArgs e)
         {
-            // 1. 휴지통 파일 처리
-            if (_trashFrameList.Count > 0)
+            // 1. 데이터 유무 확인
+            if (string.IsNullOrEmpty(_currentCatalogPath))
             {
-                if (MessageBox.Show($"휴지통에 있는 {_trashFrameList.Count}개의 파일을 영구 삭제하고 학습을 시작할까요?",
-                                    "최종 확인", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                MessageBox.Show("데이터가 로드되지 않았습니다. 폴더를 먼저 선택해주세요!");
+                return;
+            }
+
+            // 2. 휴지통 및 물리적 파일 정리 로직 실행
+            if (_trashFrameList.Count > 0 || true) // 항상 카탈로그 비교 정리는 수행하는 것이 안전함
+            {
+                string message = _trashFrameList.Count > 0
+                    ? $"휴지통의 {_trashFrameList.Count}개 파일과 사용하지 않는 이미지를 영구 삭제하고 학습할까요?"
+                    : "사용하지 않는 이미지 파일을 정리하고 학습을 시작할까요?";
+
+                if (MessageBox.Show(message, "최종 확인", MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
+                    // A. 물리적 파일 정리 (이미지 파일 삭제)
+                    CleanupUnusedFiles(_currentCatalogPath, _masterFrameList, _trashFrameList);
+
+                    // B. 카탈로그 리스트 정리
                     _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, _trashFrameList);
                     _trashFrameList.Clear();
                     UpdateTrashListUI();
@@ -978,14 +992,7 @@ namespace DateManager
                 else { return; }
             }
 
-            // 2. 데이터 유무 필수 확인
-            if (string.IsNullOrEmpty(_currentCatalogPath))
-            {
-                MessageBox.Show("데이터가 로드되지 않았습니다. 폴더를 먼저 선택해주세요!");
-                return;
-            }
-
-            // 🎯 [부활 포인트 1] 학습 버프 가동 시 차트 컴포넌트의 이전 기록을 안전하게 밀어버림!
+            // 3. UI 초기화
             lossPoints.Clear();
             if (ChartRealTime != null)
             {
@@ -998,19 +1005,20 @@ namespace DateManager
             btnEndTraining.Enabled = true;
             pnlCamView.Visible = false;
             pnlTrainingLog.Visible = true;
+
             btnStartTraining.BackColor = Color.FromArgb(62, 62, 66);
             btnEndTraining.BackColor = Color.FromArgb(211, 47, 47);
             btnViewLog.BackColor = Color.FromArgb(0, 122, 204);
             btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
 
             rtbTrainLog.Clear();
-            rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다...\r\n");
+            rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다... (데이터 정리 완료)\r\n");
 
-            string linuxTubPath = ConvertToLinuxPath(_currentCatalogPath);
+            // 4. 학습 시작
             string pythonPath = "wsl.exe";
             string mycarDir = "/home/jaeseo03/mycar";
 
-            await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, linuxTubPath));
+            await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, _currentCatalogPath));
         }
 
         // 🎯 [부활 포인트 2] 기주님 맞춤형 실시간 꺾은선 다크모드 렌더링 엔진 완벽 복구!
@@ -1774,6 +1782,52 @@ namespace DateManager
             finally
             {
                 this.Cursor = Cursors.Default;
+            }
+        }
+        private void CleanupUnusedFiles(string tubFolderPath, List<DonkeyFrame> masterList, List<DonkeyFrame> trashList)
+        {
+            try
+            {
+                // 1. 이미지 폴더 경로 정의 (DataProcessor.cs의 로직과 동일하게 맞춤)
+                string imagesFolderPath = Path.Combine(tubFolderPath, "images");
+                if (!Directory.Exists(imagesFolderPath)) return;
+
+                // 2. 휴지통에 있는 파일들 물리적 삭제
+                foreach (var frame in trashList)
+                {
+                    if (string.IsNullOrEmpty(frame.ImagePath)) continue;
+
+                    // ImagePath에는 파일명(예: "123.jpg")만 들어있으므로, images 폴더와 결합합니다.
+                    string filePath = Path.Combine(imagesFolderPath, frame.ImagePath);
+
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
+                }
+
+                // 3. 카탈로그(masterList)에 없는 고아(Orphan) 이미지 파일 삭제
+                // 유효한 파일명 목록을 HashSet으로 만듭니다 (검색 속도 최적화)
+                var validFileNames = new HashSet<string>(masterList.Select(f => f.ImagePath));
+
+                // 이미지 폴더 내의 모든 jpg 파일 조회
+                var allFiles = Directory.GetFiles(imagesFolderPath, "*.jpg");
+
+                foreach (var file in allFiles)
+                {
+                    string fileName = Path.GetFileName(file);
+
+                    // 카탈로그에 없는 파일이면 삭제
+                    if (!validFileNames.Contains(fileName))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // 파일 접근 권한 문제 등이 있을 수 있으므로 예외는 로그로 확인
+                Console.WriteLine($"파일 정리 중 오류 발생: {ex.Message}");
             }
         }
     }

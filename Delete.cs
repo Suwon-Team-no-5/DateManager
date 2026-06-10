@@ -22,63 +22,66 @@ namespace DateManager
 
         public DeleteResult RemoveFramesFromCatalogs(List<DonkeyFrame> frameList, IEnumerable<DonkeyFrame> targetFrames)
         {
-            if (frameList == null) throw new ArgumentNullException(nameof(frameList)); // frameList이 null인 경우 예외처리
+            if (frameList == null) throw new ArgumentNullException(nameof(frameList));
             if (targetFrames == null) throw new ArgumentNullException(nameof(targetFrames));
 
-            var selectedFrames = targetFrames
-                .Where(frame => frame != null)
+            // 1. 경로 정보가 있는 프레임과 없는 프레임을 구분합니다.
+            var framesWithCatalog = targetFrames
+                .Where(f => f != null && !string.IsNullOrWhiteSpace(f.SourceCatalogPath))
                 .ToList();
-            // 선택된 프레임 중에서 null이 아닌 것만 필터링
 
-            var targets = selectedFrames
-                .Where(frame => frame != null && !string.IsNullOrWhiteSpace(frame.SourceCatalogPath))
+            var framesWithoutCatalog = targetFrames
+                .Where(f => f != null && string.IsNullOrWhiteSpace(f.SourceCatalogPath))
+                .ToList();
+
+            // 2. 만약 삭제할 카탈로그 대상이 하나도 없다면, 그냥 리스트에서만 제거하고 종료합니다.
+            if (framesWithCatalog.Count == 0)
+            {
+                frameList.RemoveAll(frame => targetFrames.Contains(frame));
+                return new DeleteResult(); // 빈 결과 반환
+            }
+
+            // 3. 이제 카탈로그 정보가 있는 것들만 처리
+            var targets = framesWithCatalog
                 .GroupBy(frame => Path.GetFullPath(frame.SourceCatalogPath))
                 .ToList();
-            // 선택된 프레임 중에서 SourceCatalogPath가 유효한 것만 필터링하고, 절대 경로로 그룹화
-
-            if (targets.Count == 0)
-            {
-                throw new InvalidOperationException("삭제할 프레임의 원본 catalog 파일 정보를 찾을 수 없습니다. 데이터를 다시 로드한 뒤 시도해 주세요.");
-            }
 
             var result = new DeleteResult();
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-            foreach (var catalogGroup in targets)// 각 catalog 파일별로 그룹화된 프레임들을 처리
+            foreach (var catalogGroup in targets)
             {
                 string catalogPath = catalogGroup.Key;
                 if (!File.Exists(catalogPath))
                 {
-                    throw new FileNotFoundException("원본 catalog 파일을 찾을 수 없습니다.", catalogPath);
+                    // 여기서 예외를 던지지 말고 로그를 남기거나 건너뛰는 것이 안전합니다.
+                    continue;
                 }
 
-                var deleteKeys = catalogGroup
-                    .Select(CreateFrameKey)
-                    .ToHashSet();
+                var deleteKeys = catalogGroup.Select(CreateFrameKey).ToHashSet();
 
-                string catalogFolder = Path.GetDirectoryName(catalogPath) ?? ""; // catalog 파일의 폴더 경로
-                string backupFolder = Path.Combine(catalogFolder, "backup"); // 백업 폴더 경로
-                Directory.CreateDirectory(backupFolder); // 백업 폴더가 없으면 생성
+                string catalogFolder = Path.GetDirectoryName(catalogPath) ?? "";
+                string backupFolder = Path.Combine(catalogFolder, "backup");
+                Directory.CreateDirectory(backupFolder);
 
                 string backupPath = Path.Combine(
                     backupFolder,
                     $"{Path.GetFileNameWithoutExtension(catalogPath)}_{timestamp}{Path.GetExtension(catalogPath)}");
-                // 원본 catalog 파일을 백업 폴더로 복사 (덮어쓰기 방지)
-                File.Copy(catalogPath, backupPath, overwrite: false); // 백업 파일이 이미 존재하는 경우 예외 발생
-                result.BackupFiles.Add(backupPath); // 백업 파일 경로를 결과에 추가
 
-                string[] originalLines = File.ReadAllLines(catalogPath); // 원본 catalog 파일의 모든 라인을 읽어옴
-                var remainingLines = new List<string>(originalLines.Length); // 삭제되지 않은 라인들을 저장할 리스트
-                int deletedInFile = 0; // 현재 catalog 파일에서 삭제된 라인 수를 카운트
+                File.Copy(catalogPath, backupPath, overwrite: false);
+                result.BackupFiles.Add(backupPath);
+
+                string[] originalLines = File.ReadAllLines(catalogPath);
+                var remainingLines = new List<string>(originalLines.Length);
+                int deletedInFile = 0;
 
                 foreach (string line in originalLines)
                 {
-                    if (ShouldDeleteLine(line, deleteKeys))// 해당 라인이 삭제 대상인지 확인
+                    if (ShouldDeleteLine(line, deleteKeys))
                     {
                         deletedInFile++;
                         continue;
                     }
-
                     remainingLines.Add(line);
                 }
 
@@ -87,7 +90,8 @@ namespace DateManager
                 DeleteCatalogCaches(catalogFolder);
             }
 
-            frameList.RemoveAll(frame => selectedFrames.Contains(frame));
+            // 최종적으로 전체 리스트에서 제거
+            frameList.RemoveAll(frame => targetFrames.Contains(frame));
 
             return result;
         }
