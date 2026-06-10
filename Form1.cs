@@ -63,6 +63,7 @@ namespace DateManager
         // ==========================================
         public class AiPredictFrame
         {
+            public int FrameIndex { get; set; } = -1; // 식별자
             public float Angle { get; set; }
             public float Throttle { get; set; }
         }
@@ -103,6 +104,11 @@ namespace DateManager
         private string _modelWinPath = @"\\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\models\mypilot.h5";
 
         private bool _isSelectingStart = true; // 시작을 입력할 차례인지, 끝을 입력할 차례인지 구분
+
+        private string _selectedModelPath = "";
+
+        // 클래스 필드 쪽에 추가
+        private Dictionary<int, AiPredictFrame> _aiPredictedMap = new Dictionary<int, AiPredictFrame>();
 
         public Form1()
         {
@@ -219,32 +225,39 @@ namespace DateManager
         {
             List<AiPredictFrame> predictedList = new List<AiPredictFrame>();
 
-            //이미 검증 완료된 wsl.exe 엔진 호출 방식 적용
             string pythonPath = "wsl.exe";
-
-            //파이썬 스크립트의 절대 경로 지정
             string scriptPath = "/home/jaeseo03/mycar/predict_all.py";
 
-
-            // WSL에서 실행할 때만 Windows 경로를 Linux 스타일로 변환
             bool useWsl = pythonPath != null && pythonPath.IndexOf("wsl", StringComparison.OrdinalIgnoreCase) >= 0;
             string linuxTubPath = useWsl ? ConvertToLinuxPath(tubPath) : tubPath;
             string linuxModelPath = useWsl ? ConvertToLinuxPath(modelPath) : modelPath;
 
-
-            string linuxPythonEnv = "/home/jaeseo03/miniconda3/envs/donkey/bin/python";//파이썬 경로 확인 필요!!!!
+            string linuxPythonEnv = "/home/jaeseo03/miniconda3/envs/e2e_env/bin/python";
 
             ProcessStartInfo start = new ProcessStartInfo();
             start.FileName = pythonPath;
-
-            // Use -d <distro> -e to execute the python binary inside WSL distribution
-            // Wrap command safely using bash -lc to allow complex commands if needed
             start.Arguments = $"-d Ubuntu-22.04 -e bash -lc \"{linuxPythonEnv} '{scriptPath}' '{linuxTubPath}' '{linuxModelPath}'\"";
-
             start.UseShellExecute = false;
             start.RedirectStandardOutput = true;
             start.RedirectStandardError = true;
             start.CreateNoWindow = true;
+
+            void AppendLog(string text)
+            {
+                try
+                {
+                    if (rtbTrainLog == null) return;
+                    if (rtbTrainLog.InvokeRequired)
+                    {
+                        rtbTrainLog.Invoke((MethodInvoker)(() => rtbTrainLog.AppendText(text + Environment.NewLine)));
+                    }
+                    else
+                    {
+                        rtbTrainLog.AppendText(text + Environment.NewLine);
+                    }
+                }
+                catch { }
+            }
 
             try
             {
@@ -256,9 +269,23 @@ namespace DateManager
                     string stderr = process.StandardError.ReadToEnd();
                     process.WaitForExit();
 
+                    // 항상 로그 남기기(디버깅용)
                     if (!string.IsNullOrWhiteSpace(stderr))
                     {
-                        // 로그에 경고는 남기되, 치명적 오류면 사용자에게 알립니다.
+                        AppendLog("[predict_all.py STDERR] " + stderr.Trim());
+                    }
+                    if (!string.IsNullOrWhiteSpace(stdout))
+                    {
+                        AppendLog("[predict_all.py STDOUT] (length: " + stdout.Length + ")");
+                    }
+                    else
+                    {
+                        AppendLog("[predict_all.py STDOUT] (empty)");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(stderr))
+                    {
+                        // 치명적 오류일 가능성 있으므로 사용자에게 보여줌
                         if (!stderr.Contains("WARNING") && !stderr.Contains("tensorflow"))
                         {
                             MessageBox.Show($"AI 예측 스크립트 오류: {stderr}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -269,23 +296,45 @@ namespace DateManager
                     {
                         try
                         {
-                            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                            var records = JsonSerializer.Deserialize<List<Dictionary<string, float>>>(stdout, options);
-
-                            if (records != null)
+                            using (var doc = JsonDocument.Parse(stdout))
                             {
-                                foreach (var item in records)
+                                if (doc.RootElement.ValueKind == JsonValueKind.Array)
                                 {
-                                    predictedList.Add(new AiPredictFrame
+                                    foreach (var el in doc.RootElement.EnumerateArray())
                                     {
-                                        Angle = item.ContainsKey("steering") ? item["steering"] : 0f,
-                                        Throttle = item.ContainsKey("throttle") ? item["throttle"] : 0f
-                                    });
+                                        float steering = 0f;
+                                        float throttle = 0f;
+                                        int frameIndex = -1;
+                                        if (el.ValueKind == JsonValueKind.Object)
+                                        {
+                                            if (el.TryGetProperty("steering", out var sProp))
+                                            {
+                                                if (sProp.ValueKind == JsonValueKind.Number && sProp.TryGetDouble(out double sVal)) steering = (float)sVal;
+                                                else if (sProp.ValueKind == JsonValueKind.String && float.TryParse(sProp.GetString(), out float sParsed)) steering = sParsed;
+                                            }
+                                            if (el.TryGetProperty("throttle", out var tProp))
+                                            {
+                                                if (tProp.ValueKind == JsonValueKind.Number && tProp.TryGetDouble(out double tVal)) throttle = (float)tVal;
+                                                else if (tProp.ValueKind == JsonValueKind.String && float.TryParse(tProp.GetString(), out float tParsed)) throttle = tParsed;
+                                            }
+                                            if (el.TryGetProperty("index", out var idxProp) && idxProp.ValueKind == JsonValueKind.Number && idxProp.TryGetInt32(out int idxVal))
+    frameIndex = idxVal;
+                                        }
+
+                                        predictedList.Add(new AiPredictFrame { FrameIndex = frameIndex, Angle = steering, Throttle = throttle });
+                                    }
+                                }
+                                else
+                                {
+                                    AppendLog("[predict_all.py] JSON root is not array.");
                                 }
                             }
+
+                            AppendLog($"[predict_all.py] parsed {predictedList.Count} prediction items.");
                         }
                         catch (Exception ex)
                         {
+                            AppendLog("[predict_all.py] JSON parse error: " + ex.Message);
                             MessageBox.Show($"AI 예측 결과 파싱 실패: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                     }
@@ -293,6 +342,7 @@ namespace DateManager
             }
             catch (Exception ex)
             {
+                AppendLog("[PredictAllFrames] 오류: " + ex.Message);
                 MessageBox.Show($"AI 예측값 연산 중 오류 발생: {ex.Message}");
             }
 
@@ -307,36 +357,24 @@ namespace DateManager
                 fbd.Description = "Donkeycar 데이터(Tub) 폴더를 선택하세요.";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
+                    _currentCatalogPath = fbd.SelectedPath; //(경로 저장)
+                    _backupManager.CurrentCatalogPath = _currentCatalogPath;
                     string selectedPath = fbd.SelectedPath;
 
-                    // 💡 [추가] 분석에 사용할 AI 모델(.h5) 선택 파일창
-                    string modelPath = "";
-                    using (OpenFileDialog ofd = new OpenFileDialog())
-                    {
-                        ofd.Title = "분석에 사용할 동키카 모델(.h5) 파일을 선택하세요.";
-                        ofd.Filter = "Keras Model (*.h5)|*.h5|All Files (*.*)|*.*";
-                        // 기본 지정 경로인 _modelWinPath가 있으면 초기 위치로 맵핑 가능
-                        if (ofd.ShowDialog() == DialogResult.OK) modelPath = ofd.FileName;
-                        else return;
-                    }
-
-                    _currentCatalogPath = selectedPath;
-                    _backupManager.CurrentCatalogPath = _currentCatalogPath;
+                    // 로딩 중임을 사용자에게 알림 (UI가 멈추지 않음)
                     this.Cursor = Cursors.WaitCursor;
                     lstFrameData.Items.Clear();
 
                     try
                     {
-                        // 1. 기존 주행 데이터 로드
+                        // 💡 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행
                         _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath));
 
+                        // 로드 완료 후 UI 업데이트: 마스터 리스트를 바로 표시 리스트로 반영
                         if (_masterFrameList != null && _masterFrameList.Count > 0)
                         {
-                            // 2. 💡 [추가] 백그라운드에서 AI 예측값 전체 동시 계산 실행
-                            _aiPredictedList = await Task.Run(() => PredictAllFrames(selectedPath, modelPath));
-
                             RefreshFrameList(_masterFrameList);
-                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터와 AI 예측 연산을 완료했습니다!");
+                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터를 로드했습니다!");
                         }
                     }
                     catch (Exception ex)
@@ -345,6 +383,7 @@ namespace DateManager
                     }
                     finally
                     {
+                        // 커서 복구
                         this.Cursor = Cursors.Default;
                     }
                 }
@@ -404,9 +443,33 @@ namespace DateManager
 
             int targetStartIndex = selectedIndices.Min();
 
+            // UI에서 선택된 항목 -> DonkeyFrame 객체 목록
             List<DonkeyFrame> selectedFrames = selectedIndices
                 .Select(index => _displayedFrameList[index])
                 .ToList();
+
+            // --- 예측 리스트 동기화: 삭제될 프레임의 master 인덱스를 찾아서 예측값을 보관하고 제거 ---
+            // master 인덱스 계산(프레임의 고유 FrameIndex로 매칭)
+            var pairs = selectedFrames
+                .Select(f => new { Frame = f, MasterIndex = _masterFrameList.FindIndex(m => m.FrameIndex == f.FrameIndex) })
+                .Where(p => p.MasterIndex >= 0)
+                .OrderByDescending(p => p.MasterIndex) // 내림차순으로 제거(인덱스 무효화 방지)
+                .ToList();
+
+            foreach (var p in pairs)
+            {
+                int frameKey = p.Frame.FrameIndex;
+                // 맵에서 안전하게 제거
+                _aiPredictedMap.Remove(frameKey);
+
+                // 리스트에도 FrameIndex 매칭 항목이 있으면 제거
+                if (_aiPredictedList != null)
+                {
+                    int idxToRemove = _aiPredictedList.FindIndex(x => x.FrameIndex == frameKey);
+                    if (idxToRemove >= 0) _aiPredictedList.RemoveAt(idxToRemove);
+                }
+            }
+            // ------------------------------------------------------------------
 
             _displayedFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
             _masterFrameList.RemoveAll(frame => selectedFrames.Contains(frame));
@@ -415,6 +478,7 @@ namespace DateManager
 
             RefreshFrameList(_displayedFrameList);
             UpdateTrashListUI();
+            pbMainCam.Invalidate();
 
             if (lstFrameData.Items.Count > 0)
             {
@@ -551,7 +615,7 @@ namespace DateManager
         private void btnPlay_Click(object sender, EventArgs e)
         {
             if (!HasDisplayedFrames()) return;
-            if (_isViewingTrash) return;
+            if  (_isViewingTrash) return;
 
             if (_playbackTimer.Enabled)
             {
@@ -1208,7 +1272,13 @@ namespace DateManager
             for (int i = 1; i <= segments; i++)
             {
                 int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
-                float targetAngle = (float)_displayedFrameList[futureIndex].Angle;
+                var futureFrame = _displayedFrameList[futureIndex];
+                float targetAngle;
+                if (_aiPredictedMap != null && _aiPredictedMap.TryGetValue(futureFrame.FrameIndex, out var pred))
+    targetAngle = pred.Angle;
+    else
+    targetAngle = (float)futureFrame.Angle; // fallback
+
                 smoothedAngle = (smoothedAngle * 0.7f) + (targetAngle * 0.3f);
                 angleSum += smoothedAngle;
 
@@ -1628,19 +1698,83 @@ namespace DateManager
             }
         }
 
-        private void btnCompareDataset_Click(object sender, EventArgs e)
+        private async void btnCompareDataset_Click(object sender, EventArgs e)
         {
-            
-                    // 💡 [추가] 분석에 사용할 AI 모델(.h5) 선택 파일창
-            string modelPath = "";
+            // 모델 파일 선택
             using (OpenFileDialog ofd = new OpenFileDialog())
             {
                 ofd.Title = "분석에 사용할 동키카 모델(.h5) 파일을 선택하세요.";
                 ofd.Filter = "Keras Model (*.h5)|*.h5|All Files (*.*)|*.*";
-                // 기본 지정 경로인 _modelWinPath가 있으면 초기 위치로 맵핑 가능
-                if (ofd.ShowDialog() == DialogResult.OK) modelPath = ofd.FileName;
-                else return;
-            }        
+                if (ofd.ShowDialog() != DialogResult.OK) return;
+                _selectedModelPath = ofd.FileName;
+            }
+
+            // Tub(카탈로그)가 미리 로드되어 있는지 확인
+            if (string.IsNullOrWhiteSpace(_currentCatalogPath) || _masterFrameList == null || _masterFrameList.Count == 0)
+            {
+                MessageBox.Show("먼저 Tub 폴더를 'Load Tub' 버튼으로 로드하세요.", "준비 필요", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            this.Cursor = Cursors.WaitCursor;
+            try
+            {
+                rtbTrainLog.AppendText($"선택 모델: {_selectedModelPath}\r\nTub: {_currentCatalogPath}\r\nAI 예측 시작...\r\n");
+
+                // PredictAllFrames는 WSL/Python 호출로 블로킹이므로 백그라운드에서 실행
+                var predicted = await Task.Run(() => PredictAllFrames(_currentCatalogPath, _selectedModelPath));
+                _aiPredictedList = predicted ?? new List<AiPredictFrame>();
+                _aiPredictedMap = new Dictionary<int, AiPredictFrame>();
+
+                if (_aiPredictedList.Count > 0)
+                {
+                    // 1) 예측에 FrameIndex가 포함된 경우: 그걸로 매핑
+                    if (_aiPredictedList.All(p => p.FrameIndex != -1))
+                    {
+                        foreach (var p in _aiPredictedList) _aiPredictedMap[p.FrameIndex] = p;
+                    }
+                    else
+                    {
+                        // 2) 포함 안 되어 있으면 master 순서와 매칭(최소 길이)
+                        int m = Math.Min(_aiPredictedList.Count, _masterFrameList.Count);
+                        for (int i = 0; i < m; i++)
+                        {
+                            int fid = _masterFrameList[i].FrameIndex;
+                            _aiPredictedList[i].FrameIndex = fid;
+                            _aiPredictedMap[fid] = _aiPredictedList[i];
+                        }
+                    }
+                }
+
+                rtbTrainLog.AppendText($"AI 예측 완료: {_aiPredictedList.Count}개 항목\r\n");
+
+                if (_aiPredictedList.Count == 0)
+                {
+                    MessageBox.Show("예측 결과가 없습니다. rtbTrainLog의 stdout/stderr를 확인하세요.", "예측 실패", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // 예측 개수가 카탈로그 개수와 다른 경우 경고 로그
+                if (_aiPredictedList.Count != _masterFrameList.Count)
+                {
+                    rtbTrainLog.AppendText($"경고: 카탈로그({_masterFrameList.Count})와 예측({_aiPredictedList.Count}) 항목 수가 다릅니다. (최소 길이로 매칭하여 시각화)\r\n");
+                }
+
+                // UI 갱신 — 카탈로그는 이미 로드되어 있으므로 리스트 새로 고침
+                RefreshFrameList(_masterFrameList);
+                pbMainCam.Invalidate();
+
+                MessageBox.Show($"AI 예측 연산 완료: {_aiPredictedList.Count}개", "완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"예측 중 오류: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                rtbTrainLog.AppendText($"예측 예외: {ex}\r\n");
+            }
+            finally
+            {
+                this.Cursor = Cursors.Default;
+            }
         }
     }
 }
