@@ -73,20 +73,42 @@ namespace DateManager
             if (string.IsNullOrWhiteSpace(winPath)) return winPath ?? "";
             try
             {
-                // \wsl$ style or drive-letter style 변환
+                // 통일: 역슬래시 -> 슬래시
                 string p = winPath.Replace("\\", "/");
-                // C:/Users/... -> /mnt/c/Users/...
+
+                // WSL UNC 형태: //wsl.localhost/Ubuntu-22.04/home/...
+                if (p.StartsWith("//wsl.localhost/", StringComparison.OrdinalIgnoreCase) ||
+                    p.StartsWith("/wsl.localhost/", StringComparison.OrdinalIgnoreCase))
+                {
+                    // 제거: //wsl.localhost/<distro>
+                    string rest = p.StartsWith("//wsl.localhost/", StringComparison.OrdinalIgnoreCase)
+                        ? p.Substring("//wsl.localhost/".Length)
+                        : p.Substring("/wsl.localhost/".Length);
+
+                    int idx = rest.IndexOf('/');
+                    if (idx >= 0)
+                    {
+                        // rest = "Ubuntu-22.04/home/jaeseo03/..."
+                        // 반환: "/home/jaeseo03/..."
+                        return rest.Substring(idx);
+                    }
+                    return "/" + rest;
+                }
+
+                // 드라이브 문자 형식 C:/...
                 if (p.Length >= 2 && char.IsLetter(p[0]) && p[1] == ':')
                 {
                     char drive = char.ToLowerInvariant(p[0]);
                     string rest = p.Substring(2);
                     return $"/mnt/{drive}{rest}".Replace("//", "/");
                 }
-                // \wsl.localhost\... network path - map to WSL mount if possible
-                if (p.StartsWith("/wsl.localhost/")) return p;
+
                 return p;
             }
-            catch { return winPath ?? ""; }
+            catch
+            {
+                return winPath ?? "";
+            }
         }
 
         private List<AiPredictFrame> _aiPredictedList = new List<AiPredictFrame>();
