@@ -1301,22 +1301,25 @@ namespace DateManager
 
             if (_displayedFrameList == null || _displayedFrameList.Count == 0) return;
 
+            // AI 오버레이를 그릴지 판단: 모델을 선택하고 예측이 채워져 있어야 함
+            bool showAi = (_aiPredictedMap != null && _aiPredictedMap.Count > 0 && !string.IsNullOrWhiteSpace(_selectedModelPath));
+
             int segments = 10;
             int lookAheadStep = 2;
             float pathHeight = height * 0.6f;
             float bottomWidth = 140f;
             float topWidth = 20f;
             float curX = width / 2.0f;
+            float angleSum = 0f;
             float maxDeflection = width * 0.012f;
 
-            // ground-truth (파란색) 준비
+            // Ground-truth (파랑) 좌우 엣지 계산
             PointF[] leftEdge = new PointF[segments + 1];
             PointF[] rightEdge = new PointF[segments + 1];
             leftEdge[0] = new PointF(curX - bottomWidth / 2, height);
             rightEdge[0] = new PointF(curX + bottomWidth / 2, height);
 
             float smoothedAngle = 0f;
-            float angleSum = 0f;
             for (int i = 1; i <= segments; i++)
             {
                 int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
@@ -1333,45 +1336,7 @@ namespace DateManager
                 rightEdge[i] = new PointF(curX + currentWidth / 2, nextY);
             }
 
-            // AI 예측 (연두) 준비 — 매 프레임에 대해 매핑된 예측이 있으면 사용, 없으면 ground-truth로 폴백
-            var aiMap = _aiPredictedMap;
-            PointF[] leftA = new PointF[segments + 1];
-            PointF[] rightA = new PointF[segments + 1];
-            float curXA = width / 2.0f;
-            leftA[0] = new PointF(curXA - bottomWidth / 2, height);
-            rightA[0] = new PointF(curXA + bottomWidth / 2, height);
-
-            float smoothedA = 0f;
-            float angleSumA = 0f;
-            for (int i = 1; i <= segments; i++)
-            {
-                int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
-                var futureFrame = _displayedFrameList[futureIndex];
-
-                float targetAngleA;
-                if (aiMap != null && aiMap.TryGetValue(futureFrame.FrameIndex, out var pred))
-                {
-                    targetAngleA = pred.Angle;
-                }
-                else
-                {
-                    // AI 예측이 없는 경우 시각적 연속성을 위해 GT 각도로 폴백
-                    targetAngleA = (float)futureFrame.Angle;
-                }
-
-                smoothedA = (smoothedA * 0.7f) + (targetAngleA * 0.3f);
-                angleSumA += smoothedA;
-
-                float progress = i / (float)segments;
-                float nextY = height - (pathHeight * progress);
-                float nextX = curXA + (angleSumA * maxDeflection);
-                curXA = nextX;
-                float currentWidth = bottomWidth - ((bottomWidth - topWidth) * progress);
-                leftA[i] = new PointF(curXA - currentWidth / 2, nextY);
-                rightA[i] = new PointF(curXA + currentWidth / 2, nextY);
-            }
-
-            // 파란색 경로(현재 리스트)
+            // 파란색 경로 그리기 (Ground-truth)
             for (int i = 0; i < segments; i++)
             {
                 float gap = 5f;
@@ -1383,21 +1348,62 @@ namespace DateManager
                 }
             }
 
-            // 초록색 AI 경로 (반투명으로 위에 그림)
-            try
+            // AI 오버레이 계산 및 그리기 (조건부)
+            if (showAi)
             {
-                using (SolidBrush aiBrush = new SolidBrush(Color.FromArgb(160, Color.LimeGreen)))
+                try
                 {
-                    for (int i = 0; i < segments; i++)
+                    var aiMap = _aiPredictedMap;
+                    float curXA = width / 2.0f;
+                    float angleSumA = 0f;
+                    PointF[] leftA = new PointF[segments + 1];
+                    PointF[] rightA = new PointF[segments + 1];
+
+                    leftA[0] = new PointF(curXA - bottomWidth / 2, height);
+                    rightA[0] = new PointF(curXA + bottomWidth / 2, height);
+
+                    float smoothedA = 0f;
+                    for (int i = 1; i <= segments; i++)
                     {
-                        PointF[] polyA = { leftA[i], rightA[i], new PointF(rightA[i + 1].X, rightA[i + 1].Y + 5f), new PointF(leftA[i + 1].X, leftA[i + 1].Y + 5f) };
-                        g.FillPolygon(aiBrush, polyA);
+                        int futureIndex = Math.Min(_currentFrameIndex + (i * lookAheadStep), _displayedFrameList.Count - 1);
+                        var futureFrame = _displayedFrameList[futureIndex];
+
+                        float targetAngleA;
+                        if (aiMap != null && aiMap.TryGetValue(futureFrame.FrameIndex, out var pred))
+                        {
+                            targetAngleA = pred.Angle;
+                        }
+                        else
+                        {
+                            // AI 예측 없으면 GT로 폴백해 연속성 유지
+                            targetAngleA = (float)futureFrame.Angle;
+                        }
+
+                        smoothedA = (smoothedA * 0.7f) + (targetAngleA * 0.3f);
+                        angleSumA += smoothedA;
+
+                        float progress = i / (float)segments;
+                        float nextY = height - (pathHeight * progress);
+                        float nextX = curXA + (angleSumA * maxDeflection);
+                        curXA = nextX;
+                        float currentWidth = bottomWidth - ((bottomWidth - topWidth) * progress);
+                        leftA[i] = new PointF(curXA - currentWidth / 2, nextY);
+                        rightA[i] = new PointF(curXA + currentWidth / 2, nextY);
+                    }
+
+                    using (SolidBrush aiBrush = new SolidBrush(Color.FromArgb(160, Color.LimeGreen)))
+                    {
+                        for (int i = 0; i < segments; i++)
+                        {
+                            PointF[] polyA = { leftA[i], rightA[i], new PointF(rightA[i + 1].X, rightA[i + 1].Y + 5f), new PointF(leftA[i + 1].X, leftA[i + 1].Y + 5f) };
+                            g.FillPolygon(aiBrush, polyA);
+                        }
                     }
                 }
+                catch { }
             }
-            catch { }
 
-            // HUD (속도 등)
+            // HUD: 속도 텍스트 및 바
             float throttle = (float)_displayedFrameList[_currentFrameIndex].Throttle;
             int displaySpeed = (int)Math.Round(Math.Abs(throttle) * 100);
             float hudRight = width - 50;
