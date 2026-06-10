@@ -170,6 +170,7 @@ def main():
         print(json.dumps([]))
         return
 
+    print(f"[predict_all.py] final results count: {len(results)}", file=sys.stderr)
     print(json.dumps(results))
 
 if __name__ == "__main__":
