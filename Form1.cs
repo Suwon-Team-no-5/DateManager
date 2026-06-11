@@ -1586,6 +1586,8 @@ namespace DateManager
 
         private void btnRunSimulator_Click(object sender, EventArgs e)
         {
+            string wslDistro = "Ubuntu-22.04";
+            int drivePort = 8887;
             string wslModelsRoot = @"\\wsl.localhost\Ubuntu-22.04\home\jaeseo03\mycar\models\";
 
             using (OpenFileDialog ofd = new OpenFileDialog())
@@ -1606,42 +1608,96 @@ namespace DateManager
                     {
                         rtbTrainLog.AppendText($"\r\n🚗 자율주행 모니터링 시스템을 구동합니다... (선택된 모델: {selectedFileName})\r\n");
 
-                        rtbTrainLog.AppendText("0. 이전 주행 서버 포트(8887)를 초기화합니다...\r\n");
-                        System.Diagnostics.ProcessStartInfo killInfo = new System.Diagnostics.ProcessStartInfo();
-                        killInfo.FileName = "wsl.exe";
-                        killInfo.Arguments = "-d Ubuntu-22.04 -e bash -c \"fuser -k 8887/tcp || true\"";
-                        killInfo.CreateNoWindow = true;
-                        killInfo.UseShellExecute = false;
+                        // 0. 포트 및 좀비 프로세스 정리 (LauncherForm 방식 적용)
+                        rtbTrainLog.AppendText("0. 이전 주행 서버 포트(8887) 및 기존 프로세스를 초기화합니다...\r\n");
+                        RunWslHidden(wslDistro, $"fuser -k {drivePort}/tcp || true", waitMilliseconds: 1500);
+                        RunWslHidden(wslDistro, "pkill -f 'manage.py drive' || true", waitMilliseconds: 1000);
 
-                        using (var killProc = System.Diagnostics.Process.Start(killInfo))
+                        // 1. 인자 이스케이프 및 실행 커맨드 빌드 (LauncherForm 핵심 로직 반영)
+                        string extraArgs = $"--model=./models/{EscapeBashArg(selectedFileName)} --type=linear";
+
+                        string command =
+                            "MYCAR_DIR=\"${DONKEYCAR_MY_CAR_DIR:-$HOME/mycar}\"; " +
+                            "if [ ! -f \"$MYCAR_DIR/manage.py\" ]; then " +
+                            "echo \"mycar 폴더를 찾을 수 없습니다. WSL에서 DONKEYCAR_MY_CAR_DIR 환경변수를 설정하거나 $HOME/mycar에 프로젝트를 두세요.\"; " +
+                            "exec bash; " +
+                            "fi; " +
+                            "PYTHON_BIN=\"${DONKEYCAR_PYTHON:-}\"; " +
+                            "if [ -z \"$PYTHON_BIN\" ]; then " +
+                            "if command -v conda >/dev/null 2>&1; then " +
+                            "PYTHON_BIN=\"python\"; " +
+                            "elif [ -x \"$HOME/miniconda3/envs/e2e_env/bin/python\" ]; then " +
+                            "PYTHON_BIN=\"$HOME/miniconda3/envs/e2e_env/bin/python\"; " +
+                            "elif [ -x \"$HOME/anaconda3/envs/e2e_env/bin/python\" ]; then " +
+                            "PYTHON_BIN=\"$HOME/anaconda3/envs/e2e_env/bin/python\"; " +
+                            "else " +
+                            "PYTHON_BIN=\"python3\"; " +
+                            "fi; " +
+                            "fi; " +
+                            "cd \"$MYCAR_DIR\"; " +
+                            "export PYTHONUNBUFFERED=1; " +
+                            $"\"$PYTHON_BIN\" manage.py drive {extraArgs}; " +
+                            "echo \"\"; " +
+                            "echo \"============================================================\"; " +
+                            "echo \"[알림] 프로세스가 종료되었습니다. 위 에러 메시지를 확인하세요.\"; " +
+                            "echo \"창을 닫으려면 exit를 입력하거나 우측 상단 X를 누르세요.\"; " +
+                            "echo \"============================================================\"; " +
+                            "exec bash"; // 에러가 나거나 비정상 종료되어도 터미널이 닫히지 않고 로그를 유지함
+
+                        System.Diagnostics.ProcessStartInfo wslInfo = new System.Diagnostics.ProcessStartInfo
                         {
-                            killProc.WaitForExit(1500);
-                        }
-
-                        System.Diagnostics.ProcessStartInfo wslInfo = new System.Diagnostics.ProcessStartInfo();
-                        wslInfo.FileName = "wsl.exe";
-                        wslInfo.Arguments = $"-d Ubuntu-22.04 -e bash -c \"cd '/home/jaeseo03/mycar' && export PYTHONUNBUFFERED=1 && /home/jaeseo03/miniconda3/envs/e2e_env/bin/python manage.py drive --model=./models/{selectedFileName} --type=linear\"";
-                        wslInfo.CreateNoWindow = false;
-                        wslInfo.UseShellExecute = true;
+                            FileName = "cmd.exe",
+                            Arguments = $"/c wsl.exe -d {wslDistro} -e bash -lc \"{EscapeForWslDoubleQuotes(command)}\"",
+                            CreateNoWindow = false,
+                            UseShellExecute = true
+                        };
 
                         System.Diagnostics.Process.Start(wslInfo);
                         rtbTrainLog.AppendText($"1. WSL2 자율주행 주행 서버 구동 시작 ({selectedFileName}).\r\n");
 
+                        // 2. 웹 컨트롤러 화면 팝업
                         System.Diagnostics.ProcessStartInfo browserInfo = new System.Diagnostics.ProcessStartInfo
                         {
-                            FileName = "http://localhost:8887",
+                            FileName = $"http://localhost:{drivePort}",
                             UseShellExecute = true
                         };
                         System.Diagnostics.Process.Start(browserInfo);
+
                         rtbTrainLog.AppendText("2. 웹 컨트롤러 브라우저 화면 팝업 완료.\r\n");
                         rtbTrainLog.AppendText("🎉 모든 모니터링 장치가 준비되었습니다! 시뮬레이터에서 'Full Auto'로 변경하세요.\r\n");
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"구동 중 치명적 오류 발생: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.None);
+                        MessageBox.Show($"구동 중 치명적 오류 발생: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
+        }
+
+        private void RunWslHidden(string distro, string command, int waitMilliseconds)
+        {
+            System.Diagnostics.ProcessStartInfo info = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "wsl.exe",
+                Arguments = $"-d {distro} -e bash -lc \"{EscapeForWslDoubleQuotes(command)}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            };
+
+            using (System.Diagnostics.Process proc = System.Diagnostics.Process.Start(info))
+            {
+                proc?.WaitForExit(waitMilliseconds);
+            }
+        }
+
+        private static string EscapeForWslDoubleQuotes(string value)
+        {
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static string EscapeBashArg(string value)
+        {
+            return value.Replace("'", "'\"'\"'");
         }
 
         private void RefreshSimulatorButtonState()

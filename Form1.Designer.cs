@@ -699,7 +699,7 @@
             btnSelectRange.Location = new Point(253, 100);
             btnSelectRange.Margin = new Padding(2);
             btnSelectRange.Name = "btnSelectRange";
-            btnSelectRange.Size = new Size(116, 31);
+            btnSelectRange.Size = new Size(122, 31);
             btnSelectRange.TabIndex = 0;
             btnSelectRange.Text = "구간 선택";
             btnSelectRange.UseVisualStyleBackColor = false;
@@ -738,7 +738,7 @@
             btnSelectAll.BackColor = Color.FromArgb(62, 62, 66);
             btnSelectAll.FlatAppearance.BorderSize = 0;
             btnSelectAll.FlatStyle = FlatStyle.Flat;
-            btnSelectAll.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
+            btnSelectAll.Font = new Font("Segoe UI", 7.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnSelectAll.ForeColor = Color.White;
             btnSelectAll.Location = new Point(253, 48);
             btnSelectAll.Name = "btnSelectAll";
