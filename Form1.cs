@@ -1073,6 +1073,9 @@ namespace DateManager
         // ==========================================
         // ✨ [수정] 학습 시작 버튼
         // ==========================================
+        // ==========================================
+        // ✨ [수정] 학습 시작 버튼 (백업 로직 추가)
+        // ==========================================
         private async void btnStart_Click(object? sender, EventArgs e)
         {
             // 1. 데이터 유무 확인
@@ -1097,27 +1100,7 @@ namespace DateManager
             // 전역 변수에 저장해둠 (End버튼 등에서 읽어오기 위해)
             _currentTrainingModelName = customModelName;
 
-            // 2. 휴지통 및 물리적 파일 정리 로직 실행
-            if (_trashFrameList.Count > 0 || true) // 항상 카탈로그 비교 정리는 수행하는 것이 안전함
-            {
-                string message = _trashFrameList.Count > 0
-                    ? $"휴지통의 {_trashFrameList.Count}개 파일과 사용하지 않는 이미지를 영구 삭제하고 '{_currentTrainingModelName}' 이름으로 학습할까요?"
-                    : $"사용하지 않는 이미지 파일을 정리하고 '{_currentTrainingModelName}' 이름으로 학습을 시작할까요?";
-
-                if (MessageBox.Show(message, "최종 확인", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                {
-                    // A. 물리적 파일 정리 (이미지 파일 삭제)
-                    CleanupUnusedFiles(_currentCatalogPath, _masterFrameList, _trashFrameList);
-
-                    // B. 카탈로그 리스트 정리
-                    _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, _trashFrameList);
-                    _trashFrameList.Clear();
-                    UpdateTrashListUI();
-                }
-                else { return; }
-            }
-
-            // 3. UI 초기화
+            // 3. UI 초기화 (로그를 띄우기 위해 위치를 약간 위로 올림)
             lossPoints.Clear();
             if (ChartRealTime != null)
             {
@@ -1137,14 +1120,111 @@ namespace DateManager
             btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
 
             rtbTrainLog.Clear();
-            rtbTrainLog.AppendText($" AI 학습 연동을 시작합니다... (데이터 정리 완료, 모델명: {_currentTrainingModelName})\r\n");
+            rtbTrainLog.AppendText($"▶️ AI 학습 준비를 시작합니다... (모델명: {_currentTrainingModelName})\r\n");
+
+            // 2. 휴지통 및 물리적 파일 정리 로직 실행 (백업 포함)
+            if (_trashFrameList.Count > 0 || true) // 항상 카탈로그 비교 정리는 수행하는 것이 안전함
+            {
+                string message = _trashFrameList.Count > 0
+                    ? $"휴지통의 {_trashFrameList.Count}개 파일과 사용하지 않는 이미지를 영구 삭제하고 '{_currentTrainingModelName}' 이름으로 학습할까요?\n\n(※ 삭제 전 자동으로 백업 폴더가 생성됩니다.)"
+                    : $"사용하지 않는 이미지 파일을 정리하고 '{_currentTrainingModelName}' 이름으로 학습을 시작할까요?\n\n(※ 정리 전 자동으로 백업 폴더가 생성됩니다.)";
+
+                if (MessageBox.Show(message, "데이터 정리 및 학습 시작 확인", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                {
+                    try
+                    {
+                        this.Cursor = Cursors.WaitCursor;
+
+                        // 🌟 [추가됨] 삭제 전 전체 데이터 백업 로직
+                        string parentDir = Directory.GetParent(_currentCatalogPath)?.FullName ?? _currentCatalogPath;
+                        string folderName = new DirectoryInfo(_currentCatalogPath).Name;
+                        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss"); // 콜론(:) 없이 안전한 날짜 포맷
+                        string backupPath = Path.Combine(parentDir, $"{folderName}_{timestamp}_백업");
+
+                        rtbTrainLog.AppendText($"\r\n💾 영구 삭제 전 원본 데이터 백업을 시작합니다...\r\n  - 원본: {_currentCatalogPath}\r\n  - 백업: {backupPath}\r\n");
+
+                        // 용량이 클 수 있으므로 UI가 멈추지 않게 비동기로 복사 수행
+                        await Task.Run(() => CopyDirectory(_currentCatalogPath, backupPath));
+
+                        rtbTrainLog.AppendText("✅ 백업 완료! 이제 휴지통 및 미사용 이미지를 원본에서 영구 삭제합니다...\r\n");
+
+                        // A. 물리적 파일 정리 (이미지 파일 삭제)
+                        CleanupUnusedFiles(_currentCatalogPath, _masterFrameList, _trashFrameList);
+
+                        // B. 카탈로그 리스트 정리
+                        _fileRemover.RemoveFramesFromCatalogs(_masterFrameList, _trashFrameList);
+                        _trashFrameList.Clear();
+                        UpdateTrashListUI();
+
+                        // C. 휴지통 기록 파일 갱신 (비우기)
+                        SaveTrashState();
+
+                        rtbTrainLog.AppendText("✅ 데이터 정리가 완벽하게 끝났습니다.\r\n\r\n");
+                    }
+                    catch (Exception ex)
+                    {
+                        this.Cursor = Cursors.Default;
+                        MessageBox.Show($"백업 또는 정리 중 오류가 발생했습니다: {ex.Message}", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        rtbTrainLog.AppendText($"❌ 오류 발생으로 학습을 취소합니다: {ex.Message}\r\n");
+
+                        // 버튼 원상 복구
+                        btnStartTraining.Enabled = true;
+                        btnEndTraining.Enabled = false;
+                        btnStartTraining.BackColor = Color.FromArgb(0, 122, 204);
+                        btnEndTraining.BackColor = Color.FromArgb(62, 62, 66);
+                        return; // 에러가 나면 학습으로 넘어가지 않음
+                    }
+                    finally
+                    {
+                        this.Cursor = Cursors.Default;
+                    }
+                }
+                else
+                {
+                    // 취소 시 버튼 상태 원상복구
+                    btnStartTraining.Enabled = true;
+                    btnEndTraining.Enabled = false;
+                    btnStartTraining.BackColor = Color.FromArgb(0, 122, 204);
+                    btnEndTraining.BackColor = Color.FromArgb(62, 62, 66);
+                    return;
+                }
+            }
+
+            rtbTrainLog.AppendText($"🚀 WSL2를 통한 AI 학습 연동을 본격적으로 시작합니다...\r\n");
 
             // 4. 학습 시작
             string pythonPath = "wsl.exe";
             string mycarDir = "/home/jaeseo03/mycar";
 
-            // 🌟 [수정됨] 입력받은 파일 이름을 매개변수로 던져줌
+            // 입력받은 파일 이름을 매개변수로 던져줌
             await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, _currentCatalogPath, _currentTrainingModelName));
+        }
+
+        // ==========================================
+        // ✨ [추가] 폴더 전체 복사(백업)용 재귀 함수
+        // ==========================================
+        private void CopyDirectory(string sourceDir, string destinationDir)
+        {
+            DirectoryInfo dir = new DirectoryInfo(sourceDir);
+            if (!dir.Exists)
+                throw new DirectoryNotFoundException($"원본 폴더를 찾을 수 없습니다: {dir.FullName}");
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+            Directory.CreateDirectory(destinationDir);
+
+            // 1. 현재 폴더의 모든 파일 복사
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                string targetFilePath = Path.Combine(destinationDir, file.Name);
+                file.CopyTo(targetFilePath, true); // 덮어쓰기 허용
+            }
+
+            // 2. 하위 폴더 재귀적 복사
+            foreach (DirectoryInfo subDir in dirs)
+            {
+                string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
+                CopyDirectory(subDir.FullName, newDestinationDir);
+            }
         }
 
         // ==========================================
