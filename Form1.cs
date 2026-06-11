@@ -58,6 +58,7 @@ namespace DateManager
         private readonly SolidBrush _bgBrush = new SolidBrush(Color.FromArgb(100, 200, 200, 200));
         private readonly SolidBrush _barBlueBrush = new SolidBrush(Color.DeepSkyBlue);
         private readonly SolidBrush _barOrangeBrush = new SolidBrush(Color.Orange);
+        private string _currentTrainingModelName = "mypilot.h5"; // 사용자가 지정한 모델 이름 저장용
         // ==========================================
         // ✨ [추가] AI 예측 시각화를 위한 멤버 변수
         // ==========================================
@@ -419,20 +420,47 @@ namespace DateManager
                         // 💡 비동기 작업으로 무거운 로드 작업을 별도 스레드에서 수행
                         _masterFrameList = await Task.Run(() => _dataProcessor.LoadCatalogData(selectedPath));
 
-                        // 로드 완료 후 UI 업데이트: 마스터 리스트를 바로 표시 리스트로 반영
+                        // 🚨 [안전장치 추가] 데이터가 정상적으로(null이 아닐 때만) 로드되었을 때만 처리
                         if (_masterFrameList != null && _masterFrameList.Count > 0)
                         {
+                            // 🌟 [수정 1] 이미지 파일명에서 원본 프레임 번호를 무조건 추출하여 고정 (번호 섞임 방지)
+                            foreach (var frame in _masterFrameList)
+                            {
+                                if (!string.IsNullOrEmpty(frame.ImagePath))
+                                {
+                                    // "123_cam-image..." 형태에서 앞의 숫자만 정규식으로 추출
+                                    var match = System.Text.RegularExpressions.Regex.Match(frame.ImagePath, @"\d+");
+                                    if (match.Success && int.TryParse(match.Value, out int originalId))
+                                    {
+                                        frame.FrameIndex = originalId;
+                                    }
+                                }
+                            }
+
+                            // 🌟 [수정 2] 원본 번호순으로 전체 리스트 재정렬
+                            _masterFrameList = _masterFrameList.OrderBy(f => f.FrameIndex).ToList();
+
+                            // 🌟 [수정 3] 이전 휴지통 상태가 있다면 불러와서 메인 리스트에서 분리
+                            _trashFrameList.Clear();
+                            LoadTrashState();
+
+                            // 로드 완료 후 UI 업데이트: 마스터 리스트를 바로 표시 리스트로 반영
                             RefreshFrameList(_masterFrameList);
-                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터를 로드했습니다!");
+                            MessageBox.Show($"총 {_masterFrameList.Count}개의 데이터를 로드했습니다!\n(휴지통 항목: {_trashFrameList.Count}개)");
+                        }
+                        else
+                        {
+                            MessageBox.Show("폴더에 유효한 데이터가 없습니다.", "알림");
                         }
                     }
                     catch (Exception ex)
                     {
+                        // 🚨 누락되었던 catch 복구: 에러 발생 시 프로그램 종료 방지
                         MessageBox.Show($"데이터 로드 중 오류가 발생했습니다: {ex.Message}");
                     }
                     finally
                     {
-                        // 커서 복구
+                        // 🚨 누락되었던 finally 복구: 에러가 나든 안 나든 마우스 커서를 원상복구
                         this.Cursor = Cursors.Default;
                     }
                 }
@@ -535,6 +563,7 @@ namespace DateManager
                 lstFrameData.SelectedIndex = targetIndex;
                 lstFrameData.Focus();
             }
+            SaveTrashState();
         }
 
         private void lstFrameData_SelectedIndexChanged(object? sender, EventArgs e)
@@ -1012,6 +1041,38 @@ namespace DateManager
         private void btnSetLeft_Click(object sender, EventArgs e) { start = lstFrameData.SelectedIndex; }
         private void btnSetRight_Click(object sender, EventArgs e) { end = lstFrameData.SelectedIndex; }
 
+        // ==========================================
+        // ✨ [추가] 파일 이름 입력을 위한 팝업창 생성 헬퍼 함수
+        // ==========================================
+        private string PromptForModelName()
+        {
+            Form prompt = new Form()
+            {
+                Width = 400,
+                Height = 180,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "학습 모델 이름 지정",
+                StartPosition = FormStartPosition.CenterScreen,
+                MaximizeBox = false
+            };
+            Label textLabel = new Label() { Left = 20, Top = 20, Width = 340, Text = "저장할 모델 파일의 이름을 입력하세요.\n(예: mypilot_v2.h5)" };
+            TextBox textBox = new TextBox() { Left = 20, Top = 60, Width = 340, Text = "mypilot.h5" };
+            Button confirmation = new Button() { Text = "확인", Left = 180, Width = 80, Top = 90, DialogResult = DialogResult.OK };
+            Button cancel = new Button() { Text = "취소", Left = 280, Width = 80, Top = 90, DialogResult = DialogResult.Cancel };
+
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(cancel);
+            prompt.Controls.Add(textLabel);
+            prompt.AcceptButton = confirmation;
+            prompt.CancelButton = cancel;
+
+            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text.Trim() : "";
+        }
+
+        // ==========================================
+        // ✨ [수정] 학습 시작 버튼
+        // ==========================================
         private async void btnStart_Click(object? sender, EventArgs e)
         {
             // 1. 데이터 유무 확인
@@ -1021,12 +1082,27 @@ namespace DateManager
                 return;
             }
 
+            // 🌟 1-5. 팝업창을 띄워 저장할 모델 이름 입력받기
+            string customModelName = PromptForModelName();
+
+            // 만약 사용자가 X를 누르거나 취소를 눌렀다면, 또는 빈 칸이라면 학습 진행 취소
+            if (string.IsNullOrWhiteSpace(customModelName)) return;
+
+            // 확장자 .h5를 안 적었다면 자동으로 붙여줌
+            if (!customModelName.EndsWith(".h5", StringComparison.OrdinalIgnoreCase))
+            {
+                customModelName += ".h5";
+            }
+
+            // 전역 변수에 저장해둠 (End버튼 등에서 읽어오기 위해)
+            _currentTrainingModelName = customModelName;
+
             // 2. 휴지통 및 물리적 파일 정리 로직 실행
             if (_trashFrameList.Count > 0 || true) // 항상 카탈로그 비교 정리는 수행하는 것이 안전함
             {
                 string message = _trashFrameList.Count > 0
-                    ? $"휴지통의 {_trashFrameList.Count}개 파일과 사용하지 않는 이미지를 영구 삭제하고 학습할까요?"
-                    : "사용하지 않는 이미지 파일을 정리하고 학습을 시작할까요?";
+                    ? $"휴지통의 {_trashFrameList.Count}개 파일과 사용하지 않는 이미지를 영구 삭제하고 '{_currentTrainingModelName}' 이름으로 학습할까요?"
+                    : $"사용하지 않는 이미지 파일을 정리하고 '{_currentTrainingModelName}' 이름으로 학습을 시작할까요?";
 
                 if (MessageBox.Show(message, "최종 확인", MessageBoxButtons.YesNo) == DialogResult.Yes)
                 {
@@ -1061,13 +1137,31 @@ namespace DateManager
             btnViewMonitor.BackColor = Color.FromArgb(62, 62, 66);
 
             rtbTrainLog.Clear();
-            rtbTrainLog.AppendText(" AI 학습 연동을 시작합니다... (데이터 정리 완료)\r\n");
+            rtbTrainLog.AppendText($" AI 학습 연동을 시작합니다... (데이터 정리 완료, 모델명: {_currentTrainingModelName})\r\n");
 
             // 4. 학습 시작
             string pythonPath = "wsl.exe";
             string mycarDir = "/home/jaeseo03/mycar";
 
-            await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, _currentCatalogPath));
+            // 🌟 [수정됨] 입력받은 파일 이름을 매개변수로 던져줌
+            await Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, _currentCatalogPath, _currentTrainingModelName));
+        }
+
+        // ==========================================
+        // ✨ [수정] 학습 강제 종료 버튼
+        // ==========================================
+        private void btnEndTraining_Click(object sender, EventArgs e)
+        {
+            donkeyTrainer.KillProcess();
+
+            btnEndTraining.Enabled = false;
+            btnStartTraining.Enabled = true;
+
+            btnStartTraining.BackColor = Color.FromArgb(0, 122, 204);
+            btnEndTraining.BackColor = Color.FromArgb(62, 62, 66);
+
+            // 🌟 [수정됨] 하드코딩된 이름 대신 저장했던 파일 이름 변수(_currentTrainingModelName) 출력
+            rtbTrainLog.AppendText($"\r\n⏹️ 지금까지의 학습으로 새로운 AI 학습 모델이 생성되었습니다. 새로운 학습을 준비합니다.\r\n모델 위치: /home/jaeseo03/mycar/models\r\n학습 파일 이름: {_currentTrainingModelName}\r\n");
         }
 
         // 🎯 [부활 포인트 2] 기주님 맞춤형 실시간 꺾은선 다크모드 렌더링 엔진 완벽 복구!
@@ -1213,19 +1307,6 @@ namespace DateManager
             await System.Threading.Tasks.Task.Run(() => donkeyTrainer.StartTraining(pythonPath, mycarDir, tubPath));
         }
 
-        private void btnEndTraining_Click(object sender, EventArgs e)
-        {
-            donkeyTrainer.KillProcess();
-
-            btnEndTraining.Enabled = false;
-            btnStartTraining.Enabled = true;
-
-            btnStartTraining.BackColor = Color.FromArgb(0, 122, 204);
-            btnEndTraining.BackColor = Color.FromArgb(62, 62, 66);
-
-            rtbTrainLog.AppendText("\r\n⏹️ AI 학습 연동이 완전히 종료되었습니다. 새로운 학습을 준비합니다.\r\n");
-        }
-
         private void btnRestoreData_Click(object sender, EventArgs e)
         {
             List<int> selectedIndices = new List<int>();
@@ -1264,6 +1345,7 @@ namespace DateManager
             else btnPlay.Enabled = true;
 
             pbMainCam.Invalidate();
+            SaveTrashState();
         }
 
         private void UpdateTrashListUI()
@@ -1942,6 +2024,57 @@ namespace DateManager
             {
                 // 파일 접근 권한 문제 등이 있을 수 있으므로 예외는 로그로 확인
                 Console.WriteLine($"파일 정리 중 오류 발생: {ex.Message}");
+            }
+        }
+
+        // ==========================================
+        // ✨ [추가] 휴지통 데이터 영구 보존용 헬퍼 메서드
+        // ==========================================
+        private void SaveTrashState()
+        {
+            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
+            string trashPath = Path.Combine(_currentCatalogPath, "trash_state.json");
+
+            if (_trashFrameList.Count == 0)
+            {
+                // 휴지통이 비워졌다면 기록 파일도 삭제
+                if (File.Exists(trashPath)) File.Delete(trashPath);
+                return;
+            }
+
+            // 휴지통에 들어있는 프레임들의 원본 ID만 추출하여 JSON으로 저장
+            var trashIds = _trashFrameList.Select(f => f.FrameIndex).ToList();
+            string json = JsonSerializer.Serialize(trashIds);
+            File.WriteAllText(trashPath, json);
+        }
+
+        private void LoadTrashState()
+        {
+            if (string.IsNullOrEmpty(_currentCatalogPath)) return;
+            string trashPath = Path.Combine(_currentCatalogPath, "trash_state.json");
+
+            if (File.Exists(trashPath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(trashPath);
+                    var trashIds = JsonSerializer.Deserialize<List<int>>(json);
+                    if (trashIds != null && trashIds.Count > 0)
+                    {
+                        // 1. 전체 데이터에서 휴지통에 들어가야 할 프레임들 솎아내기
+                        var framesToTrash = _masterFrameList.Where(f => trashIds.Contains(f.FrameIndex)).ToList();
+
+                        // 2. 메인 리스트에서는 삭제하고 휴지통 리스트로 이동
+                        _masterFrameList.RemoveAll(f => trashIds.Contains(f.FrameIndex));
+                        _trashFrameList.AddRange(framesToTrash);
+
+                        UpdateTrashListUI();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("휴지통 상태 복구 실패: " + ex.Message);
+                }
             }
         }
     }
