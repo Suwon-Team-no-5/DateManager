@@ -1522,22 +1522,43 @@ namespace DateManager
 
         private void btnSelectAll_Click(object sender, EventArgs e)
         {
-            if (lstFrameData.Items.Count == 0) return;
+            // 1. 휴지통 패널이 켜져 있는지 확인
+            bool isTrashMode = pnlTrash.Visible;
 
-            lstFrameData.SelectedIndexChanged -= lstFrameData_SelectedIndexChanged;
-            lstFrameData.BeginUpdate();
+            // 2. 모드에 따라 대상 리스트박스 결정
+            ListBox targetList = isTrashMode ? lstTrashItems : lstFrameData;
+
+            if (targetList.Items.Count == 0) return;
+
+            // 3. 대상 리스트에 맞는 이벤트 핸들러 임시 해제
+            if (isTrashMode)
+                targetList.SelectedIndexChanged -= lstTrashItems_SelectedIndexChanged; // 휴지통 이벤트 핸들러 명칭 확인 필요
+            else
+                targetList.SelectedIndexChanged -= lstFrameData_SelectedIndexChanged;
+
+            targetList.BeginUpdate();
 
             try
             {
-                SendMessage(lstFrameData.Handle, LB_SETSEL, 1, -1);
+                // 4. SendMessage로 전체 선택 (LB_SETSEL)
+                SendMessage(targetList.Handle, LB_SETSEL, 1, -1);
             }
             finally
             {
-                lstFrameData.EndUpdate();
-                lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
+                targetList.EndUpdate();
+
+                // 5. 이벤트 핸들러 다시 연결
+                if (isTrashMode)
+                    targetList.SelectedIndexChanged += lstTrashItems_SelectedIndexChanged;
+                else
+                    targetList.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
             }
 
-            DisplayFrame(lstFrameData.Items.Count - 1);
+            // 6. 일반 리스트일 때만 마지막 항목 표시 (휴지통은 별도 표시 로직이 없다면 생략 가능)
+            if (!isTrashMode)
+            {
+                DisplayFrame(targetList.Items.Count - 1);
+            }
         }
 
         private void btnOpenTrash_Click(object sender, EventArgs e)
@@ -1605,9 +1626,15 @@ namespace DateManager
 
         private void btnCloseTrash_Click(object sender, EventArgs e)
         {
+            // 💡 핵심: 패널을 닫기 전 선택 해제 (이벤트 루프 방지)
+            lstTrashItems.SelectedIndexChanged -= lstTrashItems_SelectedIndexChanged;
+            lstTrashItems.ClearSelected();
+            lstTrashItems.SelectedIndexChanged += lstTrashItems_SelectedIndexChanged;
+
             pnlTrash.Visible = false;
             _isViewingTrash = false;
 
+            // 이전 상태(메인 리스트 프레임) 복구 로직
             if (_lastViewedFrameId != -1)
             {
                 int foundIndex = _displayedFrameList.FindIndex(f => f.FrameIndex == _lastViewedFrameId);
@@ -1626,15 +1653,43 @@ namespace DateManager
 
         private void lstTrashItems_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // 1. 인덱스가 -1이면(선택 해제) 무시
             if (lstTrashItems.SelectedIndex == -1) return;
 
-            _isViewingTrash = true;
-            lstFrameData.ClearSelected();
+            // 2. [핵심] 이벤트 루프 방지: lstFrameData 이벤트 핸들러를 잠시 해제
+            // (ClearSelected() 호출 시 발생하는 불필요한 이벤트 호출을 막습니다)
+            lstFrameData.SelectedIndexChanged -= lstFrameData_SelectedIndexChanged;
 
-            if (_playbackTimer.Enabled) StopPlayback();
-            btnPlay.Enabled = false;
+            try
+            {
+                _isViewingTrash = true;
+                lstFrameData.ClearSelected();
 
-            DisplayTrashFrame(lstTrashItems.SelectedIndex);
+                // 3. Null 체크 (방어 코드)
+                // _playbackTimer가 초기화되지 않았을 때를 대비합니다.
+                if (_playbackTimer != null && _playbackTimer.Enabled)
+                {
+                    StopPlayback();
+                }
+
+                btnPlay.Enabled = false;
+
+                // 4. 인덱스 유효성 확인 후 DisplayTrashFrame 호출
+                if (lstTrashItems.SelectedIndex >= 0 && lstTrashItems.SelectedIndex < lstTrashItems.Items.Count)
+                {
+                    DisplayTrashFrame(lstTrashItems.SelectedIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                // 오류 발생 시 로그 기록 (필요 시)
+                System.Diagnostics.Debug.WriteLine($"Error in lstTrashItems_SelectedIndexChanged: {ex.Message}");
+            }
+            finally
+            {
+                // 5. [핵심] 이벤트 핸들러 다시 연결
+                lstFrameData.SelectedIndexChanged += lstFrameData_SelectedIndexChanged;
+            }
         }
 
         private void DisplayTrashFrame(int index)

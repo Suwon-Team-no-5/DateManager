@@ -843,7 +843,7 @@
             lstTrashItems.SelectionMode = SelectionMode.MultiExtended;
             lstTrashItems.Size = new Size(350, 400);
             lstTrashItems.TabIndex = 0;
-            lstTrashItems.Click += lstTrashItems_SelectedIndexChanged;
+            lstTrashItems.SelectedIndexChanged += lstTrashItems_SelectedIndexChanged;
             // 
             // btnOpenManual
             // 
