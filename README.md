@@ -3,7 +3,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20Forms-blue?style=flat-square&logo=windows" alt="Platform">
   <img src="https://img.shields.io/badge/Language-C%23%20%2F%20.NET-green?style=flat-square&logo=c-sharp" alt="Language">
   <img src="https://img.shields.io/badge/Environment-WSL%20%2F%20Python-yellow?style=flat-square&logo=linux" alt="Environment">
-  <img src="https://img.shields.io/badge/Team-Team%2005-orange?style=flat-square" alt="Team">
+  <img src="https://img.shields.io/badge/Team-Team%2005%20(Convergence)-orange?style=flat-square" alt="Team">
 </p>
 
 ## 📝 프로젝트 개요 (Overview)
@@ -17,10 +17,11 @@
 1. [주요 기능](#-주요-기능-key-features)
 2. [핵심 기술 및 구현 알고리즘 (8대 핵심 로직)](#-핵심-기술-및-구현-알고리즘-8대-핵심-로직)
 3. [기술 스택](#-기술-스택-tech-stack)
-4. [디렉토리 구조](#-디렉토리-구조-project-structure)
-5. [시작하기 및 실행 방법](#-시작하기-getting-started)
-6. [팀 구성 및 역할 분담](#-팀-구성-및-역할-team-members)
-7. [진행 상황 및 스크린샷](#-진행-상황-및-스크린샷-progress)
+4. [개발 및 테스트 환경](#-개발-및-테스트-환경-system-environment)
+5. [디렉토리 구조](#-디렉토리-구조-project-structure)
+6. [시작하기 및 실행 방법](#-시작하기-getting-started)
+7. [팀 구성 및 역할 분담](#-팀-구성-및-역할-team-members)
+8. [진행 상황 및 스크린샷](#-진행-상황-및-스크린샷-progress)
 
 ---
 
@@ -95,11 +96,25 @@ g.FillPolygon(aiBrush, polyA);
 
 | Category | Technology |
 | :--- | :--- |
-| **Frontend/UI** | Windows Forms (C# / .NET), GDI+ Graphics, MSChart Controls |
-| **Backend/Runtime** | .NET Runtime, Python 3.x, WSL (Windows Subsystem for Linux) |
+| **Frontend/UI** | Windows Forms (C# / .NET 10.0), GDI+ Graphics, MSChart Controls |
+| **Backend/Runtime** | .NET Core Runtime v10.0, Python v3.11.15, WSL2 (Ubuntu 22.04.5 LTS) |
 | **Data Processing** | JSON Lines 파싱 (`System.Text.Json`), LINQ Query, Regex (정규표현식) |
-| **Deep Learning** | Keras / TensorFlow (Behavioral Cloning 모델 제어, `.h5` 파일 핸들링) |
-| **Architecture** | Controller Pattern (UI 컴포넌트와 비즈니스 정제 로직의 독립적 설계) |
+| **Deep Learning** | Keras / TensorFlow v2.15.1 (Behavioral Cloning 모델 제어, `.h5` 파일 핸들링) |
+| **Framework** | DonkeyCar Python Framework v5.3.dev1 |
+
+---
+
+## 💻 개발 및 테스트 환경 (System Environment)
+
+본 시스템은 호스트 OS(Windows)와 게스트 OS(Linux) 간의 인터프로세스 통신(IPC) 및 데이터 동기화를 기반으로 구동됩니다. 완벽한 재현성과 시스템 동작 보장을 위해 타겟팅 및 테스트가 완료된 세부 환경 버전 정보는 다음과 같습니다.
+
+* **Host OS:** Windows 10 / 11 OS (64-bit)
+* **Guest OS (WSL):** WSL2 - Ubuntu 22.04.5 LTS (Jammy Jellyfish)
+* **Frontend Runtime:** .NET 10.0 (Windows Forms 데스크톱 응용 프로그램)
+* **IDE / Compiler:** Visual Studio 2022 이상
+* **Python Runtime:** Python 3.11.15 (Miniconda `e2e_env` 가상환경)
+* **Deep Learning Framework:** TensorFlow 2.15.1 (Keras 최적화 및 CPU 명령어 컴파일 최적화 구동)
+* **Autonomous Driving Framework:** DonkeyCar v5.3.dev1 (행동 복제 Linear Model 기반 아키처)
 
 ---
 
@@ -153,7 +168,7 @@ DateManager/
 ### 요구사항 (Prerequisites)
 * Windows 10 / 11 OS
 * .NET SDK 또는 .NET Desktop Development 워크로드가 포함된 **Visual Studio 2022 이상**
-* **WSL (Windows Subsystem for Linux)** 및 Python 환경 세팅 (Keras/TensorFlow 및 DonkeyCar 라이브러리 설치 필수)
+* **WSL2 (Ubuntu 22.04.5 LTS)** 및 Python 환경 세팅 (Keras/TensorFlow 및 DonkeyCar 라이브러리 설치 필수)
 
 ### 실행 방법
 1. 본 레포지토리를 클론한 뒤 Visual Studio에서 `DateManager.slnx` 솔루션을 엽니다.
