@@ -3,7 +3,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20Forms-blue?style=flat-square&logo=windows" alt="Platform">
   <img src="https://img.shields.io/badge/Language-C%23%20%2F%20.NET-green?style=flat-square&logo=c-sharp" alt="Language">
   <img src="https://img.shields.io/badge/Environment-WSL%20%2F%20Python-yellow?style=flat-square&logo=linux" alt="Environment">
-  <img src="https://img.shields.io/badge/Team-Team%2005%20(Convergence)-orange?style=flat-square" alt="Team">
+  <img src="https://img.shields.io/badge/Team-Team%2005-orange?style=flat-square" alt="Team">
 </p>
 
 ## 📝 프로젝트 개요 (Overview)
